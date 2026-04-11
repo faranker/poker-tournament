@@ -64,8 +64,16 @@ const Progress = styled.div<{ percent: number }>`
   }
 `;
 
-const Button = styled.button<{ secondary?: boolean }>`
-  background: ${(p) => (p.secondary ? "#333" : "#e50914")};
+const Button = styled.button<{ type?: string; }>`
+  // background: ${(p) => (p.type === 'secondary' ? "#333" : "#e50914")};
+  ${props => props.type === 'secondary' && "background: #333;"}
+
+  ${props => props.type === 'primary' && "background: #e50914;"}
+
+  ${props => props.type === 'success' && "background: #439d03;"}
+
+  ${props => props.type === 'info' && "background: #17a2b8;"}
+
   border: none;
   color: #fff;
   padding: 8px 14px;
@@ -216,7 +224,7 @@ export default function PokerTournamentTimer() {
   const prizes = tournament.payouts.map((percent: number) => {
     return Math.floor((percent / 100) * prizePool);
   });
-  const totalPercent = tournament.payouts.reduce((sum, p) => sum + p, 0);
+  // const totalPercent = tournament.payouts.reduce((sum, p) => sum + p, 0);
   // const totalPrize = totalBuyIn * tournament.buyIn;
 
   const isWinner = (name: string) =>
@@ -286,6 +294,75 @@ export default function PokerTournamentTimer() {
       profit,
     };
   }).sort((a, b) => b.profit - a.profit);
+
+  const shareResults = async () => {
+  const text = generateSummaryText();
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: "Poker Tournament Result",
+        text,
+      });
+    } catch (err) {
+      console.log("share cancelled");
+    }
+  } else {
+    // fallback
+    navigator.clipboard.writeText(text);
+    alert("Copy แล้ว ไปวางใน LINE ได้เลย");
+  }
+};
+
+const generateSummaryText = () => {
+  let text = `🏆 ${tournament.name}\n\n`;
+
+  text += `วันที่: ${new Date().toLocaleDateString()}\n`;
+  text += `Buy-In: ${tournament.buyIn}\n`;
+
+  text += `ผู้เล่นทั้งหมด: ${players.length}\n`;
+
+  text += `Prize Pool: ${prizePool}\n\n`;
+
+  text += "อันดับและเงินรางวัล:\n";
+  prizeWinners.forEach((w, i) => {
+    text += `${i + 1 === 1 ? "🥇" : i + 1 === 2 ? "🥈" : i + 1 === 3 ? "🥉" : i + 1} #${w.name} - ${w.amount}\n`;
+  });
+
+  text += "\nผู้เล่นทั้งหมด:\n";
+  players.forEach((p) => {
+    const winner = prizeWinners.find(w => w.name === p.name);
+    const prize = winner ? winner.amount : 0;
+    const cost = p.count * tournament.buyIn;
+    const profit = prize - cost;
+
+    text += `#${p.name} (${p.count} buy-in รวม ${cost}) → ${profit >= 0 ? "+" : ""}${profit}\n`;
+  });
+
+  return text;
+};
+
+const sendToTelegram = async () => {
+  const text = generateSummaryText();
+
+  const TOKEN = '8759551562:AAFT_chi96Y5fiYKBSuEjOfsFFZYpzgrX-4';
+  const CHAT_ID = "-5124726087";
+
+  const url = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
+
+  await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      chat_id: CHAT_ID,
+      text,
+    }),
+  });
+
+  alert("ส่งเข้า Telegram แล้ว!");
+};
 
   return (
     <App>
@@ -357,6 +434,7 @@ export default function PokerTournamentTimer() {
 
             <div style={{ display: "flex", gap: 10, marginTop: 15 }}>
               <Button
+                type="primary"
                 onClick={() => {
                   setTournament((t) => ({
                     ...t,
@@ -374,7 +452,7 @@ export default function PokerTournamentTimer() {
                 Add
               </Button>
 
-              <Button secondary onClick={() => setOpenModal(false)}>
+              <Button type="secondary" onClick={() => setOpenModal(false)}>
                 Cancel
               </Button>
             </div>
@@ -424,6 +502,7 @@ export default function PokerTournamentTimer() {
                   {/* Remove */}
                   <td>
                     <Button
+                      type="primary"
                       onClick={() => {
                         const ok = window.confirm("ลบ level นี้?");
                         if (!ok) return;
@@ -447,7 +526,7 @@ export default function PokerTournamentTimer() {
             const [sb, bb, ante, d] = r.split(",").map(Number);
             setTournament(t => ({ ...t, rounds: [...t.rounds, { sb, bb, ante, duration: d }] }));
           }}>+ Add Level</Button> */}
-          <Button secondary onClick={() => setOpenModal(true)}>
+          <Button type="primary" onClick={() => setOpenModal(true)}>
             + Add Level
           </Button>
         </Card>
@@ -458,6 +537,7 @@ export default function PokerTournamentTimer() {
           <BigTimer>{fmt(timeLeft)}</BigTimer>
           <Progress percent={progress}><div /></Progress>
           <Button
+            type="primary"
             onClick={() => {
               // 🔥 ถ้าเวลาหมดแล้ว → reset ก่อน
               if (timeLeft <= 0) {
@@ -468,8 +548,7 @@ export default function PokerTournamentTimer() {
           >
             {running ? "Pause" : "Start"}
           </Button>
-          <Button
-            secondary
+          <Button type="secondary"
             onClick={() => {
               playLevelUpSound();
               setRoundIndex((i) => {
@@ -482,7 +561,7 @@ export default function PokerTournamentTimer() {
             Prev
           </Button>
           <Button
-            secondary
+            type="secondary"
             onClick={() => {
               playLevelUpSound();
               setRoundIndex((i) => {
@@ -494,7 +573,7 @@ export default function PokerTournamentTimer() {
           >
             Next
           </Button>
-          <Button secondary onClick={() => setBreakTime(b => !b)}>Break</Button>
+          <Button type="secondary" onClick={() => setBreakTime(b => !b)}>Break</Button>
           <h3>{round.sb}/{round.bb} • Ante {round.ante}</h3>
         </Card>
 
@@ -521,6 +600,7 @@ export default function PokerTournamentTimer() {
               />
 
               <Button
+                type="primary"
                 onClick={() => {
                   setTournament((t) => ({
                     ...t,
@@ -538,7 +618,7 @@ export default function PokerTournamentTimer() {
             </div>
           ))}
 
-          <Button secondary onClick={() => {
+          <Button type="primary" onClick={() => {
             setTournament((t) => ({
               ...t,
               payouts: [...t.payouts, 0],
@@ -551,7 +631,7 @@ export default function PokerTournamentTimer() {
       <Grid2 style={{ marginTop: 20 }}>
         <Card>
           <Subtitle>Player</Subtitle>
-          <Button secondary onClick={addPlayer}>+ Add Player</Button>
+          <Button type="primary" onClick={addPlayer}>+ Add Player</Button>
           <Table>
             <thead>
               <tr><th>ชื่อ</th><th>จำนวน Buy-in</th><th></th></tr>
@@ -600,7 +680,7 @@ export default function PokerTournamentTimer() {
                   <td style={{ textAlign: 'center' }}>{p.count}</td>
                   <td>
                     <Button
-                      secondary
+                      type="secondary"
                       onClick={(e) => {
                         e.stopPropagation(); // 🔥 กัน trigger select
                         const ok = window.confirm(`เพิ่ม Buy-in "${players[i].name}" ใช่ไหม?`);
@@ -613,7 +693,7 @@ export default function PokerTournamentTimer() {
                       + Buy-in
                     </Button>
                     <Button
-                      secondary
+                      type="secondary"
                       onClick={(e) => {
                         e.stopPropagation(); // 🔥 กัน trigger select
                         const newPlayers = [...players];
@@ -633,7 +713,7 @@ export default function PokerTournamentTimer() {
                     </Button>
 
                     <Button
-                      secondary
+                      type="primary"
                       onClick={(e) => {
                         e.stopPropagation(); // 🔥 กัน trigger select
                         const ok = window.confirm(`ลบผู้เล่น "${players[i].name}" ใช่ไหม?`);
@@ -700,6 +780,26 @@ export default function PokerTournamentTimer() {
               ))}
             </tbody>
           </Table>
+          <div style={{ marginTop: '10px', display: 'flex', gap: 5, justifyContent: 'flex-end' }}>
+            <Button
+              type="success"
+              disabled={players.length === 0}
+              onClick={() => {
+                const text = encodeURIComponent(generateSummaryText());
+                window.open(`https://line.me/R/msg/text/?${text}`);
+              }}
+            >
+              Share to LINE
+            </Button>
+            <Button
+              type="info"
+              disabled={players.length === 0}
+              onClick={sendToTelegram}
+            >
+              Share to Telegram
+            </Button>
+          </div>
+          
         </Card>
       </Grid2>
     </App>

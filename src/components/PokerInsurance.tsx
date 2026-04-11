@@ -1,7 +1,7 @@
 // Poker Tournament Timer (Browser Version)
 // React + styled-components
 // Full Feature Version
-import { useState, useEffect } from "react";
+// import { useState, useEffect } from "react";
 import styled from "styled-components";
 
 const Card = styled.div`
@@ -47,7 +47,7 @@ export default function PokerInsurance() {
   const calculate = () => {
     const pot = parseFloat((document.getElementById("pot") as HTMLInputElement).value);
     const outs = parseFloat((document.getElementById("outs") as HTMLInputElement).value);
-    const street = (document.getElementById("street") as HTMLSelectElement).value;
+    // const street = (document.getElementById("street") as HTMLSelectElement).value;
     if (isNaN(pot) || isNaN(outs)) {
       alert("กรุณากรอกข้อมูลให้ถูกต้อง");
       return;
