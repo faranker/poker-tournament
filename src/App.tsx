@@ -295,24 +295,24 @@ export default function PokerTournamentTimer() {
     };
   }).sort((a, b) => b.profit - a.profit);
 
-  const shareResults = async () => {
-  const text = generateSummaryText();
+//   const shareResults = async () => {
+//   const text = generateSummaryText();
 
-  if (navigator.share) {
-    try {
-      await navigator.share({
-        title: "Poker Tournament Result",
-        text,
-      });
-    } catch (err) {
-      console.log("share cancelled");
-    }
-  } else {
-    // fallback
-    navigator.clipboard.writeText(text);
-    alert("Copy แล้ว ไปวางใน LINE ได้เลย");
-  }
-};
+//   if (navigator.share) {
+//     try {
+//       await navigator.share({
+//         title: "Poker Tournament Result",
+//         text,
+//       });
+//     } catch (err) {
+//       console.log("share cancelled");
+//     }
+//   } else {
+//     // fallback
+//     navigator.clipboard.writeText(text);
+//     alert("Copy แล้ว ไปวางใน LINE ได้เลย");
+//   }
+// };
 
 const generateSummaryText = () => {
   let text = `🏆 ${tournament.name}\n\n`;
