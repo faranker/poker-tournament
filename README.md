@@ -1,73 +1,109 @@
-# React + TypeScript + Vite
+🃏 Poker Tournament Manager
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern poker tournament manager built with Vite + React + TypeScript + styled-components.
+Designed for home games to manage blind structure, players, payouts, bounty, and real-time results.
 
-Currently, two official plugins are available:
+## 🌐 Live Demo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+[![Live Demo](https://img.shields.io/badge/demo-online-green?style=for-the-badge)](https://faranker.github.io/poker-tournament/)
 
-## React Compiler
+✨ Features
+⏱ Tournament Timer
+Blind structure (SB / BB / Ante)
+Countdown timer per level
+Auto level progression
+Sound alert on level up
+Next / Previous level control
+Break mode
+👥 Player Management
+Add / remove players
+Track multiple buy-ins (rebuy)
+Click to assign ranking (#1, #2, #3...)
+Toggle selection (click again to remove rank)
+Visual badges for positions 🥇🥈🥉
+💰 Prize Pool System
+Dynamic prize pool calculation
+Custom payout percentage per position
+Add / remove payout slots
+Auto distribution based on % input
+🎯 Hunter Bounty Mode
+Toggle bounty mode
+Configurable bounty percentage (default recommended: 25%)
+Auto calculate:
+Total bounty pool
+Bounty per knockout
+Manual input: number of kills per player
+Combined result:
+Rank prize + bounty reward
+Profit / loss per player
+📊 Result Summary
+Full leaderboard
+Total buy-in per player
+Profit / loss calculation
+Highlight winners
+Supports bounty + normal mode
+📤 Share Results
+✅ Share to LINE (auto open)
+✅ Send to Telegram Bot
+✅ Send to Discord (Webhook)
+🛠 Tech Stack
+⚡ Vite
+⚛️ React
+🟦 TypeScript
+💅 styled-components
+🚀 Getting Started
+1. Install dependencies
+npm install
+2. Run development server
+npm run dev
+🌐 Deploy to GitHub Pages
+1. Install gh-pages
+npm install gh-pages --save-dev
+2. Add to package.json
+"homepage": "https://YOUR_USERNAME.github.io/YOUR_REPO",
+"scripts": {
+  "predeploy": "npm run build",
+  "deploy": "gh-pages -d dist"
+}
+3. Deploy
+npm run deploy
+🤖 Telegram Integration
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Create a bot via Telegram and use:
 
-## Expanding the ESLint configuration
+https://api.telegram.org/bot<TOKEN>/sendMessage
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Set:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+TOKEN
+CHAT_ID (group id must start with -100)
+💬 Discord Integration (Recommended)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Use Discord Webhook:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+POST https://discord.com/api/webhooks/xxxx
+{
+  "content": "Your message"
+}
+⚠️ Security Notes
+Do NOT expose Telegram Bot Token publicly
+Discord Webhook URL should be kept private
+This project is designed for personal / private use
+📸 Screenshots
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Add your screenshots here
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+🧠 Future Ideas
+Auto track player eliminations (who knocked out who)
+PKO (Progressive Knockout) mode
+Tournament history
+Export results as PDF / image
+Mobile UI optimization
+👊 Author
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Built for fun poker nights ♠️
+Feel free to fork and customize!
+
+📄 License
+
+MIT License
