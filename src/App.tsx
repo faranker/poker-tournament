@@ -100,6 +100,14 @@ const Input = styled.input`
   border-radius: 8px;
   border: none;
   font-size: 14px;
+  box-sizing: border-box;
+`;
+
+const WrapperHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
 `;
 
 /* =====================
@@ -354,7 +362,8 @@ const generateSummaryText = () => {
   text += `วันที่: ${new Date().toLocaleDateString()}\n`;
   text += `Buy-In: ${tournament.buyIn}\n`;
 
-  text += `ผู้เล่นทั้งหมด: ${players.length}\n\n`;
+  text += `ผู้เล่นทั้งหมด: ${players.length}\n`;
+  text += `Buy in ทั้งหมด: ${totalBuyIn}\n`;
   
   if (modeBounty) {
     text += `Prize Pool: ${prizePool - bountyPool}\n`;
@@ -502,7 +511,13 @@ const sendToTelegram = async () => {
       <Grid>
         {/* Structure */}
         <Card>
-          <Title>Structure</Title>
+          <WrapperHeader>
+            <Title>Structure</Title>
+            <Button type="primary" onClick={() => setOpenModal(true)}>
+              + Add Level
+            </Button>
+          </WrapperHeader>
+          
           <Table>
             <thead>
               <tr>
@@ -566,14 +581,11 @@ const sendToTelegram = async () => {
             const [sb, bb, ante, d] = r.split(",").map(Number);
             setTournament(t => ({ ...t, rounds: [...t.rounds, { sb, bb, ante, duration: d }] }));
           }}>+ Add Level</Button> */}
-          <Button type="primary" onClick={() => setOpenModal(true)}>
-            + Add Level
-          </Button>
         </Card>
 
         {/* Timer */}
         <Card style={{ textAlign: "center" }}>
-          <Title>{breakTime ? "Break" : `Round ${roundIndex + 1}`}</Title>
+          <Title>{breakTime ? "Break" : `Level ${roundIndex + 1}`}</Title>
           <BigTimer>{fmt(timeLeft)}</BigTimer>
           <Progress percent={progress}><div /></Progress>
           <Button
@@ -624,7 +636,18 @@ const sendToTelegram = async () => {
           <Input value={tournament.name} onChange={(e) => setTournament(t => ({ ...t, name: e.target.value }))} />
           <Subtitle>Buy-In</Subtitle>
           <Input type="number" value={tournament.buyIn} onChange={(e) => setTournament(t => ({ ...t, buyIn: Number(e.target.value) }))} />
-          <Subtitle>Payout %</Subtitle>
+          <WrapperHeader>
+            <Subtitle>Payout %</Subtitle>
+            <Button type="primary" onClick={() => {
+              setTournament((t) => ({
+                ...t,
+                payouts: [...t.payouts, 0],
+              }));
+            }}>
+              + Add Payout
+            </Button>
+          </WrapperHeader>
+          
           {tournament.payouts.map((p, i) => (
             <div key={i} style={{ display: 'flex', gap: 10, margin: '8px 0 8px 0' }}>
               <span style={{ alignContent: 'center' }}>#{i + 1}</span>
@@ -657,15 +680,6 @@ const sendToTelegram = async () => {
               </Button>
             </div>
           ))}
-
-          <Button type="primary" onClick={() => {
-            setTournament((t) => ({
-              ...t,
-              payouts: [...t.payouts, 0],
-            }));
-          }}>
-            + Add Payout
-          </Button>
           <Subtitle>Hunter Bounty</Subtitle>
           <div style={{ display: 'flex' }}>
             <Input
@@ -690,8 +704,11 @@ const sendToTelegram = async () => {
       </Grid>
       <Grid2 style={{ marginTop: 20 }}>
         <Card>
-          <Subtitle>Player</Subtitle>
-          <Button type="primary" onClick={addPlayer}>+ Add Player</Button>
+          <WrapperHeader>
+            <Subtitle>Player</Subtitle>
+            <Button type="primary" onClick={addPlayer}>+ Add Player</Button>
+          </WrapperHeader>
+          
           <Table>
             <thead>
               <tr><th>ชื่อ</th><th>จำนวน Buy-in</th>{modeBounty && <th>Bounty</th>}<th></th></tr>
