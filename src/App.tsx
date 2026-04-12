@@ -73,6 +73,8 @@ const Button = styled.button<{ type?: string; }>`
 
   ${props => props.type === 'info' && "background: #17a2b8;"}
 
+  ${props => props.type === 'discord' && "background: #7289da;"}
+
   border: none;
   color: #fff;
   padding: 8px 14px;
@@ -412,6 +414,30 @@ const sendToTelegram = async () => {
 
   alert("ส่งเข้า Telegram แล้ว!");
 };
+
+  const sendToDiscord = async () => {
+    const text = generateSummaryText();
+
+    const WEBHOOK_URL = "https://discord.com/api/webhooks/1492787869746597900/zzSKIyFpSJ-DVlf00rOigODrFHLLiz4xRJ0_rKrJ3D3GGY4d9n2-TPELJFJveiOCO6d8";
+
+    await fetch(WEBHOOK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        embeds: [
+          {
+            title: tournament.name,
+            description: text,
+            color: 0xe50914,
+          },
+        ],
+      }),
+    });
+
+    alert("ส่งเข้า Discord แล้ว!");
+  };
 
   return (
     <App>
@@ -902,6 +928,13 @@ const sendToTelegram = async () => {
               onClick={sendToTelegram}
             >
               Share to Telegram
+            </Button>
+            <Button
+              type="discord"
+              disabled={players.length === 0}
+              onClick={sendToDiscord}
+            >
+              Share to Discord
             </Button>
           </div>
           
