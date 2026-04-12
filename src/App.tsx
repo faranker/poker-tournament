@@ -65,7 +65,6 @@ const Progress = styled.div<{ percent: number }>`
 `;
 
 const Button = styled.button<{ type?: string; }>`
-  // background: ${(p) => (p.type === 'secondary' ? "#333" : "#e50914")};
   ${props => props.type === 'secondary' && "background: #333;"}
 
   ${props => props.type === 'primary' && "background: #e50914;"}
@@ -147,13 +146,15 @@ export default function PokerTournamentTimer() {
   const [timeLeft, setTimeLeft] = useState(tournament.rounds[0].duration);
   const [running, setRunning] = useState(false);
   const [breakTime, setBreakTime] = useState(false);
-  const [players, setPlayers] = useState<{ name: string; count: number }[]>([]);
+  const [players, setPlayers] = useState<{ name: string; count: number, bounty: number; }[]>([]);
   const [prizeWinners, setPrizeWinners] = useState<{
     name: string;
     amount: number; // เงินรางวัล
     count: number;  // จำนวน buy-in
     profit: number; // กำไร/ขาดทุน
   }[]>([]);
+  const [modeBounty, setModeBounty] = useState(false);
+  const [bountyPercent, setBountyPercent] = useState(20);
 
   const round = tournament.rounds[roundIndex];
 
@@ -214,16 +215,35 @@ export default function PokerTournamentTimer() {
   const addPlayer = () => {
     const name = prompt("Player Name");
     if (!name) return;
-    setPlayers((p) => [...p, { name, count: 1 }]);
+    // setPlayers((p) => [...p, { name, count: 1 }]);
+    setPlayers((p) => [...p, { name, count: 1, bounty: 0 }]);
   }
 
   const MAX_WINNERS = tournament.payouts.length;
 
   const totalBuyIn = players.reduce((sum, p) => sum + p.count, 0);
   const prizePool = totalBuyIn * tournament.buyIn;
+  // const prizes = tournament.payouts.map((percent: number) => {
+  //   return Math.floor((percent / 100) * prizePool);
+  // });
+  
+
+  const totalEntries = players.reduce((sum, p) => sum + p.count, 0);
+
+const bountyPool = modeBounty
+  ? prizePool * (bountyPercent / 100)
+  : 0;
+
+const normalPrizePool = prizePool - bountyPool;
+
+const totalKnockouts = totalEntries > 0 ? totalEntries : 0;
+
+const bountyPerHead =
+  totalKnockouts > 0 ? bountyPool / totalKnockouts : 0;
+
   const prizes = tournament.payouts.map((percent: number) => {
-    return Math.floor((percent / 100) * prizePool);
-  });
+  return Math.floor((percent / 100) * normalPrizePool);
+});
   // const totalPercent = tournament.payouts.reduce((sum, p) => sum + p, 0);
   // const totalPrize = totalBuyIn * tournament.buyIn;
 
@@ -234,6 +254,15 @@ export default function PokerTournamentTimer() {
     const index = prizeWinners.findIndex((w) => w.name === name);
     return index !== -1 ? index + 1 : null;
   };
+
+  const totalBounty = players.reduce(
+  (sum, p) => sum + (p.bounty || 0),
+  0
+);
+
+if (modeBounty && totalBounty > totalKnockouts) {
+  console.warn("Bounty เกินจำนวนที่เป็นไปได้");
+}
 
   const getBadgeStyle = (pos: number) => {
     switch (pos) {
@@ -283,14 +312,19 @@ export default function PokerTournamentTimer() {
   const allResults = players.map((p) => {
     const winner = prizeWinners.find((w) => w.name === p.name);
 
-    const prize = winner ? winner.amount : 0;
+    const rankPrize = winner ? winner.amount : 0;
+    const bountyPrize = modeBounty ? (p.bounty || 0) * bountyPerHead : 0;
+
+    const totalWin = rankPrize + bountyPrize;
     const cost = p.count * tournament.buyIn;
-    const profit = prize - cost;
+    const profit = totalWin - cost;
 
     return {
       name: p.name,
       count: p.count,
-      prize,
+      prize: rankPrize,
+      bounty: bountyPrize,
+      total: totalWin,
       profit,
     };
   }).sort((a, b) => b.profit - a.profit);
@@ -320,9 +354,15 @@ const generateSummaryText = () => {
   text += `วันที่: ${new Date().toLocaleDateString()}\n`;
   text += `Buy-In: ${tournament.buyIn}\n`;
 
-  text += `ผู้เล่นทั้งหมด: ${players.length}\n`;
-
-  text += `Prize Pool: ${prizePool}\n\n`;
+  text += `ผู้เล่นทั้งหมด: ${players.length}\n\n`;
+  
+  if (modeBounty) {
+    text += `Prize Pool: ${prizePool - bountyPool}\n`;
+    text += `Bounty Pool: ${bountyPool}\n`;
+    text += `ต่อหัว: ${bountyPerHead.toFixed(2)}\n\n`;
+  } else {
+    text += `Prize Pool: ${prizePool}\n\n`;
+  }
 
   text += "อันดับและเงินรางวัล:\n";
   prizeWinners.forEach((w, i) => {
@@ -334,9 +374,9 @@ const generateSummaryText = () => {
     const winner = prizeWinners.find(w => w.name === p.name);
     const prize = winner ? winner.amount : 0;
     const cost = p.count * tournament.buyIn;
-    const profit = prize - cost;
+    const profit = modeBounty ? prize + (p.bounty || 0) * bountyPerHead - cost : prize - cost;
 
-    text += `#${p.name} (${p.count} buy-in รวม ${cost}) → ${profit >= 0 ? "+" : ""}${profit}\n`;
+    text += `#${p.name} (${p.count} buy-in รวม ${cost}) → ${modeBounty ? `(Bounty: ${p.bounty || 0} รวม ${(p.bounty || 0) * bountyPerHead})` : ""}${profit >= 0 ? "+" : ""}${profit}\n`;
   });
 
   return text;
@@ -626,6 +666,26 @@ const sendToTelegram = async () => {
           }}>
             + Add Payout
           </Button>
+          <Subtitle>Hunter Bounty</Subtitle>
+          <div style={{ display: 'flex' }}>
+            <Input
+              type='checkbox'
+              checked={modeBounty}
+              style={{ width: 20 }}
+              onChange={(e) => setModeBounty(e.target.checked)}
+            />
+            <span>Enable Hunter Bounty</span>
+          </div>
+          {modeBounty && (
+            <div style={{ marginTop: 10 }}>
+              <Subtitle>Bounty Amount %</Subtitle>
+              <Input
+                type="number"
+                value={bountyPercent}
+                onChange={(e) => setBountyPercent(Number(e.target.value))}
+              />
+            </div>
+          )}
         </Card>
       </Grid>
       <Grid2 style={{ marginTop: 20 }}>
@@ -634,7 +694,7 @@ const sendToTelegram = async () => {
           <Button type="primary" onClick={addPlayer}>+ Add Player</Button>
           <Table>
             <thead>
-              <tr><th>ชื่อ</th><th>จำนวน Buy-in</th><th></th></tr>
+              <tr><th>ชื่อ</th><th>จำนวน Buy-in</th>{modeBounty && <th>Bounty</th>}<th></th></tr>
             </thead>
             <tbody>
               {players.map((p, i) => (
@@ -678,6 +738,21 @@ const sendToTelegram = async () => {
                     })()}
                   </td>
                   <td style={{ textAlign: 'center' }}>{p.count}</td>
+                  {modeBounty && (
+                    <td style={{ textAlign: 'center' }}>
+                      <Input
+                        type="number"
+                        value={p.bounty || 0}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e: any) => {
+                          const newPlayers = [...players];
+                          newPlayers[i].bounty = Number(e.target.value);
+                          setPlayers(newPlayers);
+                        }}
+                        style={{ width: 60 }}
+                      />
+                    </td>
+                  )}
                   <td>
                     <Button
                       type="secondary"
@@ -732,7 +807,14 @@ const sendToTelegram = async () => {
         <Card>
           <Title>อันดับและเงินรางวัล</Title>
           <Subtitle>Prize Pool</Subtitle>
-          <p>Total: {prizePool}</p>
+          {!modeBounty && <p>Total: {normalPrizePool}</p>}
+          {modeBounty && <p>Total Prize Pool: {formatNumber(prizePool-bountyPool)}</p>}
+          {modeBounty && (
+            <>
+              <p>Bounty Pool: {formatNumber(bountyPool)}</p>
+              <p>ต่อหัว: {bountyPerHead.toFixed(2)}</p>
+            </>
+          )}
           <Table>
             <tbody>
               {prizes.map((a, i) => (
@@ -753,7 +835,8 @@ const sendToTelegram = async () => {
             <thead>
               <tr>
                 <th>อันดับ</th>
-                <th>รางวัล</th>
+                <th>รางวัลอันดับ</th>
+                {modeBounty && <th>รางวัลค่าหัว</th>}
                 <th>Buy-in</th>
                 <th>กำไร / ขาดทุน</th>
               </tr>
@@ -769,12 +852,17 @@ const sendToTelegram = async () => {
                     {i + 1} - {w.name}
                   </td>
                   <td style={{ textAlign: 'center' }}>{w.prize}</td>
+                  {modeBounty && (
+                    <td style={{ textAlign: 'center' }}>
+                      {w.bounty.toFixed(2)}
+                    </td>
+                  )}
                   <td style={{ textAlign: 'center' }}>{w.count}</td>
                   <td style={{ 
                     textAlign: 'center',
                     color: w.profit >= 0 ? 'lime' : 'red'
                   }}>
-                    {w.count} x {tournament.buyIn} = {w.profit}
+                    {w.count} x {tournament.buyIn} = {formatNumber(w.profit)}
                   </td>
                 </tr>
               ))}
