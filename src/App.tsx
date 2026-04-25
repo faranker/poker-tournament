@@ -18,13 +18,13 @@ const App = styled.div`
 
 const Grid = styled.div`
   display: grid;
-  grid-template-columns: 450px 1fr 360px;
+  grid-template-columns: 1fr 2fr 1fr;
   gap: 20px;
 `;
 
 const Grid2 = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 2fr;
   gap: 20px;
 `;
 
@@ -131,7 +131,7 @@ const formatNumber = (num: number) => {
 
 export default function PokerTournamentTimer() {
   const [tournament, setTournament] = useState({
-    name: "Main Event",
+    name: "",
     buyIn: 200,
     players: 7,
     rebuys: 0,
@@ -142,6 +142,7 @@ export default function PokerTournamentTimer() {
       { sb: 400, bb: 800, ante: 800, duration: 10 * 60 }
     ]
   });
+  const [mode, setMode] = useState<"TOURNAMENT" | "CASH">("TOURNAMENT");
 
   const [openModal, setOpenModal] = useState(false);
 
@@ -153,10 +154,10 @@ export default function PokerTournamentTimer() {
   });
 
   const [roundIndex, setRoundIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(tournament.rounds[0].duration);
+  const [timeLeft, setTimeLeft] = useState(tournament.rounds[0]?.duration ?? 0);
   const [running, setRunning] = useState(false);
   const [breakTime, setBreakTime] = useState(false);
-  const [players, setPlayers] = useState<{ name: string; count: number, bounty: number; }[]>([]);
+  const [players, setPlayers] = useState<{ name: string; buyInTotal: number; bounty: number; cashout: number; count: number; }[]>([]);
   const [prizeWinners, setPrizeWinners] = useState<{
     name: string;
     amount: number; // เงินรางวัล
@@ -166,7 +167,7 @@ export default function PokerTournamentTimer() {
   const [modeBounty, setModeBounty] = useState(false);
   const [bountyPercent, setBountyPercent] = useState(20);
 
-  const round = tournament.rounds[roundIndex];
+  const round = tournament.rounds[roundIndex] ?? { sb: 0, bb: 0, ante: 0, duration: 1 };
 
   const playLevelUpSound = () => {
     levelUpSound.currentTime = 0;
@@ -220,13 +221,13 @@ export default function PokerTournamentTimer() {
   // const prizePool = (players.length + tournament.rebuys) * tournament.buyIn;
   // const prizes = tournament.payouts.map((p) => Math.floor((p / 100) * prizePool));
 
-  const progress = (timeLeft / round.duration) * 100;
+  const progress = round.duration > 0 ? (timeLeft / round.duration) * 100 : 0;
 
   const addPlayer = () => {
     const name = prompt("Player Name");
     if (!name) return;
     // setPlayers((p) => [...p, { name, count: 1 }]);
-    setPlayers((p) => [...p, { name, count: 1, bounty: 0 }]);
+    setPlayers((p) => [...p, { name, buyInTotal: 0, bounty: 0, cashout: 0, count: 1 }]);
   }
 
   const MAX_WINNERS = tournament.payouts.length;
@@ -320,24 +321,43 @@ if (modeBounty && totalBounty > totalKnockouts) {
   };
 
   const allResults = players.map((p) => {
+    if (mode === "CASH") {
+      const cost = p.buyInTotal;
+      const cashout = p.cashout || 0;
+      const profit = cashout - cost;
+
+      return {
+        name: p.name,
+        count: cost, // 💰 total buy-in
+        total: cashout,
+        profit,
+      };
+    }
+
+    // 🟢 TOURNAMENT
     const winner = prizeWinners.find((w) => w.name === p.name);
 
     const rankPrize = winner ? winner.amount : 0;
     const bountyPrize = modeBounty ? (p.bounty || 0) * bountyPerHead : 0;
 
     const totalWin = rankPrize + bountyPrize;
-    const cost = p.count * tournament.buyIn;
+
+    const cost = p.count * tournament.buyIn; // 🔥 แก้ตรงนี้
     const profit = totalWin - cost;
 
     return {
       name: p.name,
-      count: p.count,
+      count: p.count, // 🔥 ใช้ count
       prize: rankPrize,
       bounty: bountyPrize,
       total: totalWin,
       profit,
     };
   }).sort((a, b) => b.profit - a.profit);
+
+  const sumBuyIn = players.reduce((sum, p) => sum + p.buyInTotal, 0);
+  const totalCashout = players.reduce((sum, p) => sum + (p.cashout || 0), 0);
+  const diff = totalCashout - sumBuyIn;
 
 //   const shareResults = async () => {
 //   const text = generateSummaryText();
@@ -555,7 +575,7 @@ const sendToTelegram = async () => {
               </tr>
             </thead>
             <tbody>
-              {tournament.rounds.map((r, i) => (
+              {tournament.rounds && tournament.rounds.length > 0 && tournament.rounds.map((r, i) => (
                 <tr
                   key={i}
                   style={{ color: i === roundIndex ? "#e50914" : "#fff" }}
@@ -611,7 +631,7 @@ const sendToTelegram = async () => {
 
         {/* Timer */}
         <Card style={{ textAlign: "center" }}>
-          <Title>{breakTime ? "Break" : `Level ${roundIndex + 1}`}</Title>
+          <h1>{breakTime ? "Break" : `Level ${roundIndex + 1}`}</h1>
           <BigTimer>{fmt(timeLeft)}</BigTimer>
           <Progress percent={progress}><div /></Progress>
           <Button
@@ -652,83 +672,261 @@ const sendToTelegram = async () => {
             Next
           </Button>
           <Button type="secondary" onClick={() => setBreakTime(b => !b)}>Break</Button>
-          <h3>{round.sb}/{round.bb} • Ante {round.ante}</h3>
+          <h1>{round.sb}/{round.bb} • Ante {round.ante}</h1>
         </Card>
-
-        {/* Prizes */}
         <Card>
-          <Title>Tournament Settings</Title>
-          <Subtitle>ชื่อทัวร์นาเมนต์</Subtitle>
-          <Input value={tournament.name} onChange={(e) => setTournament(t => ({ ...t, name: e.target.value }))} />
-          <Subtitle>Buy-In</Subtitle>
-          <Input type="number" value={tournament.buyIn} onChange={(e) => setTournament(t => ({ ...t, buyIn: Number(e.target.value) }))} />
-          <WrapperHeader>
-            <Subtitle>Payout %</Subtitle>
-            <Button type="primary" onClick={() => {
-              setTournament((t) => ({
-                ...t,
-                payouts: [...t.payouts, 0],
-              }));
-            }}>
-              + Add Payout
-            </Button>
-          </WrapperHeader>
-          
-          {tournament.payouts.map((p, i) => (
-            <div key={i} style={{ display: 'flex', gap: 10, margin: '8px 0 8px 0' }}>
-              <span style={{ alignContent: 'center' }}>#{i + 1}</span>
-
-              <Input
-                type="number"
-                value={p}
-                onChange={(e: any) => {
-                  const v = [...tournament.payouts];
-                  v[i] = Number(e.target.value);
-                  setTournament(t => ({ ...t, payouts: v }));
-                }}
-              />
-
-              <Button
-                type="primary"
-                onClick={() => {
-                  setTournament((t) => ({
-                    ...t,
-                    payouts: t.payouts.filter((_, idx) => idx !== i),
-                  }));
-
-                  // 🔥 sync winners
-                  setPrizeWinners((prev) =>
-                    prev.filter((_, idx) => idx !== i)
-                  );
-                }}
-              >
-                -
-              </Button>
-            </div>
-          ))}
-          <Subtitle>Hunter Bounty</Subtitle>
-          <div style={{ display: 'flex' }}>
-            <Input
-              type='checkbox'
-              checked={modeBounty}
-              style={{ width: 20 }}
-              onChange={(e) => setModeBounty(e.target.checked)}
-            />
-            <span>Enable Hunter Bounty</span>
-          </div>
-          {modeBounty && (
+          <Title>อันดับและเงินรางวัล</Title>
+          {mode === "CASH" ? (
             <div style={{ marginTop: 10 }}>
-              <Subtitle>Bounty Amount %</Subtitle>
-              <Input
-                type="number"
-                value={bountyPercent}
-                onChange={(e) => setBountyPercent(Number(e.target.value))}
-              />
+              <p>Total Buy-in: {formatNumber(sumBuyIn)}</p>
+              <p>Total Cashout: {formatNumber(totalCashout)}</p>
+
+              <p style={{
+                color: diff === 0 ? 'lime' : 'red',
+                fontWeight: 'bold'
+              }}>
+                Diff: {diff === 0 ? "✔ Balanced" : diff}
+              </p>
             </div>
+          ) : (
+            <>
+              <Subtitle>Prize Pool</Subtitle>
+              {!modeBounty && <p>Total: {normalPrizePool}</p>}
+              {modeBounty && <p>Total Prize Pool: {formatNumber(prizePool-bountyPool)}</p>}
+              {modeBounty && (
+                <>
+                  <p>Bounty Pool: {formatNumber(bountyPool)}</p>
+                  <p>ต่อหัว: {bountyPerHead.toFixed(2)}</p>
+                </>
+              )}
+              <Table>
+                <tbody>
+                  {prizes.map((a, i) => (
+                    <tr key={i}>
+                      <td>
+                        {i + 1 === 1 && "🏆 "}
+                        {i + 1 === 2 && "🥈 "}
+                        {i + 1 === 3 && "🥉 "}
+                        {i + 1}
+                      </td>
+                      <td>{a}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </>
           )}
+          <br />
+          <Table>
+            <thead>
+              <tr>
+                {mode === "CASH" ? (
+                  <>
+                    <th>Player</th>
+                    <th>Cashout</th>
+                    <th>Buy-in</th>
+                    <th>กำไร / ขาดทุน</th>
+                  </>
+                ) : (
+                  <>
+                    <th>อันดับ</th>
+                    <th>รางวัลอันดับ</th>
+                    {modeBounty && <th>Bounty</th>} {/* 🔥 เพิ่มตรงนี้ */}
+                    <th>Buy-in</th>
+                    <th>กำไร / ขาดทุน</th>
+                  </>
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {allResults.map((w, i) => (
+                <tr key={i}>
+                  <td>
+                    {i + 1 === 1 && "🏆 "}
+                    {i + 1 === 2 && "🥈 "}
+                    {i + 1 === 3 && "🥉 "}
+                    {i + 1 > 3 && "🐷 "}
+                    {i + 1} - {w.name}
+                  </td>
+                  {mode === "CASH" ? (
+                    <>
+                      <td style={{ textAlign: 'center' }}>
+                        {formatNumber(w.total)}
+                      </td>
+
+                      <td style={{ textAlign: 'center' }}>
+                        {formatNumber(w.count)}
+                      </td>
+
+                      <td style={{
+                        textAlign: 'center',
+                        color: w.profit >= 0 ? 'lime' : 'red'
+                      }}>
+                        {formatNumber(w.profit)}
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td style={{ textAlign: 'center' }}>
+                        {formatNumber(w.prize)}
+                      </td>
+
+                      {modeBounty && (
+                        <td style={{ textAlign: 'center' }}>
+                          {formatNumber(w.bounty)}
+                        </td>
+                      )}
+
+                      <td style={{ textAlign: 'center' }}>
+                        {w.count}
+                      </td>
+
+                      <td style={{
+                        textAlign: 'center',
+                        color: w.profit >= 0 ? 'lime' : 'red'
+                      }}>
+                        {w.count} x {formatNumber(tournament.buyIn)} = {formatNumber(w.profit)}
+                      </td>
+                    </>
+                  )}
+                  {/* <td style={{ textAlign: 'center' }}>{w.prize}</td>
+                  {modeBounty && (
+                    <td style={{ textAlign: 'center' }}>
+                      {w.bounty.toFixed(2)}
+                    </td>
+                  )}
+                  <td style={{ textAlign: 'center' }}>{w.count}</td>
+                  <td style={{ 
+                    textAlign: 'center',
+                    color: w.profit >= 0 ? 'lime' : 'red'
+                  }}>
+                    {w.count} x {tournament.buyIn} = {formatNumber(w.profit)}
+                  </td> */}
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+          <div style={{ marginTop: '10px', display: 'flex', gap: 5, justifyContent: 'flex-end' }}>
+            <Button
+              type="success"
+              disabled={players.length === 0}
+              onClick={() => {
+                const text = encodeURIComponent(generateSummaryText());
+                window.open(`https://line.me/R/msg/text/?${text}`);
+              }}
+            >
+              Share to LINE
+            </Button>
+            <Button
+              type="info"
+              disabled={players.length === 0}
+              onClick={sendToTelegram}
+            >
+              Share to Telegram
+            </Button>
+            <Button
+              type="discord"
+              disabled={players.length === 0}
+              onClick={sendToDiscord}
+            >
+              Share to Discord
+            </Button>
+          </div>
+          
         </Card>
       </Grid>
       <Grid2 style={{ marginTop: 20 }}>
+        <Card>
+          <Title>Tournament Settings</Title>
+          <Subtitle>Game Mode</Subtitle>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <Button
+              type={mode === "TOURNAMENT" ? "primary" : "secondary"}
+              onClick={() => setMode("TOURNAMENT")}
+            >
+              Tournament
+            </Button>
+
+            <Button
+              type={mode === "CASH" ? "primary" : "secondary"}
+              onClick={() => setMode("CASH")}
+            >
+              Cash Game
+            </Button>
+          </div>
+          <Subtitle>Tournament Name</Subtitle>
+          <Input value={tournament.name} onChange={(e) => setTournament(t => ({ ...t, name: e.target.value }))} />
+          {mode === "TOURNAMENT" &&
+            <>
+              <Subtitle>Buy-In</Subtitle>
+              <Input type="number" value={tournament.buyIn} onChange={(e) => setTournament(t => ({ ...t, buyIn: Number(e.target.value) }))} />
+              <WrapperHeader>
+                <Subtitle>Payout %</Subtitle>
+                <Button type="primary" onClick={() => {
+                  setTournament((t) => ({
+                    ...t,
+                    payouts: [...t.payouts, 0],
+                  }));
+                }}>
+                  + Add Payout
+                </Button>
+              </WrapperHeader>
+              
+              {tournament.payouts.map((p, i) => (
+                <div key={i} style={{ display: 'flex', gap: 10, margin: '8px 0 8px 0' }}>
+                  <span style={{ alignContent: 'center' }}>#{i + 1}</span>
+
+                  <Input
+                    type="number"
+                    value={p}
+                    onChange={(e: any) => {
+                      const v = [...tournament.payouts];
+                      v[i] = Number(e.target.value);
+                      setTournament(t => ({ ...t, payouts: v }));
+                    }}
+                  />
+
+                  <Button
+                    type="primary"
+                    onClick={() => {
+                      setTournament((t) => ({
+                        ...t,
+                        payouts: t.payouts.filter((_, idx) => idx !== i),
+                      }));
+
+                      // 🔥 sync winners
+                      setPrizeWinners((prev) =>
+                        prev.filter((_, idx) => idx !== i)
+                      );
+                    }}
+                  >
+                    -
+                  </Button>
+                </div>
+              ))}
+              <Subtitle>Hunter Bounty</Subtitle>
+              <div style={{ display: 'flex' }}>
+                <Input
+                  type='checkbox'
+                  checked={modeBounty}
+                  style={{ width: 20 }}
+                  onChange={(e) => setModeBounty(e.target.checked)}
+                />
+                <span>Enable Hunter Bounty</span>
+              </div>
+              {modeBounty && (
+                <div style={{ marginTop: 10 }}>
+                  <Subtitle>Bounty Amount %</Subtitle>
+                  <Input
+                    type="number"
+                    value={bountyPercent}
+                    onChange={(e) => setBountyPercent(Number(e.target.value))}
+                  />
+                </div>
+              )}
+            </>
+          }
+        </Card>
         <Card>
           <WrapperHeader>
             <Subtitle>Player</Subtitle>
@@ -737,7 +935,7 @@ const sendToTelegram = async () => {
           
           <Table>
             <thead>
-              <tr><th>ชื่อ</th><th>จำนวน Buy-in</th>{modeBounty && <th>Bounty</th>}<th></th></tr>
+              <tr><th>ชื่อ</th>{mode === "CASH" ? <th>Buy-in</th> : <th>จำนวน Buy-in</th>}{modeBounty && <th>Bounty</th>}{mode === "CASH" && <th>Cashout</th>}<th></th></tr>
             </thead>
             <tbody>
               {players.map((p, i) => (
@@ -780,7 +978,11 @@ const sendToTelegram = async () => {
                       );
                     })()}
                   </td>
-                  <td style={{ textAlign: 'center' }}>{p.count}</td>
+                  <td style={{ textAlign: 'center' }}>
+                    {mode === "CASH"
+                      ? formatNumber(p.buyInTotal)
+                      : p.count}
+                  </td>
                   {modeBounty && (
                     <td style={{ textAlign: 'center' }}>
                       <Input
@@ -796,8 +998,23 @@ const sendToTelegram = async () => {
                       />
                     </td>
                   )}
+                  {mode === "CASH" && (
+                    <td style={{ textAlign: 'center' }}>
+                      <Input
+                        type="number"
+                        value={p.cashout || 0}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e: any) => {
+                          const newPlayers = [...players];
+                          newPlayers[i].cashout = Number(e.target.value);
+                          setPlayers(newPlayers);
+                        }}
+                        style={{ width: 80 }}
+                      />
+                    </td>
+                  )}
                   <td>
-                    <Button
+                    {/* <Button
                       type="secondary"
                       onClick={(e) => {
                         e.stopPropagation(); // 🔥 กัน trigger select
@@ -809,8 +1026,79 @@ const sendToTelegram = async () => {
                       }}
                     >
                       + Buy-in
+                    </Button> */}
+                    <Button
+                      type="secondary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+
+                        const newPlayers = [...players];
+
+                        if (mode === "CASH") {
+                          const amount = prompt(`ใส่จำนวน Buy-in ของ "${players[i].name}"`);
+                          if (!amount) return;
+
+                          const value = Number(amount);
+                          if (isNaN(value) || value <= 0) {
+                            alert("กรอกตัวเลขให้ถูกต้อง");
+                            return;
+                          }
+
+                          newPlayers[i].buyInTotal += value;
+
+                        } else {
+                          // 🟢 Tournament → เพิ่ม count
+                          newPlayers[i].count += 1;
+                        }
+
+                        setPlayers(newPlayers);
+                      }}
+                    >
+                      + Buy-in
                     </Button>
                     <Button
+                      type="secondary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+
+                        const newPlayers = [...players];
+
+                        if (mode === "CASH") {
+                          const amount = prompt(`ใส่จำนวนที่ต้องการลบของ "${players[i].name}"`);
+                          if (!amount) return;
+
+                          const value = Number(amount);
+                          if (isNaN(value) || value <= 0) {
+                            alert("กรอกตัวเลขให้ถูกต้อง");
+                            return;
+                          }
+
+                          if (value > newPlayers[i].buyInTotal) {
+                            alert("จำนวนเกิน");
+                            return;
+                          }
+
+                          newPlayers[i].buyInTotal -= value;
+
+                        } else {
+                          // 🟢 Tournament
+                          newPlayers[i].count -= 1;
+
+                          if (newPlayers[i].count <= 0) {
+                            const ok = window.confirm(`ลบผู้เล่น "${players[i].name}" ใช่ไหม?`);
+                            if (!ok) return;
+
+                            setPlayers(players.filter((_, idx) => idx !== i));
+                            return;
+                          }
+                        }
+
+                        setPlayers(newPlayers);
+                      }}
+                    >
+                      - Buy-in
+                    </Button>
+                    {/* <Button
                       type="secondary"
                       onClick={(e) => {
                         e.stopPropagation(); // 🔥 กัน trigger select
@@ -828,7 +1116,7 @@ const sendToTelegram = async () => {
                       }}
                     >
                       - Buy-in
-                    </Button>
+                    </Button> */}
 
                     <Button
                       type="primary"
@@ -846,98 +1134,6 @@ const sendToTelegram = async () => {
               ))}
             </tbody>
           </Table>
-        </Card>
-        <Card>
-          <Title>อันดับและเงินรางวัล</Title>
-          <Subtitle>Prize Pool</Subtitle>
-          {!modeBounty && <p>Total: {normalPrizePool}</p>}
-          {modeBounty && <p>Total Prize Pool: {formatNumber(prizePool-bountyPool)}</p>}
-          {modeBounty && (
-            <>
-              <p>Bounty Pool: {formatNumber(bountyPool)}</p>
-              <p>ต่อหัว: {bountyPerHead.toFixed(2)}</p>
-            </>
-          )}
-          <Table>
-            <tbody>
-              {prizes.map((a, i) => (
-                <tr key={i}>
-                  <td>
-                    {i + 1 === 1 && "🏆 "}
-                    {i + 1 === 2 && "🥈 "}
-                    {i + 1 === 3 && "🥉 "}
-                    {i + 1}
-                  </td>
-                  <td>{a}</td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-          <br />
-          <Table>
-            <thead>
-              <tr>
-                <th>อันดับ</th>
-                <th>รางวัลอันดับ</th>
-                {modeBounty && <th>รางวัลค่าหัว</th>}
-                <th>Buy-in</th>
-                <th>กำไร / ขาดทุน</th>
-              </tr>
-            </thead>
-            <tbody>
-              {allResults.map((w, i) => (
-                <tr key={i}>
-                  <td>
-                    {i + 1 === 1 && "🏆 "}
-                    {i + 1 === 2 && "🥈 "}
-                    {i + 1 === 3 && "🥉 "}
-                    {i + 1 > 3 && "🐷 "}
-                    {i + 1} - {w.name}
-                  </td>
-                  <td style={{ textAlign: 'center' }}>{w.prize}</td>
-                  {modeBounty && (
-                    <td style={{ textAlign: 'center' }}>
-                      {w.bounty.toFixed(2)}
-                    </td>
-                  )}
-                  <td style={{ textAlign: 'center' }}>{w.count}</td>
-                  <td style={{ 
-                    textAlign: 'center',
-                    color: w.profit >= 0 ? 'lime' : 'red'
-                  }}>
-                    {w.count} x {tournament.buyIn} = {formatNumber(w.profit)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-          <div style={{ marginTop: '10px', display: 'flex', gap: 5, justifyContent: 'flex-end' }}>
-            <Button
-              type="success"
-              disabled={players.length === 0}
-              onClick={() => {
-                const text = encodeURIComponent(generateSummaryText());
-                window.open(`https://line.me/R/msg/text/?${text}`);
-              }}
-            >
-              Share to LINE
-            </Button>
-            <Button
-              type="info"
-              disabled={players.length === 0}
-              onClick={sendToTelegram}
-            >
-              Share to Telegram
-            </Button>
-            <Button
-              type="discord"
-              disabled={players.length === 0}
-              onClick={sendToDiscord}
-            >
-              Share to Discord
-            </Button>
-          </div>
-          
         </Card>
       </Grid2>
     </App>
