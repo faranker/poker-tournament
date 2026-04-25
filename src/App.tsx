@@ -18,7 +18,7 @@ const App = styled.div`
 
 const Grid = styled.div`
   display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
+  grid-template-columns: 400px 2fr 550px;
   gap: 20px;
 `;
 
@@ -253,7 +253,7 @@ const bountyPerHead =
   totalKnockouts > 0 ? bountyPool / totalKnockouts : 0;
 
   const prizes = tournament.payouts.map((percent: number) => {
-  return Math.floor((percent / 100) * normalPrizePool);
+  return formatNumber(Math.floor((percent / 100) * normalPrizePool));
 });
   // const totalPercent = tournament.payouts.reduce((sum, p) => sum + p, 0);
   // const totalPrize = totalBuyIn * tournament.buyIn;
@@ -320,40 +320,99 @@ if (modeBounty && totalBounty > totalKnockouts) {
     });
   };
 
-  const allResults = players.map((p) => {
-    if (mode === "CASH") {
-      const cost = p.buyInTotal;
-      const cashout = p.cashout || 0;
-      const profit = cashout - cost;
+  // const allResults = players.map((p) => {
+  //   if (mode === "CASH") {
+  //     const cost = p.buyInTotal;
+  //     const cashout = p.cashout || 0;
+  //     const profit = cashout - cost;
 
-      return {
-        name: p.name,
-        count: cost, // 💰 total buy-in
-        total: cashout,
-        profit,
-      };
-    }
+  //     return {
+  //       name: p.name,
+  //       count: cost, // 💰 total buy-in
+  //       total: cashout,
+  //       profit,
+  //     };
+  //   }
 
-    // 🟢 TOURNAMENT
-    const winner = prizeWinners.find((w) => w.name === p.name);
+  //   // 🟢 TOURNAMENT
+  //   const winner = prizeWinners.find((w) => w.name === p.name);
 
-    const rankPrize = winner ? winner.amount : 0;
-    const bountyPrize = modeBounty ? (p.bounty || 0) * bountyPerHead : 0;
+  //   const rankPrize = winner ? winner.amount : 0;
+  //   const bountyPrize = modeBounty ? (p.bounty || 0) * bountyPerHead : 0;
 
-    const totalWin = rankPrize + bountyPrize;
+  //   const totalWin = rankPrize + bountyPrize;
 
-    const cost = p.count * tournament.buyIn; // 🔥 แก้ตรงนี้
-    const profit = totalWin - cost;
+  //   const cost = p.count * tournament.buyIn; // 🔥 แก้ตรงนี้
+  //   const profit = totalWin - cost;
 
-    return {
-      name: p.name,
-      count: p.count, // 🔥 ใช้ count
-      prize: rankPrize,
-      bounty: bountyPrize,
-      total: totalWin,
-      profit,
-    };
-  }).sort((a, b) => b.profit - a.profit);
+  //   return {
+  //     name: p.name,
+  //     count: p.count, // 🔥 ใช้ count
+  //     prize: rankPrize,
+  //     bounty: bountyPrize,
+  //     total: totalWin,
+  //     profit,
+  //   };
+  // }).sort((a, b) => b.profit - a.profit);
+
+  const allResults =
+  mode === "CASH"
+    ? players
+        .map((p) => {
+          const cost = p.buyInTotal;
+          const cashout = p.cashout || 0;
+          const profit = cashout - cost;
+
+          return {
+            name: p.name,
+            count: cost,
+            total: cashout,
+            profit,
+          };
+        })
+        .sort((a, b) => b.profit - a.profit) // ✅ cash เรียงได้
+    : [
+        // 🏆 คนที่ได้อันดับ (เรียงตามที่เลือก)
+        ...prizeWinners.map((w, i) => {
+          const p = players.find((pl) => pl.name === w.name);
+
+          const bountyPrize = modeBounty
+            ? (p?.bounty || 0) * bountyPerHead
+            : 0;
+
+          const totalWin = w.amount + bountyPrize;
+
+          const cost = (p?.count || 0) * tournament.buyIn;
+          const profit = totalWin - cost;
+
+          return {
+            name: w.name,
+            rank: i + 1, // 🔥 ใช้อันนี้แทน index
+            prize: w.amount,
+            bounty: bountyPrize,
+            count: p?.count || 0,
+            total: totalWin,
+            profit,
+          };
+        }),
+
+        // 🐷 คนที่ไม่ได้อันดับ (ต่อท้าย)
+        ...players
+          .filter((p) => !prizeWinners.some((w) => w.name === p.name))
+          .map((p) => {
+            const cost = p.count * tournament.buyIn;
+
+            return {
+              name: p.name,
+              rank: null,
+              prize: 0,
+              bounty: 0,
+              count: p.count,
+              total: 0,
+              profit: -cost,
+            };
+          }),
+      ];
 
   const sumBuyIn = players.reduce((sum, p) => sum + p.buyInTotal, 0);
   const totalCashout = players.reduce((sum, p) => sum + (p.cashout || 0), 0);
@@ -378,37 +437,102 @@ if (modeBounty && totalBounty > totalKnockouts) {
 //   }
 // };
 
+const handleChangeMode = (nextMode: "TOURNAMENT" | "CASH") => {
+  if (mode === nextMode) return;
+
+  const ok = window.confirm(
+  `⚠️ เปลี่ยนโหมดเป็น ${nextMode}\n\nข้อมูลทั้งหมดจะถูกล้าง:\n- Players\n- Buy-in\n- Results\n\nยืนยันหรือไม่?`
+  );
+  if (!ok) return;
+
+  // 🔥 reset ทุกอย่างที่เกี่ยวข้อง
+  setMode(nextMode);
+  setPlayers([]);
+  setPrizeWinners([]);
+
+  // ถ้ามี state เพิ่ม เช่น bounty / cash
+  setModeBounty(false);
+
+  // reset timer (optional แต่แนะนำ)
+  setRoundIndex(0);
+  setRunning(false);
+};
+
 const generateSummaryText = () => {
   let text = `🏆 ${tournament.name}\n\n`;
 
   text += `วันที่: ${new Date().toLocaleDateString()}\n`;
-  text += `Buy-In: ${tournament.buyIn}\n`;
+  text += `โหมด: ${mode === "CASH" ? "Cash Game" : "Tournament"}\n\n`;
 
-  text += `ผู้เล่นทั้งหมด: ${players.length}\n`;
-  text += `Buy in ทั้งหมด: ${totalBuyIn}\n`;
-  
-  if (modeBounty) {
-    text += `Prize Pool: ${prizePool - bountyPool}\n`;
-    text += `Bounty Pool: ${bountyPool}\n`;
-    text += `ต่อหัว: ${bountyPerHead.toFixed(2)}\n\n`;
-  } else {
-    text += `Prize Pool: ${prizePool}\n\n`;
+  // =========================
+  // 🟢 TOURNAMENT MODE
+  // =========================
+  if (mode !== "CASH") {
+    text += `Buy-In: ${tournament.buyIn}\n`;
+    text += `ผู้เล่นทั้งหมด: ${players.length}\n`;
+    text += `Buy-in ทั้งหมด: ${totalBuyIn}\n`;
+
+    if (modeBounty) {
+      text += `Prize Pool: ${prizePool - bountyPool}\n`;
+      text += `Bounty Pool: ${bountyPool}\n`;
+      text += `ต่อหัว: ${bountyPerHead.toFixed(2)}\n\n`;
+    } else {
+      text += `Prize Pool: ${prizePool}\n\n`;
+    }
+
+    // 🏆 อันดับ
+    text += "อันดับและเงินรางวัล:\n";
+    prizeWinners.forEach((w, i) => {
+      text += `${
+        i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`
+      } ${w.name} - ${w.amount}\n`;
+    });
+
+    text += "\nผู้เล่นทั้งหมด:\n";
+
+    players.forEach((p) => {
+      const winner = prizeWinners.find(w => w.name === p.name);
+
+      const prize = winner ? winner.amount : 0;
+      const bounty = modeBounty ? (p.bounty || 0) * bountyPerHead : 0;
+
+      const cost = p.count * tournament.buyIn;
+      const totalWin = prize + bounty;
+      const profit = totalWin - cost;
+
+      text += `#${p.name} (${p.count} buy-in = ${cost})`;
+
+      if (modeBounty) {
+        text += ` | 🎯 ${p.bounty || 0} หัว = ${bounty}`;
+      }
+
+      text += ` → ${profit >= 0 ? "+" : ""}${profit}\n`;
+    });
   }
 
-  text += "อันดับและเงินรางวัล:\n";
-  prizeWinners.forEach((w, i) => {
-    text += `${i + 1 === 1 ? "🥇" : i + 1 === 2 ? "🥈" : i + 1 === 3 ? "🥉" : i + 1} #${w.name} - ${w.amount}\n`;
-  });
+  // =========================
+  // 🔵 CASH MODE
+  // =========================
+  else {
+    const totalBuy = players.reduce((sum, p) => sum + (p.buyInTotal || 0), 0);
+    const totalCashout = players.reduce((sum, p) => sum + (p.cashout || 0), 0);
+    const diff = totalCashout - totalBuy;
 
-  text += "\nผู้เล่นทั้งหมด:\n";
-  players.forEach((p) => {
-    const winner = prizeWinners.find(w => w.name === p.name);
-    const prize = winner ? winner.amount : 0;
-    const cost = p.count * tournament.buyIn;
-    const profit = modeBounty ? prize + (p.bounty || 0) * bountyPerHead - cost : prize - cost;
+    text += `ผู้เล่นทั้งหมด: ${players.length}\n`;
+    text += `Total Buy-in: ${totalBuy}\n`;
+    text += `Total Cashout: ${totalCashout}\n`;
+    text += `Diff: ${diff === 0 ? "✔ Balanced" : diff}\n\n`;
 
-    text += `#${p.name} (${p.count} buy-in รวม ${cost}) → ${modeBounty ? `(Bounty: ${p.bounty || 0} รวม ${(p.bounty || 0) * bountyPerHead})` : ""}${profit >= 0 ? "+" : ""}${profit}\n`;
-  });
+    text += "ผลลัพธ์:\n";
+
+    players.forEach((p) => {
+      const cost = p.buyInTotal || 0;
+      const cashout = p.cashout || 0;
+      const profit = cashout - cost;
+
+      text += `#${p.name} (${cost} → ${cashout}) = ${profit >= 0 ? "+" : ""}${profit}\n`;
+    });
+  }
 
   return text;
 };
@@ -691,7 +815,7 @@ const sendToTelegram = async () => {
           ) : (
             <>
               <Subtitle>Prize Pool</Subtitle>
-              {!modeBounty && <p>Total: {normalPrizePool}</p>}
+              {!modeBounty && <p>Total: {formatNumber(normalPrizePool)}</p>}
               {modeBounty && <p>Total Prize Pool: {formatNumber(prizePool-bountyPool)}</p>}
               {modeBounty && (
                 <>
@@ -768,12 +892,12 @@ const sendToTelegram = async () => {
                   ) : (
                     <>
                       <td style={{ textAlign: 'center' }}>
-                        {formatNumber(w.prize)}
+                        {formatNumber(w.prize ?? 0)}
                       </td>
 
                       {modeBounty && (
                         <td style={{ textAlign: 'center' }}>
-                          {formatNumber(w.bounty)}
+                          {formatNumber(w.bounty ?? 0)}
                         </td>
                       )}
 
@@ -842,14 +966,14 @@ const sendToTelegram = async () => {
           <div style={{ display: 'flex', gap: 10 }}>
             <Button
               type={mode === "TOURNAMENT" ? "primary" : "secondary"}
-              onClick={() => setMode("TOURNAMENT")}
+              onClick={() => handleChangeMode("TOURNAMENT")}
             >
               Tournament
             </Button>
 
             <Button
               type={mode === "CASH" ? "primary" : "secondary"}
-              onClick={() => setMode("CASH")}
+              onClick={() => handleChangeMode("CASH")}
             >
               Cash Game
             </Button>
