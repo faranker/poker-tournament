@@ -14,24 +14,44 @@ const App = styled.div`
   min-height: 100vh;
   padding: 20px;
   font-family: Inter, system-ui, sans-serif;
+
+  @media (max-width: 1024px) {
+    padding: 16px;
+  }
+
+  @media (max-width: 640px) {
+    padding: 12px;
+  }
 `;
 
 const Grid = styled.div`
   display: grid;
-  grid-template-columns: 400px 2fr 550px;
+  grid-template-columns: 1fr 2fr 1fr;
   gap: 20px;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
-const Grid2 = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 20px;
-`;
+// const Grid2 = styled.div`
+//   display: grid;
+//   grid-template-columns: 400px 2fr 550px;
+//   gap: 20px;
+
+//   @media (max-width: 1200px) {
+//     grid-template-columns: 1fr;
+//   }
+// `;
 
 const Card = styled.div`
   background: #141414;
   border-radius: 14px;
   padding: 16px;
+
+  @media (max-width: 640px) {
+    padding: 12px;
+  }
 `;
 
 const Title = styled.h2`
@@ -48,6 +68,15 @@ const BigTimer = styled.div`
   font-size: 120px;
   font-weight: 700;
   text-align: center;
+
+  @media (max-width: 1024px) {
+    font-size: 88px;
+  }
+
+  @media (max-width: 640px) {
+    font-size: 56px;
+    line-height: 1.1;
+  }
 `;
 
 const Progress = styled.div<{ percent: number }>`
@@ -81,6 +110,13 @@ const Button = styled.button<{ type?: string; }>`
   border-radius: 10px;
   cursor: pointer;
   margin-right: 8px;
+  white-space: nowrap;
+
+  @media (max-width: 640px) {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 8px;
+  }
 
   &:hover { opacity: .9 }
 `;
@@ -94,6 +130,15 @@ const Table = styled.table`
     padding: 6px;
     border-bottom: 1px solid #222;
   }
+
+  @media (max-width: 640px) {
+    font-size: 13px;
+  }
+`;
+
+const TableScroll = styled.div`
+  width: 100%;
+  overflow-x: auto;
 `;
 
 const Input = styled.input`
@@ -110,6 +155,12 @@ const WrapperHeader = styled.div`
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
 `;
 
 /* =====================
@@ -129,6 +180,16 @@ const formatNumber = (num: number) => {
    App
 ===================== */
 
+type Result = {
+  name: string;
+  count: number;
+  total: number;
+  profit: number;
+  prize?: number;
+  bounty?: number;
+  rank?: number | null;
+};
+
 export default function PokerTournamentTimer() {
   const [tournament, setTournament] = useState({
     name: "",
@@ -142,7 +203,7 @@ export default function PokerTournamentTimer() {
       { sb: 400, bb: 800, ante: 800, duration: 10 * 60 }
     ]
   });
-  const [mode, setMode] = useState<"TOURNAMENT" | "CASH">("TOURNAMENT");
+  const [mode, setMode] = useState<"TOURNAMENT" | "CASH">("CASH");
 
   const [openModal, setOpenModal] = useState(false);
 
@@ -303,10 +364,10 @@ if (modeBounty && totalBounty > totalKnockouts) {
       if (prev.length >= tournament.payouts.length) return prev;
 
       const position = prev.length;
-      const prize = prizes[position] || 0;
+      const prize = Number(prizes[position] || 0);
 
       const cost = p.count * tournament.buyIn;
-      const profit = prize - cost;
+      const profit = Number(prize) - cost;
 
       return [
         ...prev,
@@ -355,7 +416,7 @@ if (modeBounty && totalBounty > totalKnockouts) {
   //   };
   // }).sort((a, b) => b.profit - a.profit);
 
-  const allResults =
+  const allResults: Result[] =
   mode === "CASH"
     ? players
         .map((p) => {
@@ -537,51 +598,51 @@ const generateSummaryText = () => {
   return text;
 };
 
-const sendToTelegram = async () => {
-  const text = generateSummaryText();
+// const sendToTelegram = async () => {
+//   const text = generateSummaryText();
 
-  const TOKEN = '8759551562:AAFT_chi96Y5fiYKBSuEjOfsFFZYpzgrX-4';
-  const CHAT_ID = "-5124726087";
+//   const TOKEN = '8759551562:AAFT_chi96Y5fiYKBSuEjOfsFFZYpzgrX-4';
+//   const CHAT_ID = "-5124726087";
 
-  const url = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
+//   const url = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
 
-  await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      chat_id: CHAT_ID,
-      text,
-    }),
-  });
+//   await fetch(url, {
+//     method: "POST",
+//     headers: {
+//       "Content-Type": "application/json",
+//     },
+//     body: JSON.stringify({
+//       chat_id: CHAT_ID,
+//       text,
+//     }),
+//   });
 
-  alert("ส่งเข้า Telegram แล้ว!");
-};
+//   alert("ส่งเข้า Telegram แล้ว!");
+// };
 
-  const sendToDiscord = async () => {
-    const text = generateSummaryText();
+//   const sendToDiscord = async () => {
+//     const text = generateSummaryText();
 
-    const WEBHOOK_URL = "https://discord.com/api/webhooks/1492787869746597900/zzSKIyFpSJ-DVlf00rOigODrFHLLiz4xRJ0_rKrJ3D3GGY4d9n2-TPELJFJveiOCO6d8";
+//     const WEBHOOK_URL = "https://discord.com/api/webhooks/1492787869746597900/zzSKIyFpSJ-DVlf00rOigODrFHLLiz4xRJ0_rKrJ3D3GGY4d9n2-TPELJFJveiOCO6d8";
 
-    await fetch(WEBHOOK_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        embeds: [
-          {
-            title: tournament.name,
-            description: text,
-            color: 0xe50914,
-          },
-        ],
-      }),
-    });
+//     await fetch(WEBHOOK_URL, {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify({
+//         embeds: [
+//           {
+//             title: tournament.name,
+//             description: text,
+//             color: 0xe50914,
+//           },
+//         ],
+//       }),
+//     });
 
-    alert("ส่งเข้า Discord แล้ว!");
-  };
+//     alert("ส่งเข้า Discord แล้ว!");
+//   };
 
   return (
     <App>
@@ -680,7 +741,7 @@ const sendToTelegram = async () => {
       )}
       <Grid>
         {/* Structure */}
-        <Card>
+        {mode !== "CASH" && <Card id="Structure">
           <WrapperHeader>
             <Title>Structure</Title>
             <Button type="primary" onClick={() => setOpenModal(true)}>
@@ -688,73 +749,75 @@ const sendToTelegram = async () => {
             </Button>
           </WrapperHeader>
           
-          <Table>
-            <thead>
-              <tr>
-                <th>SB</th>
-                <th>BB</th>
-                <th>Ante</th>
-                <th>Min</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {tournament.rounds && tournament.rounds.length > 0 && tournament.rounds.map((r, i) => (
-                <tr
-                  key={i}
-                  style={{ color: i === roundIndex ? "#e50914" : "#fff" }}
-                >
-                  {/* SB */}
-                  <td style={{ textAlign: 'center' }}>
-                    {r.sb ? formatNumber(r.sb) : "-"}
-                  </td>
-
-                  {/* BB */}
-                  <td style={{ textAlign: 'center' }}>
-                    {r.bb ? formatNumber(r.bb) : "-"}
-                  </td>
-
-                  {/* Ante */}
-                  <td style={{ textAlign: 'center' }}>
-                    {r.ante ? formatNumber(r.ante) : "-"}
-                  </td>
-
-                  {/* Duration */}
-                  <td style={{ textAlign: 'center' }}>
-                    {fmt(r.duration)}
-                  </td>
-
-                  {/* Remove */}
-                  <td>
-                    <Button
-                      type="primary"
-                      onClick={() => {
-                        const ok = window.confirm("ลบ level นี้?");
-                        if (!ok) return;
-
-                        setTournament((t) => ({
-                          ...t,
-                          rounds: t.rounds.filter((_, idx) => idx !== i),
-                        }));
-                      }}
-                    >
-                      -
-                    </Button>
-                  </td>
+          <TableScroll>
+            <Table>
+              <thead>
+                <tr>
+                  <th>SB</th>
+                  <th>BB</th>
+                  <th>Ante</th>
+                  <th>Min</th>
+                  <th></th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
+              </thead>
+              <tbody>
+                {tournament.rounds && tournament.rounds.length > 0 && tournament.rounds.map((r, i) => (
+                  <tr
+                    key={i}
+                    style={{ color: i === roundIndex ? "#e50914" : "#fff" }}
+                  >
+                    {/* SB */}
+                    <td style={{ textAlign: 'center' }}>
+                      {r.sb ? formatNumber(r.sb) : "-"}
+                    </td>
+
+                    {/* BB */}
+                    <td style={{ textAlign: 'center' }}>
+                      {r.bb ? formatNumber(r.bb) : "-"}
+                    </td>
+
+                    {/* Ante */}
+                    <td style={{ textAlign: 'center' }}>
+                      {r.ante ? formatNumber(r.ante) : "-"}
+                    </td>
+
+                    {/* Duration */}
+                    <td style={{ textAlign: 'center' }}>
+                      {fmt(r.duration)}
+                    </td>
+
+                    {/* Remove */}
+                    <td>
+                      <Button
+                        type="primary"
+                        onClick={() => {
+                          const ok = window.confirm("ลบ level นี้?");
+                          if (!ok) return;
+
+                          setTournament((t) => ({
+                            ...t,
+                            rounds: t.rounds.filter((_, idx) => idx !== i),
+                          }));
+                        }}
+                      >
+                        -
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </TableScroll>
           {/* <Button secondary onClick={() => {
             const r = prompt("SB,BB,ANTE,DURATION(sec)");
             if (!r) return;
             const [sb, bb, ante, d] = r.split(",").map(Number);
             setTournament(t => ({ ...t, rounds: [...t.rounds, { sb, bb, ante, duration: d }] }));
           }}>+ Add Level</Button> */}
-        </Card>
+        </Card>}
 
         {/* Timer */}
-        <Card style={{ textAlign: "center" }}>
+        {mode !== "CASH" && <Card id="Timer" style={{ textAlign: "center" }}>
           <h1>{breakTime ? "Break" : `Level ${roundIndex + 1}`}</h1>
           <BigTimer>{fmt(timeLeft)}</BigTimer>
           <Progress percent={progress}><div /></Progress>
@@ -797,23 +860,10 @@ const sendToTelegram = async () => {
           </Button>
           <Button type="secondary" onClick={() => setBreakTime(b => !b)}>Break</Button>
           <h1>{round.sb}/{round.bb} • Ante {round.ante}</h1>
-        </Card>
-        <Card>
+        </Card>}
+        {mode !== "CASH" && <Card id="Results">
           <Title>อันดับและเงินรางวัล</Title>
-          {mode === "CASH" ? (
-            <div style={{ marginTop: 10 }}>
-              <p>Total Buy-in: {formatNumber(sumBuyIn)}</p>
-              <p>Total Cashout: {formatNumber(totalCashout)}</p>
-
-              <p style={{
-                color: diff === 0 ? 'lime' : 'red',
-                fontWeight: 'bold'
-              }}>
-                Diff: {diff === 0 ? "✔ Balanced" : diff}
-              </p>
-            </div>
-          ) : (
-            <>
+          <>
               <Subtitle>Prize Pool</Subtitle>
               {!modeBounty && <p>Total: {formatNumber(normalPrizePool)}</p>}
               {modeBounty && <p>Total Prize Pool: {formatNumber(prizePool-bountyPool)}</p>}
@@ -823,114 +873,87 @@ const sendToTelegram = async () => {
                   <p>ต่อหัว: {bountyPerHead.toFixed(2)}</p>
                 </>
               )}
-              <Table>
-                <tbody>
-                  {prizes.map((a, i) => (
-                    <tr key={i}>
-                      <td>
-                        {i + 1 === 1 && "🏆 "}
-                        {i + 1 === 2 && "🥈 "}
-                        {i + 1 === 3 && "🥉 "}
-                        {i + 1}
-                      </td>
-                      <td>{a}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-            </>
-          )}
-          <br />
-          <Table>
-            <thead>
-              <tr>
-                {mode === "CASH" ? (
-                  <>
-                    <th>Player</th>
-                    <th>Cashout</th>
-                    <th>Buy-in</th>
-                    <th>กำไร / ขาดทุน</th>
-                  </>
-                ) : (
-                  <>
-                    <th>อันดับ</th>
-                    <th>รางวัลอันดับ</th>
-                    {modeBounty && <th>Bounty</th>} {/* 🔥 เพิ่มตรงนี้ */}
-                    <th>Buy-in</th>
-                    <th>กำไร / ขาดทุน</th>
-                  </>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {allResults.map((w, i) => (
-                <tr key={i}>
-                  <td>
-                    {i + 1 === 1 && "🏆 "}
-                    {i + 1 === 2 && "🥈 "}
-                    {i + 1 === 3 && "🥉 "}
-                    {i + 1 > 3 && "🐷 "}
-                    {i + 1} - {w.name}
-                  </td>
-                  {mode === "CASH" ? (
-                    <>
-                      <td style={{ textAlign: 'center' }}>
-                        {formatNumber(w.total)}
-                      </td>
-
-                      <td style={{ textAlign: 'center' }}>
-                        {formatNumber(w.count)}
-                      </td>
-
-                      <td style={{
-                        textAlign: 'center',
-                        color: w.profit >= 0 ? 'lime' : 'red'
-                      }}>
-                        {formatNumber(w.profit)}
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td style={{ textAlign: 'center' }}>
-                        {formatNumber(w.prize ?? 0)}
-                      </td>
-
-                      {modeBounty && (
-                        <td style={{ textAlign: 'center' }}>
-                          {formatNumber(w.bounty ?? 0)}
+              <TableScroll>
+                <Table>
+                  <tbody>
+                    {prizes.map((a, i) => (
+                      <tr key={i}>
+                        <td>
+                          {i + 1 === 1 && "🏆 "}
+                          {i + 1 === 2 && "🥈 "}
+                          {i + 1 === 3 && "🥉 "}
+                          {i + 1}
                         </td>
-                      )}
-
-                      <td style={{ textAlign: 'center' }}>
-                        {w.count}
-                      </td>
-
-                      <td style={{
-                        textAlign: 'center',
-                        color: w.profit >= 0 ? 'lime' : 'red'
-                      }}>
-                        {w.count} x {formatNumber(tournament.buyIn)} = {formatNumber(w.profit)}
-                      </td>
-                    </>
-                  )}
-                  {/* <td style={{ textAlign: 'center' }}>{w.prize}</td>
-                  {modeBounty && (
-                    <td style={{ textAlign: 'center' }}>
-                      {w.bounty.toFixed(2)}
-                    </td>
-                  )}
-                  <td style={{ textAlign: 'center' }}>{w.count}</td>
-                  <td style={{ 
-                    textAlign: 'center',
-                    color: w.profit >= 0 ? 'lime' : 'red'
-                  }}>
-                    {w.count} x {tournament.buyIn} = {formatNumber(w.profit)}
-                  </td> */}
+                        <td>{a}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </TableScroll>
+          </>
+          <br />
+          <TableScroll>
+            <Table>
+              <thead>
+                <tr>
+                  <th>อันดับ</th>
+                  <th>รางวัลอันดับ</th>
+                  {modeBounty && <th>Bounty</th>}
+                  <th>Buy-in</th>
+                  <th>กำไร / ขาดทุน</th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
-          <div style={{ marginTop: '10px', display: 'flex', gap: 5, justifyContent: 'flex-end' }}>
+              </thead>
+              <tbody>
+                {allResults.map((w, i) => (
+                  <tr key={i}>
+                    <td>
+                      {i + 1 === 1 && "🏆 "}
+                      {i + 1 === 2 && "🥈 "}
+                      {i + 1 === 3 && "🥉 "}
+                      {i + 1 > 3 && "🐷 "}
+                      {i + 1} - {w.name}
+                    </td>
+                    <>
+                        <td style={{ textAlign: 'center' }}>
+                          {formatNumber(w.prize ?? 0)}
+                        </td>
+
+                        {modeBounty && (
+                          <td style={{ textAlign: 'center' }}>
+                            {formatNumber(w.bounty ?? 0)}
+                          </td>
+                        )}
+
+                        <td style={{ textAlign: 'center' }}>
+                          {w.count}
+                        </td>
+
+                        <td style={{
+                          textAlign: 'center',
+                          color: w.profit >= 0 ? 'lime' : 'red'
+                        }}>
+                          {w.count} x {formatNumber(tournament.buyIn)} = {formatNumber(w.profit)}
+                        </td>
+                      </>
+                    {/* <td style={{ textAlign: 'center' }}>{w.prize}</td>
+                    {modeBounty && (
+                      <td style={{ textAlign: 'center' }}>
+                        {w.bounty.toFixed(2)}
+                      </td>
+                    )}
+                    <td style={{ textAlign: 'center' }}>{w.count}</td>
+                    <td style={{ 
+                      textAlign: 'center',
+                      color: w.profit >= 0 ? 'lime' : 'red'
+                    }}>
+                      {w.count} x {tournament.buyIn} = {formatNumber(w.profit)}
+                    </td> */}
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </TableScroll>
+          <div style={{ marginTop: '10px', display: 'flex', gap: 5, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
             <Button
               type="success"
               disabled={players.length === 0}
@@ -941,7 +964,7 @@ const sendToTelegram = async () => {
             >
               Share to LINE
             </Button>
-            <Button
+            {/* <Button
               type="info"
               disabled={players.length === 0}
               onClick={sendToTelegram}
@@ -954,22 +977,22 @@ const sendToTelegram = async () => {
               onClick={sendToDiscord}
             >
               Share to Discord
-            </Button>
+            </Button> */}
           </div>
           
-        </Card>
+        </Card>}
       </Grid>
-      <Grid2 style={{ marginTop: 20 }}>
-        <Card>
+      <Grid style={{ marginTop: 20 }}>
+        <Card id="TournamentSettings" style={{ order: mode === "CASH" ? 1 : 2 }}>
           <Title>Tournament Settings</Title>
           <Subtitle>Game Mode</Subtitle>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <Button
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {/* <Button
               type={mode === "TOURNAMENT" ? "primary" : "secondary"}
               onClick={() => handleChangeMode("TOURNAMENT")}
             >
               Tournament
-            </Button>
+            </Button> */}
 
             <Button
               type={mode === "CASH" ? "primary" : "secondary"}
@@ -1051,34 +1074,35 @@ const sendToTelegram = async () => {
             </>
           }
         </Card>
-        <Card>
+        <Card id="Players" style={{ order: mode === "CASH" ? 2 : 1 }}>
           <WrapperHeader>
             <Subtitle>Player</Subtitle>
             <Button type="primary" onClick={addPlayer}>+ Add Player</Button>
           </WrapperHeader>
           
-          <Table>
-            <thead>
-              <tr><th>ชื่อ</th>{mode === "CASH" ? <th>Buy-in</th> : <th>จำนวน Buy-in</th>}{modeBounty && <th>Bounty</th>}{mode === "CASH" && <th>Cashout</th>}<th></th></tr>
-            </thead>
-            <tbody>
-              {players.map((p, i) => (
-                <tr
-                  key={i}
-                  onClick={() => selectPlayer(p)}
-                  style={{
-                    cursor: 'pointer',
-                    background: isWinner(p.name) ? '#1e3a8a' : 'transparent',
-                    color: isWinner(p.name) ? '#fff' : '#aaa',
-                    transition: '0.2s',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isWinner(p.name)) e.currentTarget.style.background = '#222';
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isWinner(p.name)) e.currentTarget.style.background = 'transparent';
-                  }}
-                >
+          <TableScroll>
+            <Table>
+              <thead>
+                <tr><th>ชื่อ</th>{mode === "CASH" ? <th>Buy-in</th> : <th>จำนวน Buy-in</th>}{modeBounty && <th>Bounty</th>}{mode === "CASH" && <th>Cashout</th>}<th></th></tr>
+              </thead>
+              <tbody>
+                {players.map((p, i) => (
+                  <tr
+                    key={i}
+                    onClick={() => selectPlayer(p)}
+                    style={{
+                      cursor: 'pointer',
+                      background: isWinner(p.name) ? '#1e3a8a' : 'transparent',
+                      color: isWinner(p.name) ? '#fff' : '#aaa',
+                      transition: '0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isWinner(p.name)) e.currentTarget.style.background = '#222';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isWinner(p.name)) e.currentTarget.style.background = 'transparent';
+                    }}
+                  >
                   <td>
                     {(() => {
                       const pos = getPosition(p.name);
@@ -1254,12 +1278,164 @@ const sendToTelegram = async () => {
                       Remove
                     </Button>
                   </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </TableScroll>
         </Card>
-      </Grid2>
+        {mode === "CASH" && <Card id="Results" style={{ order: 3 }}>
+          <Title>อันดับและเงินรางวัล</Title>
+          {mode === "CASH" ? (
+            <div style={{ marginTop: 10 }}>
+              <p>Total Buy-in: {formatNumber(sumBuyIn)}</p>
+              <p>Total Cashout: {formatNumber(totalCashout)}</p>
+
+              <p style={{
+                color: diff === 0 ? 'lime' : 'red',
+                fontWeight: 'bold'
+              }}>
+                Diff: {diff === 0 ? "✔ Balanced" : diff}
+              </p>
+            </div>
+          ) : (
+            <>
+              <Subtitle>Prize Pool</Subtitle>
+              {!modeBounty && <p>Total: {formatNumber(normalPrizePool)}</p>}
+              {modeBounty && <p>Total Prize Pool: {formatNumber(prizePool-bountyPool)}</p>}
+              {modeBounty && (
+                <>
+                  <p>Bounty Pool: {formatNumber(bountyPool)}</p>
+                  <p>ต่อหัว: {bountyPerHead.toFixed(2)}</p>
+                </>
+              )}
+              <TableScroll>
+                <Table>
+                  <tbody>
+                    {prizes.map((a, i) => (
+                      <tr key={i}>
+                        <td>
+                          {i + 1 === 1 && "🏆 "}
+                          {i + 1 === 2 && "🥈 "}
+                          {i + 1 === 3 && "🥉 "}
+                          {i + 1}
+                        </td>
+                        <td>{a}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </TableScroll>
+            </>
+          )}
+          <br />
+          <TableScroll>
+            <Table>
+              <thead>
+                <tr>
+                  {mode === "CASH" ? (
+                    <>
+                      <th>Player</th>
+                      <th>Cashout</th>
+                      <th>Buy-in</th>
+                      <th>กำไร / ขาดทุน</th>
+                    </>
+                  ) : (
+                    <>
+                      <th>อันดับ</th>
+                      <th>รางวัลอันดับ</th>
+                      {modeBounty && <th>Bounty</th>}
+                      <th>Buy-in</th>
+                      <th>กำไร / ขาดทุน</th>
+                    </>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {allResults.map((w, i) => (
+                  <tr key={i}>
+                    <td>
+                      {i + 1 === 1 && "🏆 "}
+                      {i + 1 === 2 && "🥈 "}
+                      {i + 1 === 3 && "🥉 "}
+                      {i + 1 > 3 && "🐷 "}
+                      {i + 1} - {w.name}
+                    </td>
+                    {mode === "CASH" ? (
+                      <>
+                        <td style={{ textAlign: 'center' }}>
+                          {formatNumber(w.total)}
+                        </td>
+
+                        <td style={{ textAlign: 'center' }}>
+                          {formatNumber(w.count)}
+                        </td>
+
+                        <td style={{
+                          textAlign: 'center',
+                          color: w.profit >= 0 ? 'lime' : 'red'
+                        }}>
+                          {formatNumber(w.profit)}
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td style={{ textAlign: 'center' }}>
+                          {formatNumber(w.prize ?? 0)}
+                        </td>
+
+                        {modeBounty && (
+                          <td style={{ textAlign: 'center' }}>
+                            {formatNumber(w.bounty ?? 0)}
+                          </td>
+                        )}
+
+                        <td style={{ textAlign: 'center' }}>
+                          {w.count}
+                        </td>
+
+                        <td style={{
+                          textAlign: 'center',
+                          color: w.profit >= 0 ? 'lime' : 'red'
+                        }}>
+                          {w.count} x {formatNumber(tournament.buyIn)} = {formatNumber(w.profit)}
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </TableScroll>
+          <div style={{ marginTop: '10px', display: 'flex', gap: 5, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+            <Button
+              type="success"
+              disabled={players.length === 0}
+              onClick={() => {
+                const text = encodeURIComponent(generateSummaryText());
+                window.open(`https://line.me/R/msg/text/?${text}`);
+              }}
+            >
+              Share to LINE
+            </Button>
+            {/* <Button
+              type="info"
+              disabled={players.length === 0}
+              onClick={sendToTelegram}
+            >
+              Share to Telegram
+            </Button>
+            <Button
+              type="discord"
+              disabled={players.length === 0}
+              onClick={sendToDiscord}
+            >
+              Share to Discord
+            </Button> */}
+          </div>
+          
+        </Card>}
+      </Grid>
     </App>
   );
 }
