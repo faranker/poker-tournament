@@ -4,7 +4,7 @@ import styled, { css, keyframes } from "styled-components";
 import {
   signIn, signUp, signOut, resetPassword, checkUsername,
   type AuthUser, type Plan,
-  PLAN_LABELS, PLAN_COLORS, FREE_MAX_PLAYERS, FREE_MAX_EXPORTS,
+  PLAN_COLORS,
 } from "../auth";
 
 const overlayShow = keyframes`from{opacity:0}to{opacity:1}`;
@@ -84,13 +84,7 @@ const PlanRow = styled.div`display:flex;align-items:center;justify-content:space
 const ExpiryText = styled.div<{$warn?:boolean}>`
   font-size:13px;color:${p=>p.$warn?"var(--gold)":"var(--text-muted)"};margin-top:3px;
 `;
-const FeatureList = styled.div`display:flex;flex-direction:column;gap:4px;margin-top:10px;`;
-const FeatureItem = styled.div<{$ok?:boolean}>`
-  font-size:14px;color:${p=>p.$ok===false?"var(--text-dim)":"var(--text)"};
-  display:flex;align-items:center;gap:6px;
-  &::before{content:'${p=>p.$ok===false?"✗":"✓"}';
-    color:${p=>p.$ok===false?"var(--text-dim)":"var(--success)"};font-weight:800;}
-`;
+
 const UsernameStatus = styled.span<{$ok?:boolean|null}>`
   font-size:13px;margin-left:6px;
   color:${p=>p.$ok===true?"var(--success)":p.$ok===false?"var(--accent)":"var(--text-dim)"};
@@ -118,7 +112,7 @@ interface Props {
 
 type ViewMode = "login" | "register" | "forgot";
 
-export function LoginModal({ user, reason, onLogin, onLogout, onClose, onUpgrade, onRefresh, lang }: Props) {
+export function LoginModal({ user, reason, onLogin, onLogout, onClose, onUpgrade, onRefresh: _onRefresh, lang }: Props) {
   const [view,        setView]        = useState<ViewMode>("login");
   const [identifier,  setIdentifier]  = useState("");
   const [email,       setEmail]       = useState("");
