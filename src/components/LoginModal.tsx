@@ -81,9 +81,7 @@ const PlanSection = styled.div`
   padding:14px;margin-bottom:14px;
 `;
 const PlanRow = styled.div`display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;`;
-const ExpiryText = styled.div<{$warn?:boolean}>`
-  font-size:13px;color:${p=>p.$warn?"var(--gold)":"var(--text-muted)"};margin-top:3px;
-`;
+
 
 const UsernameStatus = styled.span<{$ok?:boolean|null}>`
   font-size:13px;margin-left:6px;
@@ -176,14 +174,7 @@ export function LoginModal({ user, reason, onLogin, onLogout, onClose, onUpgrade
 
   const handleLogout = async () => { await signOut(); onLogout(); };
 
-  const expiryLabel = (expiresAt: string | null) => {
-    if (!expiresAt) return null;
-    const days = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86400000);
-    if (days <= 0)  return { text: isTH ? "หมดอายุแล้ว" : "Expired", warn: true };
-    if (days <= 7)  return { text: isTH ? `หมดอายุใน ${days} วัน ⚠` : `Expires in ${days} days ⚠`, warn: true };
-    const str = new Date(expiresAt).toLocaleDateString(isTH ? "th-TH" : "en-GB", { day:"2-digit", month:"short", year:"numeric" });
-    return { text: isTH ? `หมดอายุ ${str}` : `Expires ${str}`, warn: false };
-  };
+
 
   /* ── Logged-in view ── */
   if (user) {
