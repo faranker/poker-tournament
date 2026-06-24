@@ -516,8 +516,8 @@ const ShareBtns = styled.div`
    Tournament / Timer
 ───────────────────────────────────────── */
 const TimerCard = styled(Card)`
-  display:flex;flex-direction:column;align-items:center;gap:10px;
-  padding:24px 16px;position:relative;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;gap:16px;
+  padding:28px 20px;position:relative;overflow:hidden;
   &::before{content:'';position:absolute;inset:0;
     background:radial-gradient(ellipse at center top,var(--accent-soft) 0%,transparent 70%);
     pointer-events:none;}
@@ -527,13 +527,56 @@ const LevelBadge = styled.div`
   color:var(--text-muted);background:var(--surface2);border:1px solid var(--border);
   padding:3px 14px;border-radius:20px;
 `;
-const BigTimer = styled.div<{$urgent?:boolean}>`
-  font-size:88px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;
-  letter-spacing:-2px;color:var(--timer-color);
-  ${p=>p.$urgent&&css`color:var(--accent);animation:${glow} 1.5s ease-in-out infinite;`}
-  @media(max-width:1024px){font-size:70px;}
-  @media(max-width:640px){font-size:56px;letter-spacing:-1px;}
+
+/* Circular timer */
+const CircleWrap = styled.div`
+  position:relative;display:flex;align-items:center;justify-content:center;
+  width:200px;height:200px;
+  @media(max-width:640px){width:160px;height:160px;}
 `;
+const CircleSvg = styled.svg`
+  position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);
+`;
+const CircleTrack = styled.circle`
+  fill:none;stroke:var(--progress-bg);stroke-width:8;
+`;
+const CircleProgress = styled.circle<{$urgent?:boolean}>`
+  fill:none;stroke-width:8;stroke-linecap:round;
+  stroke:${p=>p.$urgent?"var(--accent)":"var(--accent)"};
+  filter:drop-shadow(0 0 6px var(--accent-glow));
+  transition:stroke-dashoffset 1s linear;
+`;
+const CircleInner = styled.div`
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+`;
+const BigTimer = styled.div<{$urgent?:boolean}>`
+  font-size:52px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;
+  letter-spacing:-1px;color:var(--timer-color);
+  ${p=>p.$urgent&&css`color:var(--accent);animation:${glow} 1.5s ease-in-out infinite;`}
+  @media(max-width:640px){font-size:42px;}
+`;
+const StatusLabel = styled.div<{$urgent?:boolean}>`
+  font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  color:${p=>p.$urgent?"var(--accent)":"var(--text-muted)"};
+`;
+
+/* Blind cards */
+const BlindsRow = styled.div`
+  display:flex;gap:10px;width:100%;justify-content:center;
+`;
+const BlindCard = styled.div`
+  flex:1;background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:10px 8px;text-align:center;
+  .lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;}
+  .val{font-size:22px;font-weight:800;color:var(--text);}
+  @media(max-width:640px){.val{font-size:18px;}}
+`;
+
+const TimerCtrl = styled.div`
+  display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;
+`;
+
+/* keep ProgBar for any other usage */
 const ProgBar = styled.div<{$pct:number;$urgent?:boolean}>`
   width:100%;height:5px;background:var(--progress-bg);border-radius:4px;overflow:hidden;
   &::after{content:'';display:block;height:100%;border-radius:4px;
@@ -542,16 +585,6 @@ const ProgBar = styled.div<{$pct:number;$urgent?:boolean}>`
       ?"linear-gradient(90deg,var(--accent),#ff6060)"
       :"linear-gradient(90deg,var(--accent),var(--accent-glow))"};
     box-shadow:0 0 8px var(--accent-glow);}
-`;
-const BlindsBox = styled.div`
-  background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);
-  padding:8px 16px;text-align:center;width:100%;
-  .lbl{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;}
-  .val{font-size:20px;font-weight:700;margin-top:2px;}
-  .ante{font-size:14px;color:var(--text-muted);margin-top:2px;}
-`;
-const TimerCtrl = styled.div`
-  display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;
 `;
 
 /* Tournament table */
@@ -1268,35 +1301,70 @@ export default function App() {
   /* ─────────────────────────────────────────
      Tournament Timer Panel
   ───────────────────────────────────────── */
-  const TimerPanel = () => (
+  const TimerPanel = () => {
+    const R = 88; const C = 2*Math.PI*R;
+    const dashOffset = C * (1 - progress/100);
+    const statusText = breakTime
+      ? (lang==="TH"?"พัก":"BREAK")
+      : running
+        ? (lang==="TH"?"กำลังนับ":"RUNNING")
+        : (lang==="TH"?"หยุด":"PAUSED");
+    return (
     <TimerCard>
       <LevelBadge>{breakTime?t("breakTime"):`${t("level")} ${roundIndex+1}`}</LevelBadge>
-      <BigTimer $urgent={isUrgent}>{fmt(timeLeft)}</BigTimer>
-      <ProgBar $pct={progress} $urgent={isUrgent} style={{width:"100%"}} />
-      <BlindsBox>
-        <div className="lbl">{t("blinds")}</div>
-        <div className="val">{fmtN(round.sb)} / {fmtN(round.bb)}</div>
-        {round.ante>0&&<div className="ante">{t("ante")}: {fmtN(round.ante)}</div>}
-      </BlindsBox>
+
+      <CircleWrap>
+        <CircleSvg viewBox="0 0 200 200">
+          <CircleTrack cx="100" cy="100" r={R}/>
+          <CircleProgress
+            $urgent={isUrgent}
+            cx="100" cy="100" r={R}
+            strokeDasharray={C}
+            strokeDashoffset={dashOffset}
+          />
+        </CircleSvg>
+        <CircleInner>
+          <BigTimer $urgent={isUrgent}>{fmt(timeLeft)}</BigTimer>
+          <StatusLabel $urgent={isUrgent}>{statusText}</StatusLabel>
+        </CircleInner>
+      </CircleWrap>
+
+      <BlindsRow>
+        <BlindCard>
+          <div className="lbl">{lang==="TH"?"Small Blind":"Small Blind"}</div>
+          <div className="val">{fmtN(round.sb)}</div>
+        </BlindCard>
+        <BlindCard>
+          <div className="lbl">{lang==="TH"?"Big Blind":"Big Blind"}</div>
+          <div className="val">{fmtN(round.bb)}</div>
+        </BlindCard>
+        {round.ante>0&&(
+          <BlindCard>
+            <div className="lbl">{t("ante")}</div>
+            <div className="val">{fmtN(round.ante)}</div>
+          </BlindCard>
+        )}
+      </BlindsRow>
+
       <TimerCtrl>
         <Btn $v="secondary" $sm onClick={()=>{
           levelUpSound.currentTime=0;levelUpSound.play().catch(()=>{});
           setRoundIndex(i=>{const p=Math.max(i-1,0);setTimeLeft(tournament.rounds[p].duration);return p;});
-        }}><SkipBack size={14} /> {t("prev")}</Btn>
-        <Btn $v="primary" style={{padding:"9px 22px",fontSize:15}} onClick={()=>{
+        }}><SkipBack size={14} /></Btn>
+        <Btn $v="primary" style={{padding:"9px 28px",fontSize:15}} onClick={()=>{
           if(timeLeft<=0) setTimeLeft(round.duration);
           setRunning(r=>!r);
-        }}>{running?<><Pause size={16}/> {t("pause")}</>:<><Play size={16}/> {t("start")}</>}</Btn>
+        }}>{running?<Pause size={18}/>:<Play size={18}/>}</Btn>
         <Btn $v="secondary" $sm onClick={()=>{
           levelUpSound.currentTime=0;levelUpSound.play().catch(()=>{});
           setRoundIndex(i=>{const n=Math.min(i+1,tournament.rounds.length-1);setTimeLeft(tournament.rounds[n].duration);return n;});
-        }}>{t("next")} <SkipForward size={14} /></Btn>
+        }}><SkipForward size={14} /></Btn>
+        <Btn $v="ghost" $sm onClick={()=>setBreakTime(b=>!b)} title={breakTime?t("resumeTime"):t("breakTime")}>
+          {breakTime?<Play size={14}/>:<Coffee size={14}/>}
+        </Btn>
       </TimerCtrl>
-      <Btn $v="ghost" $sm onClick={()=>setBreakTime(b=>!b)}>
-        {breakTime?<><Play size={13}/> {t("resumeTime")}</>:<><Coffee size={13}/> {t("breakTime")}</>}
-      </Btn>
     </TimerCard>
-  );
+  );};
 
   /* ─────────────────────────────────────────
      Tournament Structure Panel
