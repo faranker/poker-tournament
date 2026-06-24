@@ -576,16 +576,6 @@ const TimerCtrl = styled.div`
   display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;
 `;
 
-/* keep ProgBar for any other usage */
-const ProgBar = styled.div<{$pct:number;$urgent?:boolean}>`
-  width:100%;height:5px;background:var(--progress-bg);border-radius:4px;overflow:hidden;
-  &::after{content:'';display:block;height:100%;border-radius:4px;
-    width:${p=>p.$pct}%;transition:width 1s linear;
-    background:${p=>p.$urgent
-      ?"linear-gradient(90deg,var(--accent),#ff6060)"
-      :"linear-gradient(90deg,var(--accent),var(--accent-glow))"};
-    box-shadow:0 0 8px var(--accent-glow);}
-`;
 
 /* Tournament table */
 const TournTable = styled.table`
