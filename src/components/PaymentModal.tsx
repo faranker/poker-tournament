@@ -246,6 +246,27 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess: _on
 
               {!submitted ? (
                 <>
+                  {/* คำแนะนำก่อนอัปโหลด */}
+                  <StatusBox style={{marginBottom:10}}>
+                    <Clock size={16} style={{flexShrink:0}}/>
+                    <div style={{lineHeight:1.65,fontSize:12}}>
+                      {isTH
+                        ? <>
+                            กรุณาอัปโหลดสลิปการโอนเงิน หลังจากอัปโหลดแล้ว<br/>
+                            ทีมงานจะตรวจสอบและเปิดใช้งานภายใน <b>5–10 นาที</b><br/><br/>
+                            <span style={{color:"#f59e0b"}}>⚠️ ช่วงเวลา 23:00–02:00 น. ระบบธนาคารอาจล่าช้า</span><br/>
+                            ทำให้ตรวจสอบยอดเงินไม่ได้ตามปกติ
+                          </>
+                        : <>
+                            Please upload your payment slip. After uploading,<br/>
+                            our team will verify and activate within <b>5–10 minutes</b><br/><br/>
+                            <span style={{color:"#f59e0b"}}>⚠️ During 11 PM–2 AM banking systems may be slow</span><br/>
+                            and verification may take longer than usual.
+                          </>
+                      }
+                    </div>
+                  </StatusBox>
+
                   {preview && <SlipPreview src={preview} alt="slip" style={{marginBottom:10}}/>}
                   <UploadArea $hasFile={!!file} htmlFor="slip-upload">
                     <HiddenInput
@@ -270,37 +291,38 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess: _on
                   </SubmitBtn>
                 </>
               ) : (
-                <StatusBox $ok>
-                  <CheckCircle size={18}/>
-                  <div>
-                    <div>{isTH ? "ส่งสลิปเรียบร้อยแล้ว!" : "Slip submitted!"}</div>
-                    <div style={{fontSize:12,opacity:.8,marginTop:2}}>
+                <>
+                  <StatusBox $ok>
+                    <CheckCircle size={18} style={{flexShrink:0}}/>
+                    <div style={{lineHeight:1.65,fontSize:12}}>
                       {isTH
-                        ? "ทีมงานจะตรวจสอบและเปิดใช้งานภายใน 5–10 นาที"
-                        : "Our team will verify and activate within 5–10 minutes"}
+                        ? <>
+                            <b>อัปโหลดสลิปเรียบร้อยแล้ว ✅</b><br/>
+                            กรุณารอทีมงานตรวจสอบและเปิดใช้งานภายใน <b>5–10 นาที</b>
+                          </>
+                        : <>
+                            <b>Slip uploaded successfully ✅</b><br/>
+                            Please wait for our team to verify and activate within <b>5–10 minutes</b>
+                          </>
+                      }
                     </div>
-                  </div>
-                </StatusBox>
-              )}
-
-              {!submitted && (
-                <StatusBox style={{marginTop:10}}>
-                  <Clock size={16}/>
-                  <div style={{lineHeight:1.6}}>
-                    {isTH
-                      ? <>
-                          ⏱ ปกติเปิดใช้งานภายใน <b>5–10 นาที</b> หลังได้รับสลิป<br/>
-                          🌙 ช่วง <b>23.00 – 02.00 น.</b> ระบบธนาคารอาจช้า<br/>
-                          การยืนยันยอดเข้าบัญชีอาจใช้เวลานานกว่าปกติ ขออภัยในความไม่สะดวก
-                        </>
-                      : <>
-                          ⏱ Usually activated within <b>5–10 minutes</b> after receiving slip<br/>
-                          🌙 During <b>11 PM – 2 AM</b> banking systems may be slow<br/>
-                          Verification may take longer than usual. We apologize for the inconvenience.
-                        </>
-                    }
-                  </div>
-                </StatusBox>
+                  </StatusBox>
+                  <StatusBox style={{marginTop:8}}>
+                    <Clock size={16} style={{flexShrink:0}}/>
+                    <div style={{lineHeight:1.65,fontSize:12}}>
+                      {isTH
+                        ? <>
+                            <span style={{color:"#f59e0b"}}>⚠️ ช่วงเวลา 23:00–02:00 น. ระบบธนาคารอาจล่าช้า</span><br/>
+                            ทำให้การตรวจสอบใช้เวลานานกว่าปกติ
+                          </>
+                        : <>
+                            <span style={{color:"#f59e0b"}}>⚠️ During 11 PM–2 AM banking systems may be slow</span><br/>
+                            and verification may take longer than usual.
+                          </>
+                      }
+                    </div>
+                  </StatusBox>
+                </>
               )}
             </div>
           </Body>
