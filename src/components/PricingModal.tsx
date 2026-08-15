@@ -142,13 +142,13 @@ const PLANS: PlanDef[] = [
     monthly: 49, yearly: 299, savePct: 41,
     featuresTH: [
       { text: "Cash Game ไม่จำกัดผู้เล่น" },
-      { text: "Export/Share ไม่จำกัด ไม่มี watermark" },
+      { text: "Export/Share 5 ครั้ง/เดือน ไม่มี watermark" },
       { text: "ทุกธีม" },
       { text: "Tournament mode", ok: false },
     ],
     featuresEN: [
       { text: "Unlimited Cash Game players" },
-      { text: "Unlimited exports, no watermark" },
+      { text: "Export/Share 5×/month, no watermark" },
       { text: "All themes" },
       { text: "Tournament mode", ok: false },
     ],

@@ -1557,11 +1557,14 @@ export default function App() {
             <ThreeCols>
               <Col>
                 {SettingsPanel()}
-                {(plan==="cash_pro"||plan==="full_pro") && (
-                  <div style={{padding:"0 16px 16px"}}>
-                    <PokerInsurance lang={lang}/>
-                  </div>
-                )}
+                {user
+                  ? (plan==="cash_pro"||plan==="full_pro") && (
+                      <div style={{padding:"0 16px 16px"}}>
+                        <PokerInsurance lang={lang}/>
+                      </div>
+                    )
+                  : null
+                }
               </Col>
               <Col>{PlayersPanel()}</Col>
               <Col>{SummaryPanel()}</Col>
@@ -1571,14 +1574,30 @@ export default function App() {
             <MobilePanel $show={mobileTab==="players"}>{PlayersPanel()}</MobilePanel>
             <MobilePanel $show={mobileTab==="summary"}>{SummaryPanel()}</MobilePanel>
             <MobilePanel $show={mobileTab==="insurance"}>
-              {(plan==="cash_pro"||plan==="full_pro")
-                ? <div style={{padding:"12px 16px"}}><PokerInsurance lang={lang}/></div>
-                : <div style={{padding:24,textAlign:"center",color:"var(--text-muted)",fontSize:14}}>
-                    🔒 {lang==="TH"?"ฟีเจอร์นี้สำหรับ Cash Pro / Full Pro":"This feature requires Cash Pro or Full Pro"}
-                    <br/><button style={{marginTop:12,padding:"8px 18px",borderRadius:8,border:"none",background:"var(--accent)",color:"#fff",fontWeight:700,cursor:"pointer",fontFamily:"inherit"}} onClick={()=>setShowPricing(true)}>
-                      {lang==="TH"?"อัพเกรด":"Upgrade"}
+              {!user
+                ? <div style={{padding:32,textAlign:"center",color:"var(--text-muted)",fontSize:14,display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
+                    <span style={{fontSize:32}}>🔒</span>
+                    <div style={{fontWeight:700,color:"var(--text)"}}>
+                      {lang==="TH"?"กรุณาเข้าสู่ระบบก่อนใช้งาน":"Please sign in to use this feature"}
+                    </div>
+                    <div style={{fontSize:12,color:"var(--text-dim)"}}>
+                      {lang==="TH"?"ฟีเจอร์ประกันสำหรับสมาชิก Cash Pro / Full Pro":"Insurance feature for Cash Pro / Full Pro members"}
+                    </div>
+                    <button style={{padding:"9px 22px",borderRadius:8,border:"none",background:"var(--accent)",color:"#fff",fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:14}} onClick={()=>setShowLogin(true)}>
+                      {lang==="TH"?"เข้าสู่ระบบ / สมัครสมาชิก":"Sign In / Register"}
                     </button>
                   </div>
+                : (plan==="cash_pro"||plan==="full_pro")
+                  ? <div style={{padding:"12px 16px"}}><PokerInsurance lang={lang}/></div>
+                  : <div style={{padding:32,textAlign:"center",color:"var(--text-muted)",fontSize:14,display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
+                      <span style={{fontSize:32}}>🔒</span>
+                      <div style={{fontWeight:700,color:"var(--text)"}}>
+                        {lang==="TH"?"ฟีเจอร์นี้สำหรับ Cash Pro / Full Pro":"This feature requires Cash Pro or Full Pro"}
+                      </div>
+                      <button style={{padding:"9px 22px",borderRadius:8,border:"none",background:"var(--accent)",color:"#fff",fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:14}} onClick={()=>setShowPricing(true)}>
+                        {lang==="TH"?"อัพเกรดแพลน":"Upgrade Plan"}
+                      </button>
+                    </div>
               }
             </MobilePanel>
             <MobilePanel $show={mobileTab==="settings"}>{SettingsPanel()}</MobilePanel>
