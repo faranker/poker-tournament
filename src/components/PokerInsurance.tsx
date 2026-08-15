@@ -1,238 +1,273 @@
-import { useState, useCallback } from "react";
-import styled, { css } from "styled-components";
-import { ShieldCheck, ShieldX, Info } from "lucide-react";
+import { useState } from "react";
+import * as Dialog from "@radix-ui/react-dialog";
+import styled, { css, keyframes } from "styled-components";
+import { ShieldCheck, X } from "lucide-react";
 
-/* ── Styled ── */
-const Wrap = styled.div`
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+/* ── Animations ── */
+const overlayShow  = keyframes`from{opacity:0}to{opacity:1}`;
+const contentShow  = keyframes`from{opacity:0;transform:translate(-50%,-48%) scale(.97)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}`;
+
+const Overlay = styled(Dialog.Overlay)`
+  position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:2300;backdrop-filter:blur(5px);
+  animation:${overlayShow} .15s ease;
+`;
+const Box = styled(Dialog.Content)`
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2301;
+  background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);
+  padding:24px;width:min(420px,94vw);box-shadow:var(--shadow-lg);
+  animation:${contentShow} .18s ease;max-height:92vh;overflow-y:auto;
+  &:focus{outline:none;}
 `;
 
-const SectionTitle = styled.div`
-  display: flex; align-items: center; gap: 7px;
-  font-size: 13px; font-weight: 800; color: var(--text);
-  text-transform: uppercase; letter-spacing: .06em;
+const ModalHeader = styled.div`
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;
+`;
+const ModalTitle = styled.h3`
+  font-size:16px;font-weight:900;display:flex;align-items:center;gap:8px;color:var(--text);
+`;
+const CloseBtn = styled.button`
+  background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px;
+  border-radius:6px;display:flex;&:hover{color:var(--text);background:var(--surface2);}
 `;
 
 const FieldLabel = styled.label`
-  font-size: 11px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .07em; color: var(--text-muted); margin-bottom: 4px;
-  display: block;
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--text-muted);margin-bottom:5px;display:block;
 `;
-
 const Input = styled.input`
-  width: 100%; padding: 8px 10px; border-radius: var(--radius-sm);
-  border: 1px solid var(--border); background: var(--surface2);
-  color: var(--text); font-size: 15px; font-family: inherit;
-  &:focus { outline: none; border-color: var(--border2); box-shadow: 0 0 0 3px var(--accent-soft); }
-  &::placeholder { color: var(--text-dim); }
+  width:100%;padding:9px 11px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);background:var(--surface2);
+  color:var(--text);font-size:16px;font-family:inherit;
+  &:focus{outline:none;border-color:var(--border2);box-shadow:0 0 0 3px var(--accent-soft);}
+  &::placeholder{color:var(--text-dim);}
 `;
 
-const StreetRow = styled.div`display: flex; gap: 6px;`;
-const StreetBtn = styled.button<{$active?: boolean}>`
-  flex: 1; padding: 7px 4px; border-radius: var(--radius-sm);
-  border: 1px solid var(--border); font-size: 12px; font-weight: 700;
-  font-family: inherit; cursor: pointer; transition: all .15s;
-  ${p => p.$active
-    ? css`background: var(--accent); color: #fff; border-color: var(--accent);`
-    : css`background: transparent; color: var(--text-muted); &:hover{color:var(--text);border-color:var(--border2);}`}
+const StreetRow = styled.div`display:flex;gap:6px;`;
+const StreetBtn = styled.button<{$active?:boolean}>`
+  flex:1;padding:8px 4px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);font-size:13px;font-weight:700;
+  font-family:inherit;cursor:pointer;transition:all .15s;
+  ${p=>p.$active
+    ?css`background:var(--accent);color:#fff;border-color:var(--accent);`
+    :css`background:transparent;color:var(--text-muted);&:hover{color:var(--text);border-color:var(--border2);}`}
 `;
 
-const OutsRow = styled.div`display: flex; align-items: center; gap: 10px;`;
-const OutsSlider = styled.input`
-  flex: 1; accent-color: var(--accent); cursor: pointer; height: 4px;
-`;
-const OutsNum = styled.div`
-  min-width: 32px; text-align: center; font-size: 20px; font-weight: 900;
-  color: var(--accent);
-`;
+const Divider = styled.div`height:1px;background:var(--border);margin:16px 0;`;
 
-const Divider = styled.div`height: 1px; background: var(--border);`;
+const SliderWrap = styled.div`display:flex;align-items:center;gap:12px;`;
+const Slider = styled.input`
+  flex:1;accent-color:var(--accent);cursor:pointer;height:4px;
+`;
+const SliderNum = styled.div<{$color?:string}>`
+  min-width:36px;text-align:center;font-size:22px;font-weight:900;
+  color:${p=>p.$color??"var(--accent)"};
+`;
 
 const ResultGrid = styled.div`
-  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
+`;
+const ResultCard = styled.div<{$accent?:string}>`
+  border-radius:var(--radius-sm);
+  border:1px solid ${p=>p.$accent?`${p.$accent}44`:"var(--border)"};
+  background:${p=>p.$accent?`${p.$accent}0d`:"var(--surface2)"};
+  padding:10px 10px;text-align:center;
+`;
+const ResultLabel = styled.div`font-size:9px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;`;
+const ResultValue = styled.div<{$color?:string}>`font-size:17px;font-weight:900;color:${p=>p.$color??"var(--text)"};`;
+const ResultSub   = styled.div`font-size:9px;color:var(--text-dim);margin-top:2px;`;
+
+const NetBox = styled.div`
+  border-radius:var(--radius-sm);
+  border:1px solid rgba(34,197,94,.3);
+  background:rgba(34,197,94,.06);
+  padding:12px 14px;
+  display:flex;justify-content:space-between;align-items:center;
+`;
+const NetLabel = styled.div`font-size:12px;font-weight:700;color:var(--success);`;
+const NetValue = styled.div`font-size:22px;font-weight:900;color:var(--text);`;
+
+/* ── Trigger button ── */
+const TriggerBtn = styled.button`
+  display:flex;align-items:center;gap:7px;
+  width:100%;padding:10px 14px;
+  border-radius:var(--radius-sm);border:1px solid rgba(34,197,94,.35);
+  background:rgba(34,197,94,.07);color:var(--success);
+  font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;
+  transition:all .18s;
+  &:hover{background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.6);}
 `;
 
-const ResultCard = styled.div<{$color?: string; $bg?: string}>`
-  border-radius: var(--radius-sm);
-  border: 1px solid ${p => p.$color ?? "var(--border)"};
-  background: ${p => p.$bg ?? "var(--surface2)"};
-  padding: 10px 12px;
-`;
-const ResultLabel = styled.div`font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 3px;`;
-const ResultValue = styled.div<{$color?: string}>`font-size: 18px; font-weight: 900; color: ${p => p.$color ?? "var(--text)"};`;
-const ResultSub = styled.div`font-size: 10px; color: var(--text-dim); margin-top: 2px;`;
-
-const WinLoseBox = styled.div<{$win?: boolean}>`
-  border-radius: var(--radius-sm);
-  border: 1px solid ${p => p.$win ? "rgba(76,239,144,0.3)" : "rgba(255,77,77,0.3)"};
-  background: ${p => p.$win ? "rgba(76,239,144,0.06)" : "rgba(255,77,77,0.06)"};
-  padding: 10px 12px;
-  display: flex; align-items: center; gap: 10px;
-`;
-const WinLoseIcon = styled.div<{$win?: boolean}>`color: ${p => p.$win ? "var(--success)" : "#ff4d4d"};`;
-const WinLoseText = styled.div`flex: 1;`;
-const WinLoseTitle = styled.div<{$win?: boolean}>`font-size: 12px; font-weight: 800; color: ${p => p.$win ? "var(--success)" : "#ff4d4d"};`;
-const WinLoseAmt = styled.div`font-size: 20px; font-weight: 900; color: var(--text);`;
-
-const Hint = styled.div`
-  font-size: 11px; color: var(--text-dim); line-height: 1.5;
-  background: var(--surface2); border-radius: var(--radius-sm);
-  padding: 8px 10px; border: 1px solid var(--border);
-  display: flex; gap: 7px; align-items: flex-start;
-`;
-
+const REMAINING: Record<string,"45"|"44"> = { flop:"45", turn:"44" };
 const fmtN = (n: number) => Math.round(n).toLocaleString("en-US");
 
-/* ── Remaining cards by street ── */
-const REMAINING: Record<string, number> = {
-  flop: 45,   // 52 - 2 hole A - 2 hole B - 3 flop
-  turn: 44,   // 52 - 2 - 2 - 4
-};
-
-interface Props {
-  lang: "TH" | "EN";
-}
+interface Props { lang: "TH" | "EN" }
 
 export default function PokerInsurance({ lang }: Props) {
   const isTH = lang === "TH";
-  const [pot,    setPot]    = useState<string>("");
-  const [street, setStreet] = useState<"flop"|"turn">("turn");
-  const [outs,   setOuts]   = useState(9);
+  const [open,       setOpen]       = useState(false);
+  const [pot,        setPot]        = useState("");
+  const [street,     setStreet]     = useState<"flop"|"turn">("turn");
+  const [totalOuts,  setTotalOuts]  = useState(12);   // จำนวน out ทั้งหมดของฝั่งตรงข้าม
+  const [buyOuts,    setBuyOuts]    = useState(3);    // จำนวน out ที่จะซื้อประกัน
 
   const potNum    = parseFloat(pot) || 0;
-  const remaining = REMAINING[street];
+  const remaining = Number(REMAINING[street]);
 
-  /* ── Calculation ── */
-  const calc = useCallback(() => {
-    if (potNum <= 0) return null;
+  /* cap buyOuts ไม่เกิน totalOuts */
+  const safeBuy   = Math.min(buyOuts, totalOuts);
 
-    /* fair premium per out = pot / remaining */
-    const premiumPerOut = potNum / remaining;
-    const cost          = premiumPerOut * outs;          // what buyer pays
-    const grossPayout   = potNum;                        // if hit: buyer receives full pot
-    const netIfHit      = grossPayout - cost;            // net gain for buyer
-    const probHit       = (outs / remaining) * 100;
+  /* ค่าประกันต่อ 1 out */
+  const costPerOut    = potNum > 0 ? potNum / remaining : 0;
+  /* ค่าประกันที่ต้องจ่าย */
+  const totalCost     = costPerOut * safeBuy;
+  /* โอกาสที่ out ที่ซื้อออกมา */
+  const probBought    = (safeBuy  / remaining) * 100;
+  /* โอกาสที่ out ทั้งหมดออกมา */
+  const probTotal     = (totalOuts / remaining) * 100;
+  /* ถ้า out ที่ซื้อออก: ได้รับ pot เต็ม */
+  const payoutIfHit   = potNum;
+  /* กำไรสุทธิ = payout - cost */
+  const netIfHit      = payoutIfHit - totalCost;
 
-    return { cost, grossPayout, netIfHit, probHit, premiumPerOut };
-  }, [potNum, remaining, outs]);
-
-  const result = calc();
+  const hasResult = potNum > 0 && totalOuts > 0 && safeBuy > 0;
 
   return (
-    <Wrap>
-      <SectionTitle>
-        <ShieldCheck size={15} style={{color:"var(--success)"}}/>
+    <>
+      <TriggerBtn onClick={()=>setOpen(true)}>
+        <ShieldCheck size={15}/>
         {isTH ? "คำนวณประกัน (Insurance)" : "Insurance Calculator"}
-      </SectionTitle>
+      </TriggerBtn>
 
-      {/* Pot */}
-      <div>
-        <FieldLabel>{isTH ? "ยอด Pot (บาท)" : "Pot Size (฿)"}</FieldLabel>
-        <Input
-          type="number" inputMode="numeric"
-          placeholder={isTH ? "เช่น 5000" : "e.g. 5000"}
-          value={pot}
-          onChange={e => setPot(e.target.value)}
-        />
-      </div>
+      <Dialog.Root open={open} onOpenChange={setOpen}>
+        <Dialog.Portal>
+          <Overlay />
+          <Box>
+            <ModalHeader>
+              <ModalTitle>
+                <ShieldCheck size={17} style={{color:"var(--success)"}}/>
+                {isTH ? "คำนวณประกัน" : "Insurance Calculator"}
+              </ModalTitle>
+              <CloseBtn onClick={()=>setOpen(false)}><X size={18}/></CloseBtn>
+            </ModalHeader>
 
-      {/* Street */}
-      <div>
-        <FieldLabel>{isTH ? "ตำแหน่งไพ่" : "Street"}</FieldLabel>
-        <StreetRow>
-          <StreetBtn $active={street==="flop"} onClick={()=>setStreet("flop")}>
-            Flop <span style={{fontSize:10,opacity:.7}}>{isTH?"(เหลือ 2 ใบ)":"(2 to come)"}</span>
-          </StreetBtn>
-          <StreetBtn $active={street==="turn"} onClick={()=>setStreet("turn")}>
-            Turn <span style={{fontSize:10,opacity:.7}}>{isTH?"(เหลือ 1 ใบ)":"(1 to come)"}</span>
-          </StreetBtn>
-        </StreetRow>
-      </div>
+            {/* Pot */}
+            <FieldLabel>{isTH ? "ยอด Pot (บาท)" : "Pot Size (฿)"}</FieldLabel>
+            <Input
+              type="number" inputMode="numeric"
+              placeholder={isTH ? "เช่น 5,000" : "e.g. 5000"}
+              value={pot}
+              onChange={e=>setPot(e.target.value)}
+              style={{marginBottom:14}}
+            />
 
-      {/* Outs slider */}
-      <div>
-        <FieldLabel style={{marginBottom:8}}>
-          {isTH ? "จำนวน Out ที่ซื้อ" : "Outs to Cover"}
-        </FieldLabel>
-        <OutsRow>
-          <OutsSlider
-            type="range" min={1} max={20} value={outs}
-            onChange={e => setOuts(Number(e.target.value))}
-          />
-          <OutsNum>{outs}</OutsNum>
-        </OutsRow>
-        <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"var(--text-dim)",marginTop:2}}>
-          <span>1 out</span>
-          <span>20 outs</span>
-        </div>
-      </div>
+            {/* Street */}
+            <FieldLabel>{isTH ? "ตำแหน่งไพ่" : "Street"}</FieldLabel>
+            <StreetRow style={{marginBottom:14}}>
+              <StreetBtn $active={street==="flop"} onClick={()=>setStreet("flop")}>
+                Flop
+                <div style={{fontSize:10,fontWeight:500,opacity:.7,marginTop:1}}>
+                  {isTH?"เหลือ 2 ใบ (45 ใบ)":"2 to come (45)"}
+                </div>
+              </StreetBtn>
+              <StreetBtn $active={street==="turn"} onClick={()=>setStreet("turn")}>
+                Turn
+                <div style={{fontSize:10,fontWeight:500,opacity:.7,marginTop:1}}>
+                  {isTH?"เหลือ 1 ใบ (44 ใบ)":"1 to come (44)"}
+                </div>
+              </StreetBtn>
+            </StreetRow>
 
-      <Divider />
+            {/* Total outs */}
+            <FieldLabel>
+              {isTH ? "Out ทั้งหมดของฝั่งตรงข้าม" : "Opponent's Total Outs"}
+            </FieldLabel>
+            <SliderWrap style={{marginBottom:4}}>
+              <Slider
+                type="range" min={1} max={20} value={totalOuts}
+                onChange={e=>{
+                  const v = Number(e.target.value);
+                  setTotalOuts(v);
+                  if(buyOuts > v) setBuyOuts(v);
+                }}
+              />
+              <SliderNum $color="var(--text-muted)">{totalOuts}</SliderNum>
+            </SliderWrap>
+            <div style={{fontSize:10,color:"var(--text-dim)",marginBottom:14,textAlign:"right"}}>
+              {isTH?`โอกาสฝั่งตรงข้ามแตก ${probTotal.toFixed(1)}%`:`Opponent hits ${probTotal.toFixed(1)}%`}
+            </div>
 
-      {/* Results */}
-      {result && potNum > 0 ? (
-        <>
-          <ResultGrid>
-            <ResultCard $color="rgba(212,175,55,0.4)" $bg="rgba(212,175,55,0.06)">
-              <ResultLabel>{isTH ? "ค่าประกัน (จ่าย)" : "Premium (Pay)"}</ResultLabel>
-              <ResultValue $color="var(--gold)">฿{fmtN(result.cost)}</ResultValue>
-              <ResultSub>{isTH ? `${outs} outs × ฿${fmtN(result.premiumPerOut)}/out` : `${outs} outs × ฿${fmtN(result.premiumPerOut)}/out`}</ResultSub>
-            </ResultCard>
-            <ResultCard>
-              <ResultLabel>{isTH ? "โอกาสแตก" : "Hit Probability"}</ResultLabel>
-              <ResultValue $color="var(--text)">{result.probHit.toFixed(1)}%</ResultValue>
-              <ResultSub>{outs}/{remaining} {isTH ? "ใบ" : "cards"}</ResultSub>
-            </ResultCard>
-          </ResultGrid>
+            {/* Outs to buy */}
+            <FieldLabel>
+              {isTH ? "จำนวน Out ที่ต้องการซื้อประกัน" : "Outs to Cover (buy)"}
+            </FieldLabel>
+            <SliderWrap style={{marginBottom:4}}>
+              <Slider
+                type="range" min={1} max={totalOuts} value={safeBuy}
+                onChange={e=>setBuyOuts(Number(e.target.value))}
+              />
+              <SliderNum>{safeBuy}</SliderNum>
+            </SliderWrap>
+            <div style={{fontSize:10,color:"var(--text-dim)",marginBottom:16,textAlign:"right"}}>
+              {isTH
+                ?`ซื้อ ${safeBuy} จาก ${totalOuts} out (${((safeBuy/totalOuts)*100).toFixed(0)}% ของ risk ทั้งหมด)`
+                :`${safeBuy} of ${totalOuts} outs (${((safeBuy/totalOuts)*100).toFixed(0)}% of total risk)`}
+            </div>
 
-          {/* If insurance hits */}
-          <WinLoseBox $win>
-            <WinLoseIcon $win><ShieldCheck size={20}/></WinLoseIcon>
-            <WinLoseText>
-              <WinLoseTitle $win>{isTH ? "✅ ประกันแตก — ผู้ซื้อได้รับ" : "✅ Insurance Hits — Buyer receives"}</WinLoseTitle>
-              <WinLoseAmt>฿{fmtN(result.grossPayout)}</WinLoseAmt>
-              <ResultSub style={{marginTop:2}}>
-                {isTH
-                  ? `ได้ ฿${fmtN(result.grossPayout)} − จ่ายไป ฿${fmtN(result.cost)} = กำไรสุทธิ ฿${fmtN(result.netIfHit)}`
-                  : `Receive ฿${fmtN(result.grossPayout)} − paid ฿${fmtN(result.cost)} = net ฿${fmtN(result.netIfHit)}`}
-              </ResultSub>
-            </WinLoseText>
-          </WinLoseBox>
+            <Divider style={{margin:"0 0 16px"}}/>
 
-          {/* If insurance doesn't hit */}
-          <WinLoseBox>
-            <WinLoseIcon><ShieldX size={20}/></WinLoseIcon>
-            <WinLoseText>
-              <WinLoseTitle>{isTH ? "❌ ประกันไม่แตก — ผู้ซื้อเสีย" : "❌ Insurance Misses — Buyer loses"}</WinLoseTitle>
-              <WinLoseAmt>฿{fmtN(result.cost)}</WinLoseAmt>
-              <ResultSub style={{marginTop:2}}>
-                {isTH
-                  ? `แต่ผู้ขายประกันจ่ายเงินกลับ ฿${fmtN(result.cost)} + ชนะ Pot ฿${fmtN(potNum)}`
-                  : `But seller returns ฿${fmtN(result.cost)}, buyer wins pot ฿${fmtN(potNum)}`}
-              </ResultSub>
-            </WinLoseText>
-          </WinLoseBox>
-        </>
-      ) : (
-        <div style={{textAlign:"center",color:"var(--text-dim)",fontSize:13,padding:"8px 0"}}>
-          {isTH ? "กรอกยอด Pot เพื่อคำนวณ" : "Enter pot size to calculate"}
-        </div>
-      )}
+            {/* Results */}
+            {hasResult ? (
+              <>
+                <ResultGrid>
+                  <ResultCard $accent="#d4af37">
+                    <ResultLabel>{isTH?"ค่าประกัน":"Premium"}</ResultLabel>
+                    <ResultValue $color="var(--gold)">฿{fmtN(totalCost)}</ResultValue>
+                    <ResultSub>{safeBuy} × ฿{fmtN(costPerOut)}</ResultSub>
+                  </ResultCard>
+                  <ResultCard $accent="#4a8cdf">
+                    <ResultLabel>{isTH?"โอกาส out ที่ซื้อออก":"Bought Hit %"}</ResultLabel>
+                    <ResultValue $color="#4a8cdf">{probBought.toFixed(1)}%</ResultValue>
+                    <ResultSub>{safeBuy}/{remaining} {isTH?"ใบ":"cards"}</ResultSub>
+                  </ResultCard>
+                  <ResultCard $accent="#22c55e">
+                    <ResultLabel>{isTH?"ถ้าประกันแตก ได้รับ":"If Hit — Receive"}</ResultLabel>
+                    <ResultValue $color="var(--success)">฿{fmtN(payoutIfHit)}</ResultValue>
+                    <ResultSub>{isTH?"(เต็ม Pot)":"(full pot)"}</ResultSub>
+                  </ResultCard>
+                </ResultGrid>
 
-      <Hint>
-        <Info size={13} style={{flexShrink:0,marginTop:1,color:"var(--text-dim)"}}/>
-        <span>
-          {isTH
-            ? `ค่าประกันต่อ 1 out = Pot ÷ ${remaining} ใบที่เหลือ · ถ้าประกันแตก ผู้ขายจ่าย Pot คืนให้ผู้ซื้อ`
-            : `Cost per out = Pot ÷ ${remaining} remaining cards · If hit, seller pays full pot to buyer`}
-        </span>
-      </Hint>
-    </Wrap>
+                <NetBox style={{marginTop:12}}>
+                  <div>
+                    <NetLabel>
+                      {isTH?"กำไรสุทธิถ้าประกันแตก":"Net gain if insurance hits"}
+                    </NetLabel>
+                    <div style={{fontSize:11,color:"var(--text-dim)",marginTop:2}}>
+                      {isTH
+                        ?`฿${fmtN(payoutIfHit)} − ค่าประกัน ฿${fmtN(totalCost)}`
+                        :`฿${fmtN(payoutIfHit)} − premium ฿${fmtN(totalCost)}`}
+                    </div>
+                  </div>
+                  <NetValue style={{color: netIfHit >= 0 ? "var(--success)" : "#ff4d4d"}}>
+                    {netIfHit >= 0 ? "+" : ""}฿{fmtN(netIfHit)}
+                  </NetValue>
+                </NetBox>
+
+                <div style={{fontSize:11,color:"var(--text-dim)",marginTop:10,lineHeight:1.6,
+                  background:"var(--surface2)",borderRadius:"var(--radius-sm)",padding:"8px 10px",
+                  border:"1px solid var(--border)"}}>
+                  {isTH
+                    ?`💡 ซื้อ ${safeBuy} จาก ${totalOuts} out · ค่าประกัน/out = ฿${fmtN(costPerOut)} · ถ้า out ที่ไม่ได้ซื้อ (${totalOuts-safeBuy} out) ออกมา — ไม่ได้รับอะไร`
+                    :`💡 Covering ${safeBuy} of ${totalOuts} outs · ฿${fmtN(costPerOut)}/out · If uncovered outs (${totalOuts-safeBuy}) hit — no payout`}
+                </div>
+              </>
+            ) : (
+              <div style={{textAlign:"center",color:"var(--text-dim)",fontSize:13,padding:"16px 0"}}>
+                {isTH?"กรอกยอด Pot เพื่อคำนวณ":"Enter pot size to calculate"}
+              </div>
+            )}
+          </Box>
+        </Dialog.Portal>
+      </Dialog.Root>
+    </>
   );
 }
