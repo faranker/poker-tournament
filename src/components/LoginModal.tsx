@@ -281,7 +281,7 @@ export function LoginModal({ user, reason, onLogin, onLogout, onClose, onUpgrade
         <Overlay />
         <Box>
           <Title style={{justifyContent:"center",marginBottom:20}}>
-            <img src="/logo333.png" alt="Go Poker" style={{height:125,objectFit:"contain"}} />
+            <img src="/logo22.png" alt="Go Poker" style={{height:125,objectFit:"contain"}} />
           </Title>
 
           {reason && <ReasonBanner>{reason}</ReasonBanner>}
