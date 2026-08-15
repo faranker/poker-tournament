@@ -216,6 +216,12 @@ const LangTrigger = styled(Select.Trigger)`
   &:hover{border-color:var(--border2);color:var(--text);}
   &[data-state=open]{border-color:var(--border2);color:var(--text);}
   svg{width:12px;height:12px;flex-shrink:0;}
+  .lang-short{display:none;}
+  @media(max-width:768px){
+    padding:5px 8px;
+    .lang-full{display:none;}
+    .lang-short{display:inline;}
+  }
 `;
 const LangContent = styled(Select.Content)`
   background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-sm);
@@ -229,7 +235,7 @@ const LangItem = styled(Select.Item)`
   &[data-state=checked]{color:var(--accent);font-weight:800;}
 `;
 
-const ThemeRow = styled.div`display:flex;align-items:center;gap:5px;`;
+const ThemeRow = styled.div`display:flex;align-items:center;gap:5px;@media(max-width:768px){display:none;}`;
 
 const NavAvatar = styled.button<{$color:string}>`
   width:34px;height:34px;border-radius:50%;border:2px solid ${p=>p.$color};
@@ -1482,7 +1488,8 @@ export default function App() {
           <HeaderRight>
             <Select.Root value={lang} onValueChange={v=>setLang(v as Lang)}>
               <LangTrigger aria-label="Language">
-                <span>{lang==="TH"?"🇹🇭 ไทย":"🇬🇧 English"}</span>
+                <span className="lang-full">{lang==="TH"?"🇹🇭 ไทย":"🇬🇧 English"}</span>
+                <span className="lang-short">{lang==="TH"?"🇹🇭":"🇬🇧"}</span>
                 <Select.Icon asChild><ChevronDown size={12}/></Select.Icon>
               </LangTrigger>
               <Select.Portal>
