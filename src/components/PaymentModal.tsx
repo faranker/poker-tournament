@@ -57,23 +57,36 @@ const PPBadge = styled.div`
 /* QR card */
 const QRWrap = styled.div`
   position:relative;display:flex;align-items:center;justify-content:center;
-  padding:3px;border-radius:16px;align-self:center;
+  padding:3px;border-radius:14px;align-self:center;overflow:hidden;
+  /* static dim border underneath */
+  background:#1a2a1a;
   &::before{
-    content:'';position:absolute;inset:0;border-radius:16px;z-index:0;
-    background:conic-gradient(from 0deg,#22c55e,#16a34a,#4ade80,#22c55e);
-    animation:${rotateBorder} 3s linear infinite;
+    content:'';position:absolute;
+    /* bigger than container so rotation covers all corners */
+    width:200%;height:200%;
+    top:-50%;left:-50%;
+    z-index:0;
+    background:conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      transparent 300deg,
+      #4ade80   330deg,
+      #22c55e   345deg,
+      #86efac   355deg,
+      transparent 360deg
+    );
+    animation:${rotateBorder} 2.4s linear infinite;
   }
   &::after{
-    content:'';position:absolute;inset:3px;border-radius:13px;z-index:1;
+    content:'';position:absolute;inset:3px;border-radius:12px;z-index:1;
     background:#0d1117;
   }
 `;
 const QRInner = styled.div`
-  position:relative;z-index:2;border-radius:12px;overflow:hidden;
-  padding:10px;background:#0d1117;
+  position:relative;z-index:2;padding:10px;
 `;
 const QRImg = styled.img`
-  width:200px;height:200px;object-fit:contain;display:block;border-radius:8px;
+  width:200px;height:200px;object-fit:contain;display:block;
   @media(max-width:400px){width:170px;height:170px;}
 `;
 
