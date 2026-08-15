@@ -204,11 +204,11 @@ export function LoginModal({ user, reason, onLogin, onLogout, onClose, onUpgrade
                   <div style={{fontSize:12,color:"var(--text-muted)",marginBottom:8}}>{user.email}</div>
                   <PlanBadge $plan={user.plan}>{PLAN_NAMES[user.plan]}</PlanBadge>
                 </div>
-                {user.plan !== "full_pro" && (
-                  <Btn $v="warn" $sm onClick={()=>{onClose();onUpgrade();}}>
-                    {isTH?"⬆ อัพเกรด":"⬆ Upgrade"}
-                  </Btn>
-                )}
+                <Btn $v={user.plan==="full_pro"?"secondary":"warn"} $sm onClick={()=>{onClose();onUpgrade();}}>
+                  {user.plan==="full_pro"
+                    ? (isTH?"🔄 ต่ออายุ":"🔄 Renew")
+                    : (isTH?"⬆ อัพเกรด":"⬆ Upgrade")}
+                </Btn>
               </PlanRow>
 
               {/* Expiry countdown */}

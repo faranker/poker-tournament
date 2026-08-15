@@ -55,13 +55,12 @@ const PPBadge = styled.div`
 
 /* QR card */
 const QRCard = styled.div`
-  background:#fff;border-radius:16px;padding:16px;
+  background:#fff;border-radius:12px;padding:8px;
   display:flex;align-items:center;justify-content:center;
   box-shadow:0 4px 24px rgba(0,0,0,.3);
 `;
 const QRImg = styled.img`
-  width:200px;height:200px;object-fit:contain;
-  @media(max-width:400px){width:160px;height:160px;}
+  width:100%;max-width:220px;object-fit:contain;display:block;
 `;
 
 /* Amount */
