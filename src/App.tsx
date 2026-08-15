@@ -9,6 +9,7 @@ import {
   Coffee, Camera, Trophy, Banknote, TrendingUp, TrendingDown, Check, ChevronDown,
 } from "lucide-react";
 import { SummaryCard } from "./components/SummaryCard";
+import PokerInsurance from "./components/PokerInsurance";
 import { LoginModal, NavLoginBtn } from "./components/LoginModal";
 import { PricingModal } from "./components/PricingModal";
 import { PaymentModal } from "./components/PaymentModal";
@@ -650,7 +651,7 @@ export default function App() {
   const [lang,   setLang]  = useState<Lang>("TH");
   const [theme,  setTheme] = useState<ThemeKey>("dark");
   const [mode,   setMode]  = useState<"TOURNAMENT"|"CASH">("CASH");
-  const [mobileTab, setMobileTab] = useState<"players"|"summary"|"settings"|"timer">("players");
+  const [mobileTab, setMobileTab] = useState<"players"|"summary"|"settings"|"timer"|"insurance">("players");
 
   /* ── Auth ── */
   const [user,        setUser]        = useState<AuthUser | null>(null);
@@ -1396,7 +1397,7 @@ export default function App() {
   /* ─────────────────────────────────────────
      Render
   ───────────────────────────────────────── */
-  const cashTabs  = ["players","summary","settings"] as const;
+  const cashTabs  = ["players","summary","insurance","settings"] as const;
   const tournTabs = ["timer","players","settings"]   as const;
   const activeTabs = mode==="CASH" ? cashTabs : tournTabs;
 
@@ -1533,10 +1534,11 @@ export default function App() {
         <MobileTabBar>
           {activeTabs.map(tab=>(
             <MobileTabBtn key={tab} $active={mobileTab===tab} onClick={()=>setMobileTab(tab)}>
-              {tab==="players"  ? t("players")
-               :tab==="summary" ? t("summary")
-               :tab==="settings"? t("settings")
-               :tab==="timer"   ? t("timer")
+              {tab==="players"    ? t("players")
+               :tab==="summary"   ? t("summary")
+               :tab==="settings"  ? t("settings")
+               :tab==="timer"     ? t("timer")
+               :tab==="insurance" ? (lang==="TH"?"ประกัน":"Insure")
                : tab}
             </MobileTabBtn>
           ))}
@@ -1551,7 +1553,14 @@ export default function App() {
           {mode==="CASH" && <>
             {/* Desktop 3-col */}
             <ThreeCols>
-              <Col>{SettingsPanel()}</Col>
+              <Col>
+                {SettingsPanel()}
+                {(plan==="cash_pro"||plan==="full_pro") && (
+                  <div style={{padding:"0 16px 16px"}}>
+                    <PokerInsurance lang={lang}/>
+                  </div>
+                )}
+              </Col>
               <Col>{PlayersPanel()}</Col>
               <Col>{SummaryPanel()}</Col>
             </ThreeCols>
@@ -1559,6 +1568,17 @@ export default function App() {
             {/* Mobile panels */}
             <MobilePanel $show={mobileTab==="players"}>{PlayersPanel()}</MobilePanel>
             <MobilePanel $show={mobileTab==="summary"}>{SummaryPanel()}</MobilePanel>
+            <MobilePanel $show={mobileTab==="insurance"}>
+              {(plan==="cash_pro"||plan==="full_pro")
+                ? <div style={{padding:"12px 16px"}}><PokerInsurance lang={lang}/></div>
+                : <div style={{padding:24,textAlign:"center",color:"var(--text-muted)",fontSize:14}}>
+                    🔒 {lang==="TH"?"ฟีเจอร์นี้สำหรับ Cash Pro / Full Pro":"This feature requires Cash Pro or Full Pro"}
+                    <br/><button style={{marginTop:12,padding:"8px 18px",borderRadius:8,border:"none",background:"var(--accent)",color:"#fff",fontWeight:700,cursor:"pointer",fontFamily:"inherit"}} onClick={()=>setShowPricing(true)}>
+                      {lang==="TH"?"อัพเกรด":"Upgrade"}
+                    </button>
+                  </div>
+              }
+            </MobilePanel>
             <MobilePanel $show={mobileTab==="settings"}>{SettingsPanel()}</MobilePanel>
           </>}
 
