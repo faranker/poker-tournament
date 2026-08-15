@@ -1,6 +1,30 @@
-import { supabase } from "./lib/supabase";
-import type { User } from "@supabase/supabase-js";
+const API = import.meta.env.VITE_API_URL as string;
 
+/* ── Token storage ────────────────────────────────────── */
+const TOKEN_KEY = "poker_token";
+const getToken  = () => localStorage.getItem(TOKEN_KEY);
+const setToken  = (t: string) => localStorage.setItem(TOKEN_KEY, t);
+const clearToken = () => localStorage.removeItem(TOKEN_KEY);
+
+async function apiFetch<T>(
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const token = getToken();
+  const res = await fetch(`${API}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Request failed");
+  return data as T;
+}
+
+/* ── Types ────────────────────────────────────────────── */
 export type Plan = "free" | "cash_pro" | "full_pro";
 
 export interface AuthUser {
@@ -11,7 +35,7 @@ export interface AuthUser {
   expiresAt: string | null;
 }
 
-/* ── Plan limits ──────────────────────────────────────── */
+/* ── Plan config ──────────────────────────────────────── */
 export const FREE_MAX_PLAYERS = 6;
 export const FREE_MAX_EXPORTS = 3;
 
@@ -27,153 +51,105 @@ export const PLAN_COLORS: Record<Plan, string> = {
   full_pro:  "#d4af37",
 };
 
-/* ── Internal helpers ─────────────────────────────────── */
-type Subscription = { plan: Plan; expiresAt: string | null };
-
-async function fetchSubscription(userId: string): Promise<Subscription> {
-  const { data } = await supabase
-    .from("subscriptions")
-    .select("plan, expires_at")
-    .eq("user_id", userId)
-    .single();
-  if (!data) return { plan: "free", expiresAt: null };
-  if (data.expires_at && new Date(data.expires_at) < new Date()) {
-    return { plan: "free", expiresAt: null };
-  }
-  return { plan: (data.plan as Plan) ?? "free", expiresAt: data.expires_at ?? null };
-}
-
-async function fetchUsername(userId: string): Promise<string | null> {
-  const { data } = await supabase
-    .from("profiles")
-    .select("username")
-    .eq("user_id", userId)
-    .single();
-  return data?.username ?? null;
-}
-
-async function buildAuthUser(u: User): Promise<AuthUser> {
-  const [sub, username] = await Promise.all([
-    fetchSubscription(u.id),
-    fetchUsername(u.id),
-  ]);
-  return { id: u.id, email: u.email!, username, ...sub };
-}
-
 /* ── Auth functions ───────────────────────────────────── */
 export async function signUp(
   email: string,
   username: string,
   password: string
 ): Promise<{ user: AuthUser | null; error: string | null }> {
-  const clean = username.toLowerCase().trim();
-
-  /* check username availability */
-  const { data: existing } = await supabase
-    .from("profiles")
-    .select("user_id")
-    .eq("username", clean)
-    .maybeSingle();
-  if (existing) return { user: null, error: "username นี้ถูกใช้แล้ว / Username already taken" };
-
-  const { data, error } = await supabase.auth.signUp({ email: email.trim(), password });
-  if (error) return { user: null, error: error.message };
-  if (!data.user) return { user: null, error: "Signup failed" };
-
-  await supabase.from("profiles").insert({
-    user_id: data.user.id,
-    username: clean,
-    email: email.trim().toLowerCase(),
-  });
-
-  // session = null หมายความว่า Supabase รอ email confirmation ก่อน
-  if (!data.session) return { user: null, error: null };
-
-  return {
-    user: { id: data.user.id, email: data.user.email!, username: clean, plan: "free", expiresAt: null },
-    error: null,
-  };
+  try {
+    const { token, user } = await apiFetch<{ token: string; user: AuthUser }>(
+      "/auth/register",
+      { method: "POST", body: JSON.stringify({ email, username, password }) }
+    );
+    setToken(token);
+    return { user, error: null };
+  } catch (e) {
+    return { user: null, error: (e as Error).message };
+  }
 }
 
 export async function signIn(
-  emailOrUsername: string,
+  identifier: string,
   password: string
 ): Promise<{ user: AuthUser | null; error: string | null }> {
-  let email = emailOrUsername.trim();
-
-  /* username → look up email */
-  if (!email.includes("@")) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("email")
-      .eq("username", email.toLowerCase())
-      .maybeSingle();
-    if (!data) return { user: null, error: "ไม่พบ username นี้ / Username not found" };
-    email = data.email;
+  try {
+    const { token, user } = await apiFetch<{ token: string; user: AuthUser }>(
+      "/auth/login",
+      { method: "POST", body: JSON.stringify({ identifier, password }) }
+    );
+    setToken(token);
+    return { user, error: null };
+  } catch (e) {
+    return { user: null, error: (e as Error).message };
   }
-
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { user: null, error: "อีเมล/username หรือรหัสผ่านไม่ถูกต้อง" };
-  if (!data.user) return { user: null, error: "Login failed" };
-
-  const user = await buildAuthUser(data.user);
-  return { user, error: null };
 }
 
 export async function signOut(): Promise<void> {
-  await supabase.auth.signOut();
+  clearToken();
 }
 
 export async function getSessionUser(): Promise<AuthUser | null> {
-  const { data } = await supabase.auth.getSession();
-  const u: User | null = data.session?.user ?? null;
-  if (!u) return null;
-  return buildAuthUser(u);
+  if (!getToken()) return null;
+  try {
+    const { user } = await apiFetch<{ user: AuthUser }>("/auth/me");
+    return user;
+  } catch {
+    clearToken();
+    return null;
+  }
 }
 
 export async function resetPassword(email: string): Promise<{ error: string | null }> {
-  const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-    redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}`,
-  });
-  return { error: error?.message ?? null };
+  try {
+    await apiFetch("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+    return { error: null };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
 }
 
 export async function checkUsername(username: string): Promise<boolean> {
-  const { data } = await supabase
-    .from("profiles")
-    .select("user_id")
-    .eq("username", username.toLowerCase().trim())
-    .maybeSingle();
-  return !data;
+  try {
+    const { available } = await apiFetch<{ available: boolean }>(
+      "/auth/check-username",
+      { method: "POST", body: JSON.stringify({ username }) }
+    );
+    return available;
+  } catch {
+    return false;
+  }
 }
 
 export async function refreshUser(userId: string): Promise<AuthUser | null> {
-  const { data } = await supabase.auth.getSession();
-  const u = data.session?.user;
-  if (!u || u.id !== userId) return null;
-  return buildAuthUser(u);
+  if (!getToken()) return null;
+  try {
+    const { user } = await apiFetch<{ user: AuthUser }>("/auth/me");
+    if (user.id !== userId) return null;
+    return user;
+  } catch {
+    return null;
+  }
 }
 
 /* ── Export count (per user per month) ───────────────── */
-const currentMonth = () => new Date().toISOString().slice(0, 7);
-
-export async function getExportCount(userId: string): Promise<number> {
-  const { data } = await supabase
-    .from("export_logs")
-    .select("count")
-    .eq("user_id", userId)
-    .eq("month", currentMonth())
-    .maybeSingle();
-  return data?.count ?? 0;
+export async function getExportCount(_userId: string): Promise<number> {
+  try {
+    const { count } = await apiFetch<{ count: number }>("/exports/count");
+    return count;
+  } catch {
+    return 0;
+  }
 }
 
-export async function incExportCount(userId: string): Promise<number> {
-  const month = currentMonth();
-  const current = await getExportCount(userId);
-  const next = current + 1;
-  await supabase.from("export_logs").upsert(
-    { user_id: userId, month, count: next },
-    { onConflict: "user_id,month" }
-  );
-  return next;
+export async function incExportCount(_userId: string): Promise<number> {
+  try {
+    await apiFetch("/exports", { method: "POST", body: JSON.stringify({ mode: "export" }) });
+    return await getExportCount(_userId);
+  } catch {
+    return 0;
+  }
 }
