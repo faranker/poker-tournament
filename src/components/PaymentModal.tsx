@@ -22,9 +22,9 @@ const Box = styled(Dialog.Content)`
 /* Header */
 const Header = styled.div`
   display:flex;align-items:center;gap:12px;
-  background:linear-gradient(135deg,#0a1f0a,#0d2b0d);
+  background:#0d1117;
   padding:16px 20px;border-radius:16px 16px 0 0;
-  border-bottom:1px solid #1a3a1a;
+  border-bottom:1px solid #1e2a1e;
 `;
 const LogoBox = styled.div`
   width:44px;height:44px;border-radius:10px;
