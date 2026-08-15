@@ -275,7 +275,9 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess: _on
                   <div>
                     <div>{isTH ? "ส่งสลิปเรียบร้อยแล้ว!" : "Slip submitted!"}</div>
                     <div style={{fontSize:12,opacity:.8,marginTop:2}}>
-                      {isTH ? "ทีมงานจะตรวจสอบและเปิดใช้งานภายใน 30 นาที" : "Our team will verify and activate within 30 minutes"}
+                      {isTH
+                        ? "ทีมงานจะตรวจสอบและเปิดใช้งานภายใน 5–10 นาที"
+                        : "Our team will verify and activate within 5–10 minutes"}
                     </div>
                   </div>
                 </StatusBox>
@@ -284,7 +286,20 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess: _on
               {!submitted && (
                 <StatusBox style={{marginTop:10}}>
                   <Clock size={16}/>
-                  <div>{isTH ? "เปิดใช้งานภายใน 30 นาที หลังจากตรวจสอบสลิป" : "Activated within 30 min after slip review"}</div>
+                  <div style={{lineHeight:1.6}}>
+                    {isTH
+                      ? <>
+                          ⏱ ปกติเปิดใช้งานภายใน <b>5–10 นาที</b> หลังได้รับสลิป<br/>
+                          🌙 ช่วง <b>23.00 – 02.00 น.</b> ระบบธนาคารอาจช้า<br/>
+                          การยืนยันยอดเข้าบัญชีอาจใช้เวลานานกว่าปกติ ขออภัยในความไม่สะดวก
+                        </>
+                      : <>
+                          ⏱ Usually activated within <b>5–10 minutes</b> after receiving slip<br/>
+                          🌙 During <b>11 PM – 2 AM</b> banking systems may be slow<br/>
+                          Verification may take longer than usual. We apologize for the inconvenience.
+                        </>
+                    }
+                  </div>
                 </StatusBox>
               )}
             </div>
