@@ -133,7 +133,7 @@ interface Props {
   onSuccess: () => void;
 }
 
-export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: Props) {
+export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess: _onSuccess }: Props) {
   const [file,      setFile]      = useState<File | null>(null);
   const [preview,   setPreview]   = useState<string | null>(null);
   const [loading,   setLoading]   = useState(false);
