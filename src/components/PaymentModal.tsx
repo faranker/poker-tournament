@@ -49,9 +49,8 @@ const Body = styled.div`padding:20px;display:flex;flex-direction:column;gap:16px
 /* PromptPay badge */
 const PPBadge = styled.div`
   display:flex;align-items:center;justify-content:center;gap:8px;
-  background:#fff;border-radius:8px;padding:8px 16px;
-  font-size:13px;font-weight:700;color:#1a7a1a;align-self:center;
-  span{color:#1a3a8a;}
+  background:transparent;border:1px solid #2a3a2a;border-radius:8px;padding:8px 16px;
+  font-size:13px;font-weight:700;align-self:center;
 `;
 
 /* QR card */
@@ -215,8 +214,8 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess: _on
 
           <Body>
             <PPBadge>
-              <span style={{color:"#1a7a1a",fontWeight:900}}>พร้อมเพย์</span>
-              <span style={{color:"#1a3a8a",fontWeight:900}}>PromptPay</span>
+              <span style={{color:"#22c55e",fontWeight:900}}>พร้อมเพย์</span>
+              <span style={{color:"#60a5fa",fontWeight:900}}>PromptPay</span>
             </PPBadge>
 
             <QRWrap>
