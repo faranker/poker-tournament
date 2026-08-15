@@ -15,6 +15,8 @@ app.use("/auth",          require("./routes/auth"));
 app.use("/subscriptions", require("./routes/subscriptions"));
 app.use("/exports",       require("./routes/exports"));
 app.use("/payments",      require("./routes/payments"));
+app.use("/telegram",      require("./routes/telegram-webhook"));
+app.use("/sessions",      require("./routes/sessions"));
 
 /* Health check */
 app.get("/health", async (_req, res) => {

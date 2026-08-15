@@ -21,6 +21,10 @@ import {
   PLAN_COLORS,
 } from "./auth";
 import { supabase } from "./lib/supabase";
+import {
+  useGamePersistence, loadLocal, loadCloud,
+  type GameState,
+} from "./hooks/useGamePersistence";
 
 /* ─────────────────────────────────────────
    i18n
@@ -654,9 +658,12 @@ type Result = {
    Component
 ───────────────────────────────────────── */
 export default function App() {
-  const [lang,   setLang]  = useState<Lang>("TH");
-  const [theme,  setTheme] = useState<ThemeKey>("dark");
-  const [mode,   setMode]  = useState<"TOURNAMENT"|"CASH">("CASH");
+  /* ── load persisted state once (before any useState defaults) ── */
+  const _saved = (() => { try { return loadLocal(); } catch { return null; } })();
+
+  const [lang,   setLang]  = useState<Lang>((_saved?.lang as Lang) ?? "TH");
+  const [theme,  setTheme] = useState<ThemeKey>((_saved?.theme as ThemeKey) ?? "dark");
+  const [mode,   setMode]  = useState<"TOURNAMENT"|"CASH">(_saved?.mode ?? "CASH");
   const [mobileTab, setMobileTab] = useState<"players"|"summary"|"settings"|"timer"|"insurance">("players");
 
   /* ── Auth ── */
@@ -685,23 +692,49 @@ export default function App() {
       setAppDialog({ type:"prompt", label, placeholder, resolve:(v)=>{ resolve(v); setAppDialog(null); } }));
 
   /* restore session on mount + listen for auth changes */
+  /* ── load cloud state when user logs in ── */
+  const applyGameState = (gs: GameState) => {
+    if (gs.mode)        setMode(gs.mode);
+    if (gs.lang)        setLang(gs.lang as Lang);
+    if (gs.theme)       setTheme(gs.theme as ThemeKey);
+    if (gs.players)     setPlayers(gs.players);
+    if (gs.tournament)  setTournament(gs.tournament);
+    if (gs.roundIndex !== undefined) setRoundIndex(gs.roundIndex);
+    if (gs.timeLeft   !== undefined) setTimeLeft(gs.timeLeft);
+    if (gs.breakTime  !== undefined) setBreakTime(gs.breakTime);
+    if (gs.modeBounty !== undefined) setModeBounty(gs.modeBounty);
+    if (gs.bountyPct  !== undefined) setBountyPct(gs.bountyPct);
+    if (gs.prizeWinners) setPrizeWinners(gs.prizeWinners);
+  };
+
   useEffect(() => {
-    getSessionUser().then(u => {
+    getSessionUser().then(async u => {
       setUser(u);
-      if (u) getExportCount(u.id).then(setExportCount);
+      if (u) {
+        getExportCount(u.id).then(setExportCount);
+        /* load cloud state on mount if logged in */
+        const cloud = await loadCloud();
+        if (cloud) applyGameState(cloud);
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         const u = await getSessionUser();
         setUser(u);
-        if (u) getExportCount(u.id).then(setExportCount);
+        if (u) {
+          getExportCount(u.id).then(setExportCount);
+          /* load cloud state on login */
+          const cloud = await loadCloud();
+          if (cloud) applyGameState(cloud);
+        }
       } else {
         setUser(null);
         setExportCount(0);
       }
     });
     return () => subscription.unsubscribe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* ── Refresh plan when tab comes back into focus ── */
@@ -723,28 +756,32 @@ export default function App() {
   const t = (key: keyof typeof T.TH) => T[lang][key] as string;
 
   /* ── Tournament state ── */
-  const [tournament, setTournament] = useState({
+  const _defTournament = {
     name:"", buyIn:200, payouts:[50,30,20],
     rounds:[
       {sb:100,bb:200,ante:200,duration:10*60},
       {sb:200,bb:400,ante:400,duration:10*60},
       {sb:400,bb:800,ante:800,duration:10*60},
     ],
-  });
+  };
+  const [tournament, setTournament] = useState(_saved?.tournament ?? _defTournament);
   const [openModal,   setOpenModal]   = useState(false);
   const [newLevel,    setNewLevel]    = useState({sb:0,bb:0,ante:0,duration:0});
-  const [roundIndex,  setRoundIndex]  = useState(0);
-  const [timeLeft,    setTimeLeft]    = useState(tournament.rounds[0]?.duration??0);
-  const [running,     setRunning]     = useState(false);
-  const [breakTime,   setBreakTime]   = useState(false);
-  const [modeBounty,  setModeBounty]  = useState(false);
-  const [bountyPct,   setBountyPct]   = useState(20);
-  const [prizeWinners,setPrizeWinners]= useState<{name:string;amount:number;count:number;profit:number}[]>([]);
+  const [roundIndex,  setRoundIndex]  = useState(_saved?.roundIndex ?? 0);
+  const [timeLeft,    setTimeLeft]    = useState(_saved?.timeLeft ?? (_saved?.tournament?.rounds[0]?.duration ?? 10*60));
+  const [running,     setRunning]     = useState(false); // never restore running=true (page was closed)
+  const [breakTime,   setBreakTime]   = useState(_saved?.breakTime ?? false);
+  const [modeBounty,  setModeBounty]  = useState(_saved?.modeBounty ?? false);
+  const [bountyPct,   setBountyPct]   = useState(_saved?.bountyPct ?? 20);
+  const [prizeWinners,setPrizeWinners]= useState<{name:string;amount:number;count:number;profit:number}[]>(_saved?.prizeWinners ?? []);
 
   /* ── Cash state ── */
 
   /* ── Shared players ── */
-  const [players, setPlayers] = useState<{name:string;buyInTotal:number;bounty:number;cashout:number;count:number}[]>([]);
+  const [players, setPlayers] = useState<{name:string;buyInTotal:number;bounty:number;cashout:number;count:number}[]>(_saved?.players ?? []);
+
+  /* ── Save status indicator ── */
+  const [saveStatus, setSaveStatus] = useState<"saving"|"saved"|"idle">("idle");
 
   const summaryRef = useRef<HTMLDivElement>(null);
 
@@ -772,6 +809,15 @@ export default function App() {
   },[running,timeLeft,tournament.rounds]);
 
   useEffect(()=>{levelUpSound.load();},[]);
+
+  /* ── Persist game state (localStorage always, cloud when logged in) ── */
+  const gameStateSnapshot = {
+    mode, lang, theme, players, tournament,
+    roundIndex, timeLeft, running, breakTime,
+    modeBounty, bountyPct, prizeWinners,
+  } satisfies GameState;
+
+  useGamePersistence(!!user, gameStateSnapshot, setSaveStatus);
 
   /* ── Calculations ── */
   const totalBuyIn   = players.reduce((s,p)=>s+p.count,0);
@@ -1528,6 +1574,19 @@ export default function App() {
             )}
           </HeaderRight>
         </Header>
+        {/* Save status indicator */}
+        {saveStatus !== "idle" && (
+          <div style={{
+            position:"fixed",bottom:16,right:16,zIndex:9999,
+            background:"var(--surface)",border:"1px solid var(--border2)",
+            borderRadius:8,padding:"6px 12px",fontSize:12,fontWeight:700,
+            color: saveStatus==="saved" ? "var(--success)" : "var(--text-muted)",
+            boxShadow:"var(--shadow-lg)",display:"flex",alignItems:"center",gap:6,
+            transition:"opacity .3s",
+          }}>
+            {saveStatus==="saving" ? "⏳ กำลังบันทึก..." : "✅ บันทึกแล้ว"}
+          </div>
+        )}
 
         {/* ── Mobile: mode select ── */}
         <MobileModeRow>
