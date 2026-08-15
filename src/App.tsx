@@ -1024,9 +1024,10 @@ export default function App() {
                 <Btn $v="primary" $sm onClick={()=>cashBuy(i,false)}>−</Btn>
               </div>
               <div onClick={e=>e.stopPropagation()}>
-                <Input type="number" value={p.cashout||0}
+                <Input type="number" value={p.cashout===0?"":p.cashout}
                   style={{fontSize:13,fontWeight:600}}
-                  onChange={e=>{const np=[...players];np[i].cashout=Number(e.target.value);setPlayers(np);}} />
+                  onChange={e=>{const np=[...players];np[i].cashout=Number(e.target.value)||0;setPlayers(np);}}
+                  onBlur={e=>{if(e.target.value===""){const np=[...players];np[i].cashout=0;setPlayers(np);}}} />
               </div>
               <Btn $v="ghost" $sm onClick={e=>{e.stopPropagation();removePlayer(i);}}><X size={13} /></Btn>
             </PlayerRow>
@@ -1051,8 +1052,9 @@ export default function App() {
               </MobileBuyBtns>
               <CashOutRow>
                 <CashLabel>{t("cashOut")}</CashLabel>
-                <CashInput type="number" value={p.cashout||0}
-                  onChange={e=>{const np=[...players];np[i].cashout=Number(e.target.value);setPlayers(np);}} />
+                <CashInput type="number" value={p.cashout===0?"":p.cashout}
+                  onChange={e=>{const np=[...players];np[i].cashout=Number(e.target.value)||0;setPlayers(np);}}
+                  onBlur={e=>{if(e.target.value===""){const np=[...players];np[i].cashout=0;setPlayers(np);}}} />
               </CashOutRow>
             </PlayerCardMobile>
           </div>
