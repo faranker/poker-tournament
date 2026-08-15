@@ -11,6 +11,7 @@ import {
 import { SummaryCard } from "./components/SummaryCard";
 import { LoginModal, NavLoginBtn } from "./components/LoginModal";
 import { PricingModal } from "./components/PricingModal";
+import { PaymentModal } from "./components/PaymentModal";
 import { AppDialog, type DialogConfig } from "./components/AppDialog";
 import {
   getSessionUser, refreshUser, type AuthUser, type Plan,
@@ -656,6 +657,7 @@ export default function App() {
   const [showLogin,   setShowLogin]   = useState(false);
   const [loginReason, setLoginReason] = useState("");
   const [showPricing, setShowPricing] = useState(false);
+  const [paymentPlan, setPaymentPlan] = useState<{plan: Plan; cycle: "monthly"|"yearly"}|null>(null);
 
   const plan: Plan = user?.plan ?? "free";
   const [exportCount, setExportCount] = useState(0);
@@ -1420,7 +1422,18 @@ export default function App() {
           <PricingModal
             currentPlan={plan} lang={lang}
             onClose={()=>setShowPricing(false)}
-            onUpgrade={()=>setShowPricing(false)}
+            onUpgrade={(p)=>{ setShowPricing(false); setPaymentPlan({plan:p, cycle:"monthly"}); }}
+          />
+        )}
+
+        {/* ── Payment Modal ── */}
+        {paymentPlan && (
+          <PaymentModal
+            plan={paymentPlan.plan}
+            billingCycle={paymentPlan.cycle}
+            lang={lang}
+            onClose={()=>setPaymentPlan(null)}
+            onSuccess={()=>setPaymentPlan(null)}
           />
         )}
 
