@@ -1,3 +1,4 @@
+import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import styled, { css, keyframes } from "styled-components";
 import { Check, X, Spade } from "lucide-react";
@@ -81,17 +82,38 @@ const Note = styled.p`
   font-size:13px;color:var(--text-dim);text-align:center;margin-top:16px;line-height:1.6;
 `;
 
+/* Billing toggle */
+const ToggleWrap = styled.div`
+  display:flex;align-items:center;justify-content:center;gap:0;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;padding:4px;margin-bottom:24px;align-self:center;width:fit-content;margin-left:auto;margin-right:auto;
+`;
+const ToggleBtn = styled.button<{$active?:boolean}>`
+  padding:7px 20px;border-radius:7px;border:none;cursor:pointer;
+  font-size:13px;font-weight:700;font-family:inherit;transition:all .18s;
+  ${p=>p.$active
+    ? "background:var(--accent);color:#fff;box-shadow:0 2px 8px var(--accent-glow);"
+    : "background:transparent;color:var(--text-muted);&:hover{color:var(--text);}"}
+`;
+const SaveBadge = styled.span`
+  font-size:10px;font-weight:800;background:#16a34a22;color:var(--success);
+  border:1px solid #16a34a44;border-radius:10px;padding:1px 7px;margin-left:6px;
+`;
+
+export type BillingCycle = "monthly" | "yearly";
+
 interface Props {
   currentPlan: Plan;
   lang: "TH" | "EN";
   onClose: () => void;
-  onUpgrade: (plan: Plan) => void;
+  onUpgrade: (plan: Plan, cycle: BillingCycle) => void;
 }
 
 type PlanDef = {
   key: Plan;
   nameTH: string; nameEN: string;
-  price: string; priceAlt: string;
+  monthly: number | null; yearly: number | null;
+  savePct?: number;
   featuresTH: { text: string; ok?: boolean }[];
   featuresEN: { text: string; ok?: boolean }[];
 };
@@ -100,7 +122,7 @@ const PLANS: PlanDef[] = [
   {
     key: "free",
     nameTH: "Free", nameEN: "Free",
-    price: "ฟรี", priceAlt: "ตลอดไป / Forever",
+    monthly: null, yearly: null,
     featuresTH: [
       { text: "Cash Game ≤ 6 คน" },
       { text: "Tournament (default blind เท่านั้น)" },
@@ -117,7 +139,7 @@ const PLANS: PlanDef[] = [
   {
     key: "cash_pro",
     nameTH: "Cash Pro", nameEN: "Cash Pro",
-    price: "49฿", priceAlt: "299฿/ปี (ประหยัด 41%)",
+    monthly: 49, yearly: 299, savePct: 41,
     featuresTH: [
       { text: "Cash Game ไม่จำกัดผู้เล่น" },
       { text: "Export/Share ไม่จำกัด ไม่มี watermark" },
@@ -134,7 +156,7 @@ const PLANS: PlanDef[] = [
   {
     key: "full_pro",
     nameTH: "Full Pro", nameEN: "Full Pro",
-    price: "99฿", priceAlt: "499฿/ปี (ประหยัด 58%)",
+    monthly: 99, yearly: 499, savePct: 58,
     featuresTH: [
       { text: "ทุกอย่างใน Cash Pro" },
       { text: "Tournament เต็มรูปแบบ (custom blind, bounty)" },
@@ -152,6 +174,7 @@ const PLANS: PlanDef[] = [
 
 export function PricingModal({ currentPlan, lang, onClose, onUpgrade }: Props) {
   const isTH = lang === "TH";
+  const [cycle, setCycle] = useState<BillingCycle>("monthly");
 
   return (
     <Dialog.Root open onOpenChange={open=>{ if(!open) onClose(); }}>
@@ -163,16 +186,37 @@ export function PricingModal({ currentPlan, lang, onClose, onUpgrade }: Props) {
           </Title>
           <Sub>{isTH ? "อัพเกรดเพื่อใช้งานได้เต็มที่" : "Upgrade to unlock all features"}</Sub>
 
+          {/* Billing toggle */}
+          <ToggleWrap>
+            <ToggleBtn $active={cycle==="monthly"} onClick={()=>setCycle("monthly")}>
+              {isTH?"รายเดือน":"Monthly"}
+            </ToggleBtn>
+            <ToggleBtn $active={cycle==="yearly"} onClick={()=>setCycle("yearly")}>
+              {isTH?"รายปี":"Yearly"}
+              <SaveBadge>{isTH?"ประหยัดสูงสุด 58%":"Save up to 58%"}</SaveBadge>
+            </ToggleBtn>
+          </ToggleWrap>
+
           <Grid>
             {PLANS.map(p => {
               const isCurrent = currentPlan === p.key;
               const features = isTH ? p.featuresTH : p.featuresEN;
+              const price = cycle==="yearly" ? p.yearly : p.monthly;
+              const priceUnit = cycle==="yearly"
+                ? (isTH?"/ปี":"/yr")
+                : (isTH?"/เดือน":"/mo");
+              const altPrice = cycle==="yearly"
+                ? (p.monthly ? (isTH?`เทียบเท่า ${Math.round(p.yearly!/12)}฿/เดือน`:`≈ ${Math.round(p.yearly!/12)}฿/mo`) : "")
+                : (p.yearly ? (isTH?`${p.yearly}฿/ปี (ประหยัด ${p.savePct}%)`:`${p.yearly}฿/yr (save ${p.savePct}%)`) : "");
               return (
                 <PlanCard key={p.key} $plan={p.key} $current={isCurrent}>
                   {isCurrent && <CurrentBadge $plan={p.key}>{isTH ? "แพลนปัจจุบัน" : "Current"}</CurrentBadge>}
                   <PlanName $plan={p.key}>{isTH ? p.nameTH : p.nameEN}</PlanName>
-                  <Price>{p.price} <span>{p.key !== "free" ? "/เดือน" : ""}</span></Price>
-                  <PriceAlt>{p.priceAlt}</PriceAlt>
+                  <Price>
+                    {price ? `${price}฿` : (isTH?"ฟรี":"Free")}
+                    {price && <span>{priceUnit}</span>}
+                  </Price>
+                  <PriceAlt>{altPrice || (isTH?"ตลอดไป":"Forever")}</PriceAlt>
                   <Divider />
                   <FeatureList>
                     {features.map((f, i) => (
@@ -185,7 +229,7 @@ export function PricingModal({ currentPlan, lang, onClose, onUpgrade }: Props) {
                     ))}
                   </FeatureList>
                   <Btn $plan={p.key} $full disabled={p.key === "free"}
-                    onClick={() => onUpgrade(p.key)}>
+                    onClick={() => onUpgrade(p.key, cycle)}>
                     {p.key === "free"
                       ? (isTH ? "ฟรี" : "Free")
                       : isCurrent

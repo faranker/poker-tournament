@@ -1422,7 +1422,7 @@ export default function App() {
           <PricingModal
             currentPlan={plan} lang={lang}
             onClose={()=>setShowPricing(false)}
-            onUpgrade={(p)=>{ setShowPricing(false); setPaymentPlan({plan:p, cycle:"monthly"}); }}
+            onUpgrade={(p,c)=>{ setShowPricing(false); setPaymentPlan({plan:p, cycle:c}); }}
           />
         )}
 
