@@ -6,6 +6,7 @@ import type { Plan } from "../auth";
 
 const overlayShow = keyframes`from{opacity:0}to{opacity:1}`;
 const contentShow = keyframes`from{opacity:0;transform:translate(-50%,-48%) scale(.97)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}`;
+const rotateBorder = keyframes`from{transform:rotate(0deg)}to{transform:rotate(360deg)}`;
 
 const Overlay = styled(Dialog.Overlay)`
   position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:2200;backdrop-filter:blur(6px);
@@ -54,13 +55,26 @@ const PPBadge = styled.div`
 `;
 
 /* QR card */
-const QRCard = styled.div`
-  background:#fff;border-radius:12px;padding:8px;
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 4px 24px rgba(0,0,0,.3);
+const QRWrap = styled.div`
+  position:relative;display:flex;align-items:center;justify-content:center;
+  padding:3px;border-radius:16px;align-self:center;
+  &::before{
+    content:'';position:absolute;inset:0;border-radius:16px;z-index:0;
+    background:conic-gradient(from 0deg,#22c55e,#16a34a,#4ade80,#22c55e);
+    animation:${rotateBorder} 3s linear infinite;
+  }
+  &::after{
+    content:'';position:absolute;inset:3px;border-radius:13px;z-index:1;
+    background:#0d1117;
+  }
+`;
+const QRInner = styled.div`
+  position:relative;z-index:2;border-radius:12px;overflow:hidden;
+  padding:10px;background:#0d1117;
 `;
 const QRImg = styled.img`
-  width:100%;max-width:220px;object-fit:contain;display:block;
+  width:200px;height:200px;object-fit:contain;display:block;border-radius:8px;
+  @media(max-width:400px){width:170px;height:170px;}
 `;
 
 /* Amount */
@@ -192,9 +206,11 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess: _on
               <span style={{color:"#1a3a8a",fontWeight:900}}>PromptPay</span>
             </PPBadge>
 
-            <QRCard>
-              <QRImg src="/promptpay-qr.jpg" alt="PromptPay QR" />
-            </QRCard>
+            <QRWrap>
+              <QRInner>
+                <QRImg src="/promptpay-qr.jpg" alt="PromptPay QR" />
+              </QRInner>
+            </QRWrap>
 
             <AmountBox>
               <div className="label">{isTH ? "ยอดที่ต้องชำระ" : "Amount to Pay"}</div>

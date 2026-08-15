@@ -184,12 +184,12 @@ export function PricingModal({ currentPlan, lang, onClose, onUpgrade }: Props) {
                       </Feature>
                     ))}
                   </FeatureList>
-                  <Btn $plan={p.key} $full disabled={isCurrent || p.key === "free"}
+                  <Btn $plan={p.key} $full disabled={p.key === "free"}
                     onClick={() => onUpgrade(p.key)}>
-                    {isCurrent
-                      ? (isTH ? "แพลนปัจจุบัน" : "Current Plan")
-                      : p.key === "free"
-                        ? (isTH ? "ฟรี" : "Free")
+                    {p.key === "free"
+                      ? (isTH ? "ฟรี" : "Free")
+                      : isCurrent
+                        ? (isTH ? "🔄 ต่ออายุ" : "🔄 Renew")
                         : (isTH ? "อัพเกรด" : "Upgrade")}
                   </Btn>
                 </PlanCard>
