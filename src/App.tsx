@@ -153,7 +153,7 @@ const AVATAR_COLORS = [
 const GlobalStyle = createGlobalStyle<{ $t: ThemeKey }>`
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   :root{ ${p => themeVars[p.$t]} }
-  body{background:var(--bg);color:var(--text);font-family:'Kanit',system-ui,sans-serif;
+  body{background:var(--bg);color:var(--text);font-family:'Noto Sans Thai',system-ui,sans-serif;
        -webkit-font-smoothing:antialiased;font-size:16px;}
   input[type=number]::-webkit-inner-spin-button{opacity:1}
   ::-webkit-scrollbar{width:5px;height:5px}
