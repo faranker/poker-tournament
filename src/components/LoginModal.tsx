@@ -280,14 +280,8 @@ export function LoginModal({ user, reason, onLogin, onLogout, onClose, onUpgrade
       <Dialog.Portal>
         <Overlay />
         <Box>
-          <Title style={{justifyContent:"center",flexDirection:"column",gap:2,marginBottom:20}}>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <span style={{fontSize:26}}>🃏</span>
-              <span style={{fontSize:22,fontWeight:900,letterSpacing:1}}>GO POKER</span>
-            </div>
-            <div style={{fontSize:11,fontWeight:500,color:"var(--text-dim)",letterSpacing:2,textTransform:"uppercase"}}>
-              ♠ &nbsp;POKER TIMER&nbsp; ♠
-            </div>
+          <Title style={{justifyContent:"center",marginBottom:20}}>
+            <img src="/logo.PNG" alt="Go Poker" style={{height:48,objectFit:"contain"}} />
           </Title>
 
           {reason && <ReasonBanner>{reason}</ReasonBanner>}
