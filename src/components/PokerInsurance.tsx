@@ -100,9 +100,9 @@ const TriggerBtn = styled.button`
 const REMAINING: Record<string,"45"|"44"> = { flop:"45", turn:"44" };
 const fmtN = (n: number) => Math.round(n).toLocaleString("en-US");
 
-interface Props { lang: "TH" | "EN" }
+interface Props { lang: "TH" | "EN"; inline?: boolean }
 
-export default function PokerInsurance({ lang }: Props) {
+export default function PokerInsurance({ lang, inline }: Props) {
   const isTH = lang === "TH";
   const [open,       setOpen]       = useState(false);
   const [pot,        setPot]        = useState("");
@@ -131,26 +131,9 @@ export default function PokerInsurance({ lang }: Props) {
 
   const hasResult = potNum > 0 && totalOuts > 0 && safeBuy > 0;
 
-  return (
-    <>
-      <TriggerBtn onClick={()=>setOpen(true)}>
-        <ShieldCheck size={15}/>
-        {isTH ? "คำนวณประกัน (Insurance)" : "Insurance Calculator"}
-      </TriggerBtn>
-
-      <Dialog.Root open={open} onOpenChange={setOpen}>
-        <Dialog.Portal>
-          <Overlay />
-          <Box>
-            <ModalHeader>
-              <ModalTitle>
-                <ShieldCheck size={17} style={{color:"var(--success)"}}/>
-                {isTH ? "คำนวณประกัน" : "Insurance Calculator"}
-              </ModalTitle>
-              <CloseBtn onClick={()=>setOpen(false)}><X size={18}/></CloseBtn>
-            </ModalHeader>
-
-            {/* Pot */}
+  const content = (
+    <div>
+      {/* Pot */}
             <FieldLabel>{isTH ? "ยอด Pot (บาท)" : "Pot Size (฿)"}</FieldLabel>
             <Input
               type="number" inputMode="numeric"
@@ -265,6 +248,39 @@ export default function PokerInsurance({ lang }: Props) {
                 {isTH?"กรอกยอด Pot เพื่อคำนวณ":"Enter pot size to calculate"}
               </div>
             )}
+    </div>
+  );
+
+  if (inline) return (
+    <div style={{padding:"12px 0"}}>
+      <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:16,
+        fontSize:14,fontWeight:800,color:"var(--text)",textTransform:"uppercase",letterSpacing:".06em"}}>
+        <ShieldCheck size={16} style={{color:"var(--success)"}}/>
+        {isTH ? "คำนวณประกัน" : "Insurance Calculator"}
+      </div>
+      {content}
+    </div>
+  );
+
+  return (
+    <>
+      <TriggerBtn onClick={()=>setOpen(true)}>
+        <ShieldCheck size={15}/>
+        {isTH ? "คำนวณประกัน (Insurance)" : "Insurance Calculator"}
+      </TriggerBtn>
+
+      <Dialog.Root open={open} onOpenChange={setOpen}>
+        <Dialog.Portal>
+          <Overlay />
+          <Box>
+            <ModalHeader>
+              <ModalTitle>
+                <ShieldCheck size={17} style={{color:"var(--success)"}}/>
+                {isTH ? "คำนวณประกัน" : "Insurance Calculator"}
+              </ModalTitle>
+              <CloseBtn onClick={()=>setOpen(false)}><X size={18}/></CloseBtn>
+            </ModalHeader>
+            {content}
           </Box>
         </Dialog.Portal>
       </Dialog.Root>

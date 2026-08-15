@@ -1588,7 +1588,7 @@ export default function App() {
                     </button>
                   </div>
                 : (plan==="cash_pro"||plan==="full_pro")
-                  ? <div style={{padding:"12px 16px"}}><PokerInsurance lang={lang}/></div>
+                  ? <div style={{padding:"12px 16px"}}><PokerInsurance lang={lang} inline/></div>
                   : <div style={{padding:32,textAlign:"center",color:"var(--text-muted)",fontSize:14,display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
                       <span style={{fontSize:32}}>🔒</span>
                       <div style={{fontWeight:700,color:"var(--text)"}}>
