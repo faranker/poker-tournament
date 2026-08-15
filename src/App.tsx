@@ -1465,7 +1465,7 @@ export default function App() {
 
         {/* ── Header ── */}
         <Header>
-          <LogoImg src={`${BASE}logo.png`} alt="Go Poker" />
+          <LogoImg src={`${BASE}logo333.png`} alt="Go Poker" />
 
           <ModeTabs>
             <ModeTab $active={mode==="TOURNAMENT"} onClick={()=>handleChangeMode("TOURNAMENT")}>
