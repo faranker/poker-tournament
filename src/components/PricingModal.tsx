@@ -248,10 +248,12 @@ export function PricingModal({ currentPlan, lang, onClose, onUpgrade }: Props) {
 
           <Note>
             {isTH
-              ? "💳 ชำระผ่าน PromptPay QR · ยกเลิกได้ทุกเมื่อ · ราคารวม VAT แล้ว"
-              : "💳 Pay via PromptPay QR · Cancel anytime · VAT included"}
+              ? "💳 PromptPay QR · ราคารวม VAT แล้ว"
+              : "💳 PromptPay QR · VAT included"}
             <br />
-            {isTH ? "ระบบ payment กำลังเปิดให้บริการเร็วๆ นี้" : "Payment system coming soon"}
+            {isTH
+              ? "พร้อมให้บริการแล้ว ชำระเงินผ่าน PromptPay QR ได้ทันที"
+              : "Now available — pay instantly via PromptPay QR"}
           </Note>
 
           <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
