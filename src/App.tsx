@@ -582,7 +582,7 @@ const BigTimer = styled.div<{$urgent?:boolean}>`
   letter-spacing:-1px;color:var(--timer-color);
   ${p=>p.$urgent&&css`color:var(--accent);animation:${glow} 1.5s ease-in-out infinite;`}
   @media(max-width:640px){font-size:42px;}
-  :fullscreen &, :-webkit-full-screen &{ font-size:min(18vmin,160px);letter-spacing:-2px; }
+  :fullscreen &, :-webkit-full-screen &{ font-size:min(13vmin,110px);letter-spacing:-2px; }
 `;
 const StatusLabel = styled.div<{$urgent?:boolean}>`
   font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
@@ -610,8 +610,10 @@ const BlindCard = styled.div`
 
 const TimerCtrl = styled.div`
   display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;
-  :fullscreen &, :-webkit-full-screen &{ gap:16px;
-    button{ transform:scale(1.4); }
+  :fullscreen &, :-webkit-full-screen &{
+    gap:20px;
+    button{ padding:14px 20px !important;font-size:18px !important; }
+    button svg{ width:22px;height:22px; }
   }
 `;
 
