@@ -13,7 +13,48 @@ router.post("/webhook", async (req, res) => {
   if (!cb) return;
 
   const callbackId = cb.id;
-  const data       = cb.data || "";          // "approve_4" | "reject_4"
+  const data       = cb.data || "";
+
+  /* donate_approve_N | donate_reject_N */
+  if (data.startsWith("donate_")) {
+    const parts = data.split("_");           // ["donate","approve","5"]
+    const dAction = parts[1];
+    const dId     = parseInt(parts[2], 10);
+    if (!dId || !["approve","reject"].includes(dAction)) {
+      await answerCallback(callbackId, "❓ ไม่รู้จัก action นี้");
+      return;
+    }
+    try {
+      const { rows } = await query(
+        "select * from donations where id=$1 and status='pending'", [dId]
+      );
+      if (!rows[0]) { await answerCallback(callbackId, "⚠️ ไม่พบหรือดำเนินการแล้ว"); return; }
+      const d = rows[0];
+
+      if (dAction === "approve") {
+        await query("update donations set status='approved', approved_at=now() where id=$1", [dId]);
+        await answerCallback(callbackId, `✅ Approved donation #${dId}!`);
+        await editMessageCaption(cb.message,
+          `🩷 <b>APPROVED — Donation #${dId}</b>\n\n` +
+          `👤 ชื่อ: <b>${d.display_name}</b>\n` +
+          `💰 ยอด: <b>${Number(d.amount).toLocaleString()} บาท</b>\n` +
+          `🕐 Approved: ${new Date().toLocaleString("th-TH")}`
+        );
+      } else {
+        await query("update donations set status='rejected' where id=$1 and status='pending'", [dId]);
+        await answerCallback(callbackId, `❌ Rejected donation #${dId}`);
+        await editMessageCaption(cb.message,
+          `❌ <b>REJECTED — Donation #${dId}</b>\n🕐 ${new Date().toLocaleString("th-TH")}`
+        );
+      }
+    } catch (err) {
+      console.error("[donate-webhook]", err);
+      await answerCallback(callbackId, "❌ เกิดข้อผิดพลาด");
+    }
+    return;
+  }
+
+  /* approve_N | reject_N (payment) */
   const [action, idStr] = data.split("_");
   const id = parseInt(idStr, 10);
 

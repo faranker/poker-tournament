@@ -13,6 +13,7 @@ import PokerInsurance from "./components/PokerInsurance";
 import { LoginModal, NavLoginBtn } from "./components/LoginModal";
 import { PricingModal } from "./components/PricingModal";
 import { PaymentModal } from "./components/PaymentModal";
+import { DonateModal } from "./components/DonateModal";
 import { AppDialog, type DialogConfig } from "./components/AppDialog";
 import {
   getSessionUser, refreshUser, type AuthUser, type Plan,
@@ -672,6 +673,7 @@ export default function App() {
   const [loginReason, setLoginReason] = useState("");
   const [showPricing, setShowPricing] = useState(false);
   const [paymentPlan, setPaymentPlan] = useState<{plan: Plan; cycle: "monthly"|"yearly"}|null>(null);
+  const [showDonate,  setShowDonate]  = useState(false);
 
   const plan: Plan = user?.plan ?? "free";
   const [exportCount, setExportCount] = useState(0);
@@ -1492,6 +1494,16 @@ export default function App() {
           />
         )}
 
+        {/* ── Donate Modal ── */}
+        {showDonate && (
+          <DonateModal
+            lang={lang}
+            defaultName={user?.username ?? ""}
+            userId={user?.id}
+            onClose={() => setShowDonate(false)}
+          />
+        )}
+
         {/* ── Add Level Modal ── */}
         <Dialog.Root open={openModal} onOpenChange={open=>{ if(!open) setOpenModal(false); }}>
           <Dialog.Portal>
@@ -1574,6 +1586,23 @@ export default function App() {
             )}
           </HeaderRight>
         </Header>
+        {/* Donate floating button */}
+        <button
+          onClick={() => setShowDonate(true)}
+          style={{
+            position:"fixed",bottom:16,left:16,zIndex:9998,
+            width:40,height:40,borderRadius:"50%",border:"none",
+            background:"linear-gradient(135deg,#be185d,#e879a0)",
+            color:"#fff",fontSize:18,cursor:"pointer",
+            display:"flex",alignItems:"center",justifyContent:"center",
+            boxShadow:"0 4px 12px rgba(232,121,160,.45)",
+            transition:"transform .18s,opacity .18s",
+          }}
+          onMouseEnter={e=>(e.currentTarget.style.transform="scale(1.12)")}
+          onMouseLeave={e=>(e.currentTarget.style.transform="scale(1)")}
+          title={lang==="TH"?"Support ผู้พัฒนา":"Support Developer"}
+        >🩷</button>
+
         {/* Save status indicator */}
         {saveStatus !== "idle" && (
           <div style={{
