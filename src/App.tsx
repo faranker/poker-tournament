@@ -1447,17 +1447,19 @@ export default function App() {
         const next = tournament.rounds[roundIndex+1];
         if(!next) return null;
         return (
-          <div style={{fontSize:12,color:"var(--text-muted)",display:"flex",alignItems:"center",gap:6,
-            background:"var(--surface2)",border:"1px solid var(--border)",
-            borderRadius:"var(--radius-sm)",padding:"5px 14px"}}>
-            <span style={{fontWeight:700,textTransform:"uppercase",letterSpacing:".07em"}}>
-              {lang==="TH"?"Level ถัดไป":"Next"}
+          <div style={{width:"100%",background:"var(--surface2)",border:"1px solid var(--border)",
+            borderRadius:"var(--radius-sm)",padding:"10px 16px",display:"flex",
+            flexDirection:"column",alignItems:"center",gap:4}}>
+            <span style={{fontSize:11,fontWeight:700,textTransform:"uppercase",
+              letterSpacing:".1em",color:"var(--text-muted)"}}>
+              {lang==="TH"?"Level ถัดไป":"Next Level"}
             </span>
-            <span style={{color:"var(--border2)"}}>·</span>
             {next.isBreak
-              ? <span style={{color:"#60a5fa",fontWeight:700}}>☕ Break · {fmt(next.duration)}</span>
-              : <span style={{fontWeight:600}}>
-                  {fmtN(next.sb)}/{fmtN(next.bb)}{next.ante?` · ${fmtN(next.ante)} ante`:""} · {fmt(next.duration)}
+              ? <span style={{fontSize:18,fontWeight:800,color:"#60a5fa"}}>☕ Break · {fmt(next.duration)}</span>
+              : <span style={{fontSize:18,fontWeight:800,color:"var(--text)"}}>
+                  {fmtN(next.sb)} / {fmtN(next.bb)}
+                  {next.ante ? <span style={{fontSize:14,fontWeight:600,color:"var(--text-muted)"}}> · Ante {fmtN(next.ante)}</span> : null}
+                  <span style={{fontSize:14,fontWeight:600,color:"var(--text-muted)"}}> · {fmt(next.duration)}</span>
                 </span>
             }
           </div>
