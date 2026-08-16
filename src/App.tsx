@@ -1475,7 +1475,7 @@ export default function App() {
         {/* ── Pricing Modal ── */}
         {showPricing && (
           <PricingModal
-            currentPlan={plan} lang={lang}
+            currentPlan={plan} lang={lang} user={user}
             onClose={()=>setShowPricing(false)}
             onUpgrade={(p,c)=>{ setShowPricing(false); setPaymentPlan({plan:p, cycle:c}); }}
           />

@@ -1,9 +1,10 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import styled, { css, keyframes } from "styled-components";
-import { Check, X, Spade } from "lucide-react";
+import { Check, X, Spade, User, Crown, Calendar } from "lucide-react";
 import type { Plan } from "../auth";
 import { PLAN_COLORS } from "../auth";
+import type { AuthUser } from "../auth";
 
 const overlayShow = keyframes`from{opacity:0}to{opacity:1}`;
 const contentShow = keyframes`from{opacity:0;transform:translate(-50%,-48%) scale(.97)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}`;
@@ -15,10 +16,45 @@ const Overlay = styled(Dialog.Overlay)`
 const Box = styled(Dialog.Content)`
   position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2101;
   background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);
-  padding:32px 28px;width:min(680px,94vw);box-shadow:var(--shadow-lg);
-  animation:${contentShow} .18s ease;max-height:92vh;overflow-y:auto;
+  width:min(940px,96vw);box-shadow:var(--shadow-lg);
+  animation:${contentShow} .18s ease;max-height:94vh;overflow-y:auto;
   &:focus{outline:none;}
+  display:flex;flex-direction:row;
+  @media(max-width:680px){flex-direction:column;}
 `;
+
+const LeftPanel = styled.div`
+  width:240px;flex-shrink:0;
+  background:var(--surface2);border-right:1px solid var(--border);
+  border-radius:var(--radius) 0 0 var(--radius);
+  padding:32px 24px;display:flex;flex-direction:column;gap:20px;
+  @media(max-width:680px){width:auto;border-right:none;border-bottom:1px solid var(--border);border-radius:var(--radius) var(--radius) 0 0;padding:24px 20px;}
+`;
+
+const RightPanel = styled.div`
+  flex:1;padding:32px 28px;overflow-y:auto;
+  @media(max-width:680px){padding:24px 16px;}
+`;
+
+const AccountCard = styled.div`
+  display:flex;flex-direction:column;gap:6px;
+`;
+const Avatar = styled.div<{$color:string}>`
+  width:52px;height:52px;border-radius:50%;
+  background:${p=>p.$color}22;border:2px solid ${p=>p.$color};
+  color:${p=>p.$color};font-size:20px;font-weight:900;
+  display:flex;align-items:center;justify-content:center;margin-bottom:4px;
+`;
+const AccountName = styled.div`font-size:15px;font-weight:800;color:var(--text);`;
+const AccountEmail = styled.div`font-size:12px;color:var(--text-muted);word-break:break-all;`;
+
+const InfoRow = styled.div`
+  display:flex;align-items:center;gap:8px;
+  padding:10px 12px;border-radius:var(--radius-sm);
+  background:var(--surface);border:1px solid var(--border);
+`;
+const InfoLabel = styled.div`font-size:11px;color:var(--text-muted);font-weight:600;margin-bottom:2px;`;
+const InfoValue = styled.div<{$color?:string}>`font-size:13px;font-weight:800;color:${p=>p.$color??"var(--text)"};`;
 const Title = styled.h2`font-size:20px;font-weight:900;text-align:center;margin-bottom:6px;`;
 const Sub   = styled.p`font-size:15px;color:var(--text-muted);text-align:center;margin-bottom:28px;`;
 
@@ -105,6 +141,7 @@ export type BillingCycle = "monthly" | "yearly";
 interface Props {
   currentPlan: Plan;
   lang: "TH" | "EN";
+  user: AuthUser | null;
   onClose: () => void;
   onUpgrade: (plan: Plan, cycle: BillingCycle) => void;
 }
@@ -174,93 +211,147 @@ const PLANS: PlanDef[] = [
 
 const PLAN_RANK: Record<Plan, number> = { free: 0, cash_pro: 1, full_pro: 2 };
 
-export function PricingModal({ currentPlan, lang, onClose, onUpgrade }: Props) {
+export function PricingModal({ currentPlan, lang, user, onClose, onUpgrade }: Props) {
   const isTH = lang === "TH";
   const [cycle, setCycle] = useState<BillingCycle>("monthly");
+
+  const planLabel: Record<Plan,string> = { free:"Free", cash_pro:"Cash Pro", full_pro:"Full Pro" };
+  const expiresAt = user?.expiresAt ? new Date(user.expiresAt) : null;
+  const daysLeft  = expiresAt ? Math.max(0, Math.ceil((expiresAt.getTime()-Date.now())/(1000*60*60*24))) : null;
 
   return (
     <Dialog.Root open onOpenChange={open=>{ if(!open) onClose(); }}>
       <Dialog.Portal>
         <Overlay />
         <Box>
-          <Title style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-            <Spade size={18}/> {isTH ? "เลือกแพลน" : "Choose Your Plan"}
-          </Title>
-          <Sub>{isTH ? "อัพเกรดเพื่อใช้งานได้เต็มที่" : "Upgrade to unlock all features"}</Sub>
+          {/* ── Left: Account info ── */}
+          <LeftPanel>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+              <Spade size={15} style={{color:"var(--accent)"}}/>
+              <span style={{fontSize:12,fontWeight:800,letterSpacing:".08em",color:"var(--text-muted)",textTransform:"uppercase"}}>
+                {isTH?"บัญชีของคุณ":"Your Account"}
+              </span>
+            </div>
 
-          {/* Billing toggle */}
-          <ToggleWrap>
-            <ToggleBtn $active={cycle==="monthly"} onClick={()=>setCycle("monthly")}>
-              {isTH?"รายเดือน":"Monthly"}
-            </ToggleBtn>
-            <ToggleBtn $active={cycle==="yearly"} onClick={()=>setCycle("yearly")}>
-              {isTH?"รายปี":"Yearly"}
-              <SaveBadge>{isTH?"ประหยัดสูงสุด 58%":"Save up to 58%"}</SaveBadge>
-            </ToggleBtn>
-          </ToggleWrap>
+            {user ? (
+              <AccountCard>
+                <Avatar $color={PLAN_COLORS[currentPlan]}>
+                  {(user.username ?? user.email).slice(0,2).toUpperCase()}
+                </Avatar>
+                <AccountName>@{user.username ?? user.email.split("@")[0]}</AccountName>
+                <AccountEmail>{user.email}</AccountEmail>
+              </AccountCard>
+            ) : (
+              <div style={{fontSize:13,color:"var(--text-muted)"}}>
+                {isTH?"ไม่ได้ login":"Not logged in"}
+              </div>
+            )}
 
-          <Grid>
-            {PLANS.map(p => {
-              const isCurrent = currentPlan === p.key;
-              const isDowngrade = PLAN_RANK[p.key] < PLAN_RANK[currentPlan];
-              const features = isTH ? p.featuresTH : p.featuresEN;
-              const price = cycle==="yearly" ? p.yearly : p.monthly;
-              const priceUnit = cycle==="yearly"
-                ? (isTH?"/ปี":"/yr")
-                : (isTH?"/เดือน":"/mo");
-              const altPrice = cycle==="yearly"
-                ? (p.monthly ? (isTH?`เทียบเท่า ${Math.round(p.yearly!/12)}฿/เดือน`:`≈ ${Math.round(p.yearly!/12)}฿/mo`) : "")
-                : (p.yearly ? (isTH?`${p.yearly}฿/ปี (ประหยัด ${p.savePct}%)`:`${p.yearly}฿/yr (save ${p.savePct}%)`) : "");
-              return (
-                <PlanCard key={p.key} $plan={p.key} $current={isCurrent}>
-                  {isCurrent && <CurrentBadge $plan={p.key}>{isTH ? "แพลนปัจจุบัน" : "Current"}</CurrentBadge>}
-                  <PlanName $plan={p.key}>{isTH ? p.nameTH : p.nameEN}</PlanName>
-                  <Price>
-                    {price ? `${price}฿` : (isTH?"ฟรี":"Free")}
-                    {price && <span>{priceUnit}</span>}
-                  </Price>
-                  <PriceAlt>{altPrice || (isTH?"ตลอดไป":"Forever")}</PriceAlt>
-                  <Divider />
-                  <FeatureList>
-                    {features.map((f, i) => (
-                      <Feature key={i} $ok={f.ok}>
-                        {f.ok===false
-                          ? <X size={12} style={{color:"var(--text-dim)"}}/>
-                          : <Check size={12} style={{color:"var(--success)"}}/>}
-                        {f.text}
-                      </Feature>
-                    ))}
-                  </FeatureList>
-                  <Btn $plan={p.key} $full disabled={p.key === "free" || isDowngrade}
-                    onClick={() => onUpgrade(p.key, cycle)}>
-                    {p.key === "free"
-                      ? (isTH ? "ฟรี" : "Free")
-                      : isDowngrade
-                        ? (isTH ? "แพลนปัจจุบันสูงกว่า" : "Current plan is higher")
-                        : isCurrent
-                          ? (isTH ? "🔄 ต่ออายุ" : "🔄 Renew")
-                          : (isTH ? "อัพเกรด" : "Upgrade")}
-                  </Btn>
-                </PlanCard>
-              );
-            })}
-          </Grid>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              <InfoRow>
+                <Crown size={14} style={{color:PLAN_COLORS[currentPlan],flexShrink:0}}/>
+                <div>
+                  <InfoLabel>{isTH?"แพลนปัจจุบัน":"Current Plan"}</InfoLabel>
+                  <InfoValue $color={PLAN_COLORS[currentPlan]}>{planLabel[currentPlan]}</InfoValue>
+                </div>
+              </InfoRow>
+              {expiresAt && (
+                <InfoRow>
+                  <Calendar size={14} style={{color:"var(--text-muted)",flexShrink:0}}/>
+                  <div>
+                    <InfoLabel>{isTH?"หมดอายุ":"Expires"}</InfoLabel>
+                    <InfoValue>{expiresAt.toLocaleDateString(isTH?"th-TH":"en-GB")}</InfoValue>
+                    {daysLeft !== null && (
+                      <div style={{fontSize:11,color:daysLeft<=3?"#f59e0b":"var(--success)",marginTop:1,fontWeight:700}}>
+                        {daysLeft===0
+                          ? (isTH?"หมดอายุวันนี้":"Expires today")
+                          : isTH?`อีก ${daysLeft} วัน`:`${daysLeft} days left`}
+                      </div>
+                    )}
+                  </div>
+                </InfoRow>
+              )}
+            </div>
 
-          <Note>
-            {isTH
-              ? "💳 PromptPay QR"
-              : "💳 PromptPay QR"}
-            <br />
-            {isTH
-              ? "พร้อมให้บริการแล้ว ชำระเงินผ่าน PromptPay QR ได้ทันที"
-              : "Now available — pay instantly via PromptPay QR"}
-          </Note>
+            <div style={{marginTop:"auto",paddingTop:12,borderTop:"1px solid var(--border)"}}>
+              <Note style={{textAlign:"left",margin:0,fontSize:12}}>
+                💳 PromptPay QR<br/>
+                <span style={{color:"var(--success)",fontWeight:700}}>
+                  {isTH?"พร้อมให้บริการแล้ว":"Now available"}
+                </span>
+              </Note>
+            </div>
 
-          <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
             <Dialog.Close asChild>
-              <Btn $v="ghost">{isTH ? "ปิด" : "Close"}</Btn>
+              <Btn $v="ghost" style={{width:"100%",marginTop:8}}>{isTH?"ปิด":"Close"}</Btn>
             </Dialog.Close>
-          </div>
+          </LeftPanel>
+
+          {/* ── Right: Plan selection ── */}
+          <RightPanel>
+            <Title style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,fontSize:18}}>
+              {isTH ? "เลือกแพลน" : "Choose Your Plan"}
+            </Title>
+            <Sub style={{marginBottom:20,fontSize:14}}>{isTH ? "อัพเกรดเพื่อใช้งานได้เต็มที่" : "Upgrade to unlock all features"}</Sub>
+
+            {/* Billing toggle */}
+            <ToggleWrap>
+              <ToggleBtn $active={cycle==="monthly"} onClick={()=>setCycle("monthly")}>
+                {isTH?"รายเดือน":"Monthly"}
+              </ToggleBtn>
+              <ToggleBtn $active={cycle==="yearly"} onClick={()=>setCycle("yearly")}>
+                {isTH?"รายปี":"Yearly"}
+                <SaveBadge>{isTH?"ประหยัดสูงสุด 58%":"Save up to 58%"}</SaveBadge>
+              </ToggleBtn>
+            </ToggleWrap>
+
+            <Grid>
+              {PLANS.map(p => {
+                const isCurrent = currentPlan === p.key;
+                const isDowngrade = PLAN_RANK[p.key] < PLAN_RANK[currentPlan];
+                const features = isTH ? p.featuresTH : p.featuresEN;
+                const price = cycle==="yearly" ? p.yearly : p.monthly;
+                const priceUnit = cycle==="yearly"
+                  ? (isTH?"/ปี":"/yr")
+                  : (isTH?"/เดือน":"/mo");
+                const altPrice = cycle==="yearly"
+                  ? (p.monthly ? (isTH?`เทียบเท่า ${Math.round(p.yearly!/12)}฿/เดือน`:`≈ ${Math.round(p.yearly!/12)}฿/mo`) : "")
+                  : (p.yearly ? (isTH?`${p.yearly}฿/ปี (ประหยัด ${p.savePct}%)`:`${p.yearly}฿/yr (save ${p.savePct}%)`) : "");
+                return (
+                  <PlanCard key={p.key} $plan={p.key} $current={isCurrent}>
+                    {isCurrent && <CurrentBadge $plan={p.key}>{isTH ? "แพลนปัจจุบัน" : "Current"}</CurrentBadge>}
+                    <PlanName $plan={p.key}>{isTH ? p.nameTH : p.nameEN}</PlanName>
+                    <Price>
+                      {price ? `${price}฿` : (isTH?"ฟรี":"Free")}
+                      {price && <span>{priceUnit}</span>}
+                    </Price>
+                    <PriceAlt>{altPrice || (isTH?"ตลอดไป":"Forever")}</PriceAlt>
+                    <Divider />
+                    <FeatureList>
+                      {features.map((f, i) => (
+                        <Feature key={i} $ok={f.ok}>
+                          {f.ok===false
+                            ? <X size={12} style={{color:"var(--text-dim)"}}/>
+                            : <Check size={12} style={{color:"var(--success)"}}/>}
+                          {f.text}
+                        </Feature>
+                      ))}
+                    </FeatureList>
+                    <Btn $plan={p.key} $full disabled={p.key === "free" || isDowngrade}
+                      onClick={() => onUpgrade(p.key, cycle)}>
+                      {p.key === "free"
+                        ? (isTH ? "ฟรี" : "Free")
+                        : isDowngrade
+                          ? (isTH ? "แพลนปัจจุบันสูงกว่า" : "Current plan is higher")
+                          : isCurrent
+                            ? (isTH ? "🔄 ต่ออายุ" : "🔄 Renew")
+                            : (isTH ? "อัพเกรด" : "Upgrade")}
+                    </Btn>
+                  </PlanCard>
+                );
+              })}
+            </Grid>
+          </RightPanel>
         </Box>
       </Dialog.Portal>
     </Dialog.Root>
