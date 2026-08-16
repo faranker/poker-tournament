@@ -230,8 +230,18 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
                   />
                 </div>
 
-                <div style={{textAlign:"center",padding:"8px 0",fontSize:13,color:"var(--text-muted)"}}>
-                  {isTH?"โอนผ่าน PromptPay แล้วแนบสลิปด้านล่าง":"Transfer via PromptPay then upload slip below"}
+                {/* QR Code */}
+                <div style={{display:"flex",flexDirection:"column",alignItems:"center",
+                  gap:8,padding:"12px",borderRadius:"var(--radius-sm)",
+                  background:"var(--surface2)",border:"1px solid var(--border)"}}>
+                  <img src="/promptpay-qr.jpg" alt="PromptPay QR"
+                    style={{width:160,height:160,objectFit:"contain",borderRadius:8}}/>
+                  <div style={{fontSize:12,color:"var(--text-muted)",fontWeight:600}}>
+                    {isTH?"สแกน QR เพื่อโอนเงิน":"Scan QR to transfer"}
+                  </div>
+                  <div style={{fontSize:11,color:"var(--text-dim)"}}>
+                    นาย ปัฐวี จันทร์สว่าง · xxx-x-x3766-x
+                  </div>
                 </div>
 
                 {preview && <SlipPreview src={preview} alt="slip"/>}
