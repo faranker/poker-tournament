@@ -138,28 +138,44 @@ async function sendTelegramMessage(text) {
   });
 }
 
-async function sendSlipToTelegram({ requestId, userId, username, email, plan, billingCycle, amount, filePath }) {
+async function sendSlipToTelegram({ requestId, username, email, plan, billingCycle, amount, filePath }) {
   const token  = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
 
   const caption =
-    `💳 <b>Payment Request #${requestId}</b>\n` +
-    `👤 User: <b>${username}</b> (${email})\n` +
-    `📦 Plan: <b>${plan}</b> · ${billingCycle}\n` +
-    `💰 ยอด: <b>${Number(amount).toLocaleString()} บาท</b>\n` +
-    `🕐 เวลา: ${new Date().toLocaleString("th-TH")}\n\n` +
-    `✅ Approve: POST /payments/approve/${requestId}\n` +
-    `❌ Reject:  POST /payments/reject/${requestId}`;
+    `💳 Payment Request #${requestId}\n` +
+    `👤 User: ${username} (${email})\n` +
+    `📦 Plan: ${plan} · ${billingCycle}\n` +
+    `💰 ยอด: ${Number(amount).toLocaleString()} บาท\n` +
+    `🕐 เวลา: ${new Date().toLocaleString("th-TH")}`;
+
+  const replyMarkup = JSON.stringify({
+    inline_keyboard: [[
+      { text: "✅ Approve", callback_data: `approve_${requestId}` },
+      { text: "❌ Reject",  callback_data: `reject_${requestId}`  },
+    ]],
+  });
 
   const form = new FormData();
   form.append("chat_id", chatId);
   form.append("caption", caption);
-  form.append("parse_mode", "HTML");
+  form.append("reply_markup", replyMarkup);
   form.append("photo", fs.createReadStream(filePath));
 
-  await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
-    method: "POST",
-    body: form,
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: "api.telegram.org",
+      path: `/bot${token}/sendPhoto`,
+      method: "POST",
+      headers: form.getHeaders(),
+    };
+    const req = https.request(options, (res) => {
+      let data = "";
+      res.on("data", (chunk) => { data += chunk; });
+      res.on("end", () => { console.log("[Telegram sendPhoto]", data); resolve(data); });
+    });
+    req.on("error", (e) => { console.error("[Telegram error]", e); reject(e); });
+    form.pipe(req);
   });
 }
 
