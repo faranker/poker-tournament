@@ -44,9 +44,9 @@ const T = {
     playerResults: "ผลลัพธ์ผู้เล่น",
     shareToLine: "แชร์ LINE", exportImg: "ส่งออกรูป",
     theme: "ธีม", language: "ภาษา",
-    structure: "โครงสร้าง", addLevel: "เพิ่ม Level",
+    structure: "โครงสร้าง", addLevel: "เพิ่ม Level", addBreak: "เพิ่ม Break",
     buyInAmount: "ราคา Buy-in", payoutPct: "% รางวัล", addPayout: "เพิ่ม",
-    bountyLabel: "Bounty", enableBounty: "เปิด Hunter Bounty", bountyPct: "% Bounty",
+    bountyLabel: "Bounty", enableBounty: "เปิด Bounty Hunter", bountyPct: "% Bounty",
     prizePool: "กองรางวัล", bountyPool: "Bounty Pool", perBounty: "ต่อหัว",
     level: "Level", blinds: "Blinds", ante: "Ante",
     start: "เริ่ม", pause: "หยุด",
@@ -73,9 +73,9 @@ const T = {
     playerResults: "Player Results",
     shareToLine: "Share LINE", exportImg: "Export",
     theme: "Theme", language: "Language",
-    structure: "Structure", addLevel: "Add Level",
+    structure: "Structure", addLevel: "Add Level", addBreak: "Add Break",
     buyInAmount: "Buy-in Amount", payoutPct: "Payout %", addPayout: "Add",
-    bountyLabel: "Bounty", enableBounty: "Enable Hunter Bounty", bountyPct: "Bounty %",
+    bountyLabel: "Bounty", enableBounty: "Enable Bounty Hunter", bountyPct: "Bounty %",
     prizePool: "Prize Pool", bountyPool: "Bounty Pool", perBounty: "Per Bounty",
     level: "Level", blinds: "Blinds", ante: "Ante",
     start: "Start", pause: "Pause",
@@ -758,7 +758,10 @@ export default function App() {
   const t = (key: keyof typeof T.TH) => T[lang][key] as string;
 
   /* ── Tournament state ── */
-  const _defTournament = {
+  const _defTournament: {
+    name:string; buyIn:number; payouts:number[];
+    rounds:{sb:number;bb:number;ante:number;duration:number;isBreak?:boolean}[];
+  } = {
     name:"", buyIn:200, payouts:[50,30,20],
     rounds:[
       {sb:100,bb:200,ante:200,duration:10*60},
@@ -793,7 +796,8 @@ export default function App() {
   const isUrgent = progress<20 && running;
 
   useEffect(()=>{
-    const r=tournament.rounds[roundIndex]; if(r) setTimeLeft(r.duration);
+    const r=tournament.rounds[roundIndex];
+    if(r){ setTimeLeft(r.duration); setBreakTime(!!r.isBreak); }
   },[roundIndex]);
 
   useEffect(()=>{
@@ -1422,22 +1426,32 @@ export default function App() {
     <Card>
       <CardHead>
         <CardTitle>{t("structure")}</CardTitle>
-        <Btn $v="primary" $sm disabled={plan==="free"} title={plan==="free"?(lang==="TH"?"ต้องการ Full Pro":"Requires Full Pro"):undefined}
-          onClick={()=>plan==="free"
-            ? (setLoginReason(lang==="TH"?"แก้ไข Blind Structure ต้องการแพลน Full Pro":"Editing blind structure requires Full Pro"), setShowLogin(true))
-            : setOpenModal(true)
-          }><Plus size={12} /> {t("addLevel")}</Btn>
+        <div style={{display:"flex",gap:6}}>
+          <Btn $v="ghost" $sm disabled={plan==="free"} title={plan==="free"?(lang==="TH"?"ต้องการ Full Pro":"Requires Full Pro"):undefined}
+            onClick={()=>plan==="free"
+              ? (setLoginReason(lang==="TH"?"แก้ไข Blind Structure ต้องการแพลน Full Pro":"Editing blind structure requires Full Pro"), setShowLogin(true))
+              : setTournament(s=>({...s,rounds:[...s.rounds,{sb:0,bb:0,ante:0,duration:15*60,isBreak:true}]}))
+            }><Coffee size={12} /> {t("addBreak")}</Btn>
+          <Btn $v="primary" $sm disabled={plan==="free"} title={plan==="free"?(lang==="TH"?"ต้องการ Full Pro":"Requires Full Pro"):undefined}
+            onClick={()=>plan==="free"
+              ? (setLoginReason(lang==="TH"?"แก้ไข Blind Structure ต้องการแพลน Full Pro":"Editing blind structure requires Full Pro"), setShowLogin(true))
+              : setOpenModal(true)
+            }><Plus size={12} /> {t("addLevel")}</Btn>
+        </div>
       </CardHead>
       <TableScroll>
         <TournTable>
           <thead><tr><th></th><th>SB</th><th>BB</th><th>Ante</th><th>Min</th><th></th></tr></thead>
           <tbody>
             {tournament.rounds.map((r,i)=>(
-              <tr key={i} style={i===roundIndex?{background:"var(--accent-soft)",color:"var(--accent)"}:{}}>
+              <tr key={i} style={i===roundIndex
+                ? {background:"var(--accent-soft)",color:"var(--accent)"}
+                : r.isBreak?{background:"rgba(96,165,250,.07)",color:"var(--text-muted)"}:{}}>
                 <td style={{width:20}}>{i===roundIndex&&running&&<ActiveDot/>}</td>
-                <td>{r.sb?fmtN(r.sb):"—"}</td>
-                <td>{r.bb?fmtN(r.bb):"—"}</td>
-                <td>{r.ante?fmtN(r.ante):"—"}</td>
+                {r.isBreak
+                  ? <td colSpan={3} style={{fontSize:12,fontWeight:700,letterSpacing:".04em",color:"#60a5fa"}}>☕ Break</td>
+                  : <><td>{r.sb?fmtN(r.sb):"—"}</td><td>{r.bb?fmtN(r.bb):"—"}</td><td>{r.ante?fmtN(r.ante):"—"}</td></>
+                }
                 <td>{fmt(r.duration)}</td>
                 <td>
                   <Btn $v="danger" $sm disabled={plan==="free"} onClick={()=>deleteLevel(i)}><X size={12} /></Btn>

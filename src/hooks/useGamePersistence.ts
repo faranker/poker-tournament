@@ -10,7 +10,7 @@ export type GameState = {
   players:     { name:string; buyInTotal:number; bounty:number; cashout:number; count:number }[];
   tournament:  {
     name:string; buyIn:number; payouts:number[];
-    rounds:{sb:number;bb:number;ante:number;duration:number}[];
+    rounds:{sb:number;bb:number;ante:number;duration:number;isBreak?:boolean}[];
   };
   roundIndex:  number;
   timeLeft:    number;
