@@ -88,8 +88,8 @@ export function HistoryModal({ lang, token, onClose }: Props) {
 
   useEffect(()=>{
     fetch(`${API}/history`, { headers:{ Authorization:`Bearer ${token}` } })
-      .then(r=>r.json()).then(setSessions).catch(()=>{})
-      .finally(()=>setLoading(false));
+      .then(r=>r.ok ? r.json() : []).then(data=>setSessions(Array.isArray(data)?data:[]))
+      .catch(()=>{}).finally(()=>setLoading(false));
   },[token]);
 
   return (
