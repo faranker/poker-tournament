@@ -1443,6 +1443,27 @@ export default function App() {
         )}
       </BlindsRow>
 
+      {(()=>{
+        const next = tournament.rounds[roundIndex+1];
+        if(!next) return null;
+        return (
+          <div style={{fontSize:12,color:"var(--text-muted)",display:"flex",alignItems:"center",gap:6,
+            background:"var(--surface2)",border:"1px solid var(--border)",
+            borderRadius:"var(--radius-sm)",padding:"5px 14px"}}>
+            <span style={{fontWeight:700,textTransform:"uppercase",letterSpacing:".07em"}}>
+              {lang==="TH"?"Level ถัดไป":"Next"}
+            </span>
+            <span style={{color:"var(--border2)"}}>·</span>
+            {next.isBreak
+              ? <span style={{color:"#60a5fa",fontWeight:700}}>☕ Break · {fmt(next.duration)}</span>
+              : <span style={{fontWeight:600}}>
+                  {fmtN(next.sb)}/{fmtN(next.bb)}{next.ante?` · ${fmtN(next.ante)} ante`:""} · {fmt(next.duration)}
+                </span>
+            }
+          </div>
+        );
+      })()}
+
       <TimerCtrl>
         <Btn $v="secondary" $sm onClick={()=>{
           levelUpSound.currentTime=0;levelUpSound.play().catch(()=>{});
