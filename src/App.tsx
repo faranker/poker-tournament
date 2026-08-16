@@ -770,7 +770,9 @@ export default function App() {
     ],
   };
   const [tournament, setTournament] = useState(_saved?.tournament ?? _defTournament);
-  const [openModal,   setOpenModal]   = useState(false);
+  const [openModal,      setOpenModal]      = useState(false);
+  const [openBreakModal, setOpenBreakModal] = useState(false);
+  const [breakDuration,  setBreakDuration]  = useState(15);
   const [newLevel,    setNewLevel]    = useState({sb:0,bb:0,ante:0,duration:0});
   const [roundIndex,  setRoundIndex]  = useState(_saved?.roundIndex ?? 0);
   const [timeLeft,    setTimeLeft]    = useState(_saved?.timeLeft ?? (_saved?.tournament?.rounds[0]?.duration ?? 10*60));
@@ -1430,7 +1432,7 @@ export default function App() {
           <Btn $v="ghost" $sm disabled={plan==="free"} title={plan==="free"?(lang==="TH"?"ต้องการ Full Pro":"Requires Full Pro"):undefined}
             onClick={()=>plan==="free"
               ? (setLoginReason(lang==="TH"?"แก้ไข Blind Structure ต้องการแพลน Full Pro":"Editing blind structure requires Full Pro"), setShowLogin(true))
-              : setTournament(s=>({...s,rounds:[...s.rounds,{sb:0,bb:0,ante:0,duration:15*60,isBreak:true}]}))
+              : (setBreakDuration(15), setOpenBreakModal(true))
             }><Coffee size={12} /> {t("addBreak")}</Btn>
           <Btn $v="primary" $sm disabled={plan==="free"} title={plan==="free"?(lang==="TH"?"ต้องการ Full Pro":"Requires Full Pro"):undefined}
             onClick={()=>plan==="free"
@@ -1539,6 +1541,30 @@ export default function App() {
                   setTournament(s=>({...s,rounds:[...s.rounds,{...newLevel,duration:newLevel.duration*60}]}));
                   setNewLevel({sb:0,bb:0,ante:0,duration:0}); setOpenModal(false);
                 }}>{t("addLevel")}</Btn>
+              </div>
+            </ModalBox>
+          </Dialog.Portal>
+        </Dialog.Root>
+
+        {/* ── Add Break Modal ── */}
+        <Dialog.Root open={openBreakModal} onOpenChange={open=>{ if(!open) setOpenBreakModal(false); }}>
+          <Dialog.Portal>
+            <ModalOverlay />
+            <ModalBox>
+              <h3 style={{display:"flex",alignItems:"center",gap:6}}><Coffee size={15}/> {t("addBreak")}</h3>
+              <div style={{marginBottom:10}}>
+                <Label>Duration (min)</Label>
+                <Input type="number" min={1} value={breakDuration}
+                  onChange={e=>setBreakDuration(Math.max(1,Number(e.target.value)))} />
+              </div>
+              <div style={{display:"flex",gap:8,marginTop:16,justifyContent:"flex-end"}}>
+                <Dialog.Close asChild>
+                  <Btn $v="secondary">Cancel</Btn>
+                </Dialog.Close>
+                <Btn $v="primary" onClick={()=>{
+                  setTournament(s=>({...s,rounds:[...s.rounds,{sb:0,bb:0,ante:0,duration:breakDuration*60,isBreak:true}]}));
+                  setOpenBreakModal(false);
+                }}>{t("addBreak")}</Btn>
               </div>
             </ModalBox>
           </Dialog.Portal>
