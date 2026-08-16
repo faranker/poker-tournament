@@ -7,7 +7,7 @@ import html2canvas from "html2canvas";
 import {
   Plus, X, Play, Pause, SkipBack, SkipForward,
   Coffee, Camera, Trophy, Banknote, TrendingUp, TrendingDown, Check, ChevronDown,
-  Maximize, Minimize,
+  Maximize, Minimize, Clock,
 } from "lucide-react";
 import { SummaryCard } from "./components/SummaryCard";
 import PokerInsurance from "./components/PokerInsurance";
@@ -15,6 +15,7 @@ import { LoginModal, NavLoginBtn } from "./components/LoginModal";
 import { PricingModal } from "./components/PricingModal";
 import { PaymentModal } from "./components/PaymentModal";
 import { DonateModal } from "./components/DonateModal";
+import { HistoryModal } from "./components/HistoryModal";
 import { AppDialog, type DialogConfig } from "./components/AppDialog";
 import {
   getSessionUser, refreshUser, type AuthUser, type Plan,
@@ -701,7 +702,8 @@ export default function App() {
   const [loginReason, setLoginReason] = useState("");
   const [showPricing, setShowPricing] = useState(false);
   const [paymentPlan, setPaymentPlan] = useState<{plan: Plan; cycle: "monthly"|"yearly"}|null>(null);
-  const [showDonate,  setShowDonate]  = useState(false);
+  const [showDonate,   setShowDonate]  = useState(false);
+  const [showHistory,  setShowHistory] = useState(false);
 
   const plan: Plan = user?.plan ?? "free";
   const [exportCount, setExportCount] = useState(0);
@@ -967,6 +969,31 @@ export default function App() {
     });
   };
 
+  const saveHistory = async () => {
+    if (!user) return;
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const isCash = mode === "CASH";
+      const body = {
+        mode,
+        game_name: isCash ? (players[0] ? "Cash Game" : null) : (tournament.name || null),
+        players: isCash
+          ? players.map(p => ({ name: p.name, buyInTotal: p.buyInTotal, cashout: p.cashout }))
+          : prizeWinners.map(w => ({ name: w.name, position: prizeWinners.indexOf(w) + 1, prize: w.amount })),
+        summary: isCash
+          ? { totalBuyIn: sumBuyIn, totalCashout: totalCashout }
+          : { prizePool: prizes.reduce((a, b) => a + b, 0) },
+        played_at: new Date(),
+      };
+      await fetch(`${import.meta.env.VITE_API_URL}/history/save`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body),
+      });
+    } catch { /* silent */ }
+  };
+
   const exportAsImage = async () => {
     if(!user) {
       setLoginReason(lang==="TH" ? "กรุณาเข้าสู่ระบบเพื่อส่งออกรูป" : "Please sign in to export image");
@@ -984,6 +1011,7 @@ export default function App() {
     link.download=`${tournament.name||"poker"}-${new Date().toLocaleDateString("th-TH").replace(/\//g,"-")}.png`;
     link.href=canvas.toDataURL("image/png"); link.click();
     if(plan==="free" && user) { const c = await incExportCount(user.id); setExportCount(c); }
+    saveHistory();
   };
 
   const handleShare = async () => {
@@ -999,6 +1027,7 @@ export default function App() {
     }
     window.open(`https://line.me/R/msg/text/?${encodeURIComponent(generateText())}`);
     if(plan==="free" && user) { const c = await incExportCount(user.id); setExportCount(c); }
+    saveHistory();
   };
 
   const generateText = () => {
@@ -1575,6 +1604,15 @@ export default function App() {
           />
         )}
 
+        {/* ── History Modal ── */}
+        {showHistory && user && (
+          <HistoryModal
+            lang={lang}
+            token={localStorage.getItem("token") || ""}
+            onClose={() => setShowHistory(false)}
+          />
+        )}
+
         {/* ── Donate Modal ── */}
         {showDonate && (
           <DonateModal
@@ -1676,6 +1714,12 @@ export default function App() {
               ))}
             </ThemeRow>
             {user ? (
+              <>
+              <Btn $v="ghost" $sm onClick={()=>setShowHistory(true)}
+                title={lang==="TH"?"ประวัติการเล่น":"Session History"}
+                style={{padding:"5px 8px"}}>
+                <Clock size={15}/>
+              </Btn>
               <NavAvatar
                 $color={PLAN_COLORS[plan]}
                 onClick={()=>{setLoginReason("");setShowLogin(true);}}
@@ -1684,6 +1728,7 @@ export default function App() {
                 {(user.username ?? user.email).slice(0,2).toUpperCase()}
                 <NavAvatarDot $color={PLAN_COLORS[plan]} />
               </NavAvatar>
+              </>
             ) : (
               <NavLoginBtn onClick={()=>{setLoginReason("");setShowLogin(true);}}>
                 {lang==="TH"?"เข้าสู่ระบบ":"Sign In"}

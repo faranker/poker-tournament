@@ -17,6 +17,7 @@ app.use("/exports",       require("./routes/exports"));
 app.use("/payments",      require("./routes/payments"));
 app.use("/telegram",      require("./routes/telegram-webhook"));
 app.use("/sessions",      require("./routes/sessions"));
+app.use("/history",       require("./routes/history"));
 app.use("/donations",     require("./routes/donations"));
 
 /* Health check */
