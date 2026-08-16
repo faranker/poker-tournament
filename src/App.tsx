@@ -704,6 +704,17 @@ export default function App() {
   const [paymentPlan, setPaymentPlan] = useState<{plan: Plan; cycle: "monthly"|"yearly"}|null>(null);
   const [showDonate,   setShowDonate]  = useState(false);
   const [showHistory,  setShowHistory] = useState(false);
+  const timerRef = useRef<HTMLDivElement>(null);
+  const [isFs, setIsFs] = useState(false);
+  useEffect(()=>{
+    const handler = () => setIsFs(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  },[]);
+  const toggleFs = () => {
+    if(!document.fullscreenElement) timerRef.current?.requestFullscreen();
+    else document.exitFullscreen();
+  };
 
   const plan: Plan = user?.plan ?? "free";
   const [exportCount, setExportCount] = useState(0);
@@ -1421,17 +1432,6 @@ export default function App() {
       : running
         ? (lang==="TH"?"กำลังนับ":"RUNNING")
         : (lang==="TH"?"หยุด":"PAUSED");
-    const timerRef = useRef<HTMLDivElement>(null);
-    const [isFs, setIsFs] = useState(false);
-    useEffect(()=>{
-      const handler = () => setIsFs(!!document.fullscreenElement);
-      document.addEventListener("fullscreenchange", handler);
-      return () => document.removeEventListener("fullscreenchange", handler);
-    },[]);
-    const toggleFs = () => {
-      if(!document.fullscreenElement) timerRef.current?.requestFullscreen();
-      else document.exitFullscreen();
-    };
     return (
     <TimerCard ref={timerRef}>
       <FsBtn onClick={toggleFs} title={isFs?"Exit Fullscreen":"Fullscreen"}>
