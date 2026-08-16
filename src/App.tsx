@@ -7,6 +7,7 @@ import html2canvas from "html2canvas";
 import {
   Plus, X, Play, Pause, SkipBack, SkipForward,
   Coffee, Camera, Trophy, Banknote, TrendingUp, TrendingDown, Check, ChevronDown,
+  Maximize, Minimize,
 } from "lucide-react";
 import { SummaryCard } from "./components/SummaryCard";
 import PokerInsurance from "./components/PokerInsurance";
@@ -534,6 +535,18 @@ const TimerCard = styled(Card)`
   &::before{content:'';position:absolute;inset:0;
     background:radial-gradient(ellipse at center top,var(--accent-soft) 0%,transparent 70%);
     pointer-events:none;}
+  &:fullscreen, &:-webkit-full-screen{
+    background:var(--bg);border:none;border-radius:0;
+    width:100vw;height:100vh;max-width:none;
+    justify-content:center;gap:32px;
+    &::before{background:radial-gradient(ellipse at center,var(--accent-soft) 0%,transparent 65%);}
+  }
+`;
+const FsBtn = styled.button`
+  position:absolute;top:12px;right:12px;z-index:10;
+  background:none;border:none;color:var(--text-muted);cursor:pointer;
+  padding:5px;border-radius:6px;display:flex;
+  &:hover{color:var(--text);background:var(--surface2);}
 `;
 const LevelBadge = styled.div`
   font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
@@ -1364,8 +1377,22 @@ export default function App() {
       : running
         ? (lang==="TH"?"กำลังนับ":"RUNNING")
         : (lang==="TH"?"หยุด":"PAUSED");
+    const timerRef = useRef<HTMLDivElement>(null);
+    const [isFs, setIsFs] = useState(false);
+    useEffect(()=>{
+      const handler = () => setIsFs(!!document.fullscreenElement);
+      document.addEventListener("fullscreenchange", handler);
+      return () => document.removeEventListener("fullscreenchange", handler);
+    },[]);
+    const toggleFs = () => {
+      if(!document.fullscreenElement) timerRef.current?.requestFullscreen();
+      else document.exitFullscreen();
+    };
     return (
-    <TimerCard>
+    <TimerCard ref={timerRef}>
+      <FsBtn onClick={toggleFs} title={isFs?"Exit Fullscreen":"Fullscreen"}>
+        {isFs ? <Minimize size={16}/> : <Maximize size={16}/>}
+      </FsBtn>
       <LevelBadge>{breakTime?t("breakTime"):`${t("level")} ${roundIndex+1}`}</LevelBadge>
 
       <CircleWrap>
