@@ -33,8 +33,15 @@ router.post("/webhook", async (req, res) => {
     const pr = rows[0];
 
     if (action === "approve") {
-      const months    = PLAN_MONTHS[pr.billing_cycle] || 1;
-      const expiresAt = new Date();
+      const months = PLAN_MONTHS[pr.billing_cycle] || 1;
+
+      /* extend from existing expires_at if still active, else from now */
+      const { rows: subRows } = await query(
+        "select expires_at from subscriptions where user_id=$1", [pr.user_id]
+      );
+      const existing = subRows[0]?.expires_at;
+      const base = existing && new Date(existing) > new Date() ? new Date(existing) : new Date();
+      const expiresAt = new Date(base);
       expiresAt.setMonth(expiresAt.getMonth() + months);
 
       await query(
@@ -56,7 +63,8 @@ router.post("/webhook", async (req, res) => {
         `📦 Plan: <b>${PLAN_NAMES[pr.plan]}</b> · ${pr.billing_cycle === "yearly" ? "รายปี" : "รายเดือน"}\n` +
         `💰 ยอด: <b>${Number(pr.amount).toLocaleString()} บาท</b>\n` +
         `📅 หมดอายุ: <b>${expiresAt.toLocaleDateString("th-TH")}</b>\n` +
-        `🕐 Approved: ${new Date().toLocaleString("th-TH")}`
+        `🕐 Approved: ${new Date().toLocaleString("th-TH")}\n\n` +
+        `⚡ กรุณา refresh หน้าเว็บเพื่อดู plan ที่อัปเดต`
       );
 
     } else {
