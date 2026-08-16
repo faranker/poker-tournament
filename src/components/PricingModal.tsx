@@ -18,9 +18,9 @@ const Box = styled(Dialog.Content)`
   background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);
   width:min(940px,96vw);box-shadow:var(--shadow-lg);
   animation:${contentShow} .18s ease;max-height:94vh;overflow-y:auto;
-  &:focus{outline:none;}
   display:flex;flex-direction:row;
-  @media(max-width:680px){flex-direction:column;}
+  &:focus{outline:none;}
+  @media(max-width:680px){flex-direction:column;width:min(480px,96vw);}
 `;
 
 const LeftPanel = styled.div`
@@ -28,24 +28,27 @@ const LeftPanel = styled.div`
   background:var(--surface2);border-right:1px solid var(--border);
   border-radius:var(--radius) 0 0 var(--radius);
   padding:32px 24px;display:flex;flex-direction:column;gap:20px;
-  @media(max-width:680px){width:auto;border-right:none;border-bottom:1px solid var(--border);border-radius:var(--radius) var(--radius) 0 0;padding:24px 20px;}
+  @media(max-width:680px){display:none;}
 `;
 
 const RightPanel = styled.div`
   flex:1;padding:32px 28px;overflow-y:auto;
-  @media(max-width:680px){padding:24px 16px;}
+  @media(max-width:680px){padding:20px 16px;}
 `;
 
-const AccountCard = styled.div`
-  display:flex;flex-direction:column;gap:6px;
+const MobileClose = styled.div`
+  display:none;
+  @media(max-width:680px){display:flex;justify-content:center;margin-top:16px;}
 `;
+
+const AccountCard = styled.div`display:flex;flex-direction:column;gap:6px;`;
 const Avatar = styled.div<{$color:string}>`
   width:52px;height:52px;border-radius:50%;
   background:${p=>p.$color}22;border:2px solid ${p=>p.$color};
   color:${p=>p.$color};font-size:20px;font-weight:900;
   display:flex;align-items:center;justify-content:center;margin-bottom:4px;
 `;
-const AccountName = styled.div`font-size:15px;font-weight:800;color:var(--text);`;
+const AccountName  = styled.div`font-size:15px;font-weight:800;color:var(--text);`;
 const AccountEmail = styled.div`font-size:12px;color:var(--text-muted);word-break:break-all;`;
 
 const InfoRow = styled.div`
@@ -54,9 +57,7 @@ const InfoRow = styled.div`
   background:var(--surface);border:1px solid var(--border);
 `;
 const InfoLabel = styled.div`font-size:11px;color:var(--text-muted);font-weight:600;margin-bottom:2px;`;
-const InfoValue = styled.div<{$color?:string}>`font-size:13px;font-weight:800;color:${p=>p.$color??"var(--text)"};`;
-const Title = styled.h2`font-size:20px;font-weight:900;text-align:center;margin-bottom:6px;`;
-const Sub   = styled.p`font-size:15px;color:var(--text-muted);text-align:center;margin-bottom:28px;`;
+const InfoValue  = styled.div<{$color?:string}>`font-size:13px;font-weight:800;color:${p=>p.$color??"var(--text)"};`;
 
 const Grid = styled.div`
   display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
@@ -78,16 +79,14 @@ const CurrentBadge = styled.div<{$plan:Plan}>`
 `;
 
 const PlanName = styled.div<{$plan:Plan}>`
-  font-size:16px;font-weight:900;color:${p=>PLAN_COLORS[p.$plan]};
-  margin-bottom:10px;
+  font-size:16px;font-weight:900;color:${p=>PLAN_COLORS[p.$plan]};margin-bottom:10px;
 `;
 const Price = styled.div`
   font-size:28px;font-weight:900;line-height:1;margin-bottom:4px;
   span{font-size:15px;font-weight:500;color:var(--text-muted);}
 `;
 const PriceAlt = styled.div`font-size:13px;color:var(--text-muted);margin-bottom:14px;`;
-
-const Divider = styled.div`height:1px;background:var(--border);margin-bottom:14px;`;
+const Divider  = styled.div`height:1px;background:var(--border);margin-bottom:14px;`;
 
 const FeatureList = styled.ul`list-style:none;display:flex;flex-direction:column;gap:8px;flex:1;margin-bottom:16px;`;
 const Feature = styled.li<{$ok?:boolean}>`
@@ -114,15 +113,13 @@ const Btn = styled.button<{$v?:BtnV;$full?:boolean;$plan?:Plan}>`
   }}
 `;
 
-const Note = styled.p`
-  font-size:13px;color:var(--text-dim);text-align:center;margin-top:16px;line-height:1.6;
-`;
+const Note = styled.p`font-size:13px;color:var(--text-dim);line-height:1.6;`;
 
 /* Billing toggle */
 const ToggleWrap = styled.div`
   display:flex;align-items:center;justify-content:center;gap:0;
   background:var(--surface2);border:1px solid var(--border);
-  border-radius:10px;padding:4px;margin-bottom:24px;align-self:center;width:fit-content;margin-left:auto;margin-right:auto;
+  border-radius:10px;padding:4px;margin-bottom:24px;width:fit-content;margin-left:auto;margin-right:auto;
 `;
 const ToggleBtn = styled.button<{$active?:boolean}>`
   padding:7px 20px;border-radius:7px;border:none;cursor:pointer;
@@ -224,7 +221,7 @@ export function PricingModal({ currentPlan, lang, user, onClose, onUpgrade }: Pr
       <Dialog.Portal>
         <Overlay />
         <Box>
-          {/* ── Left: Account info ── */}
+          {/* ── Left: Account info (desktop only) ── */}
           <LeftPanel>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
               <Spade size={15} style={{color:"var(--accent)"}}/>
@@ -274,7 +271,7 @@ export function PricingModal({ currentPlan, lang, user, onClose, onUpgrade }: Pr
             </div>
 
             <div style={{marginTop:"auto",paddingTop:12,borderTop:"1px solid var(--border)"}}>
-              <Note style={{textAlign:"left",margin:0,fontSize:12}}>
+              <Note style={{margin:0,fontSize:12}}>
                 💳 PromptPay QR<br/>
                 <span style={{color:"var(--success)",fontWeight:700}}>
                   {isTH?"พร้อมให้บริการแล้ว":"Now available"}
@@ -289,12 +286,15 @@ export function PricingModal({ currentPlan, lang, user, onClose, onUpgrade }: Pr
 
           {/* ── Right: Plan selection ── */}
           <RightPanel>
-            <Title style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,fontSize:18}}>
-              {isTH ? "เลือกแพลน" : "Choose Your Plan"}
-            </Title>
-            <Sub style={{marginBottom:20,fontSize:14}}>{isTH ? "อัพเกรดเพื่อใช้งานได้เต็มที่" : "Upgrade to unlock all features"}</Sub>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+              <h2 style={{fontSize:18,fontWeight:900,display:"flex",alignItems:"center",gap:8}}>
+                {isTH ? "เลือกแพลน" : "Choose Your Plan"}
+              </h2>
+            </div>
+            <p style={{fontSize:14,color:"var(--text-muted)",marginBottom:20}}>
+              {isTH ? "อัพเกรดเพื่อใช้งานได้เต็มที่" : "Upgrade to unlock all features"}
+            </p>
 
-            {/* Billing toggle */}
             <ToggleWrap>
               <ToggleBtn $active={cycle==="monthly"} onClick={()=>setCycle("monthly")}>
                 {isTH?"รายเดือน":"Monthly"}
@@ -351,6 +351,13 @@ export function PricingModal({ currentPlan, lang, user, onClose, onUpgrade }: Pr
                 );
               })}
             </Grid>
+
+            {/* Close button — mobile only */}
+            <MobileClose>
+              <Dialog.Close asChild>
+                <Btn $v="ghost">{isTH?"ปิด":"Close"}</Btn>
+              </Dialog.Close>
+            </MobileClose>
           </RightPanel>
         </Box>
       </Dialog.Portal>
