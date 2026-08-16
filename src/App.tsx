@@ -538,8 +538,8 @@ const TimerCard = styled(Card)`
   &:fullscreen, &:-webkit-full-screen{
     background:var(--bg);border:none;border-radius:0;
     width:100vw;height:100vh;max-width:none;
-    justify-content:center;gap:32px;
-    &::before{background:radial-gradient(ellipse at center,var(--accent-soft) 0%,transparent 65%);}
+    justify-content:center;gap:40px;padding:40px;
+    &::before{background:radial-gradient(ellipse at center,var(--accent-soft) 0%,transparent 60%);}
   }
 `;
 const FsBtn = styled.button`
@@ -552,6 +552,7 @@ const LevelBadge = styled.div`
   font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
   color:var(--text-muted);background:var(--surface2);border:1px solid var(--border);
   padding:3px 14px;border-radius:20px;
+  :fullscreen &, :-webkit-full-screen &{ font-size:22px;padding:6px 28px; }
 `;
 
 /* Circular timer */
@@ -559,6 +560,7 @@ const CircleWrap = styled.div`
   position:relative;display:flex;align-items:center;justify-content:center;
   width:200px;height:200px;
   @media(max-width:640px){width:160px;height:160px;}
+  :fullscreen &, :-webkit-full-screen &{ width:min(55vmin,480px);height:min(55vmin,480px); }
 `;
 const CircleSvg = styled.svg`
   position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);
@@ -580,15 +582,18 @@ const BigTimer = styled.div<{$urgent?:boolean}>`
   letter-spacing:-1px;color:var(--timer-color);
   ${p=>p.$urgent&&css`color:var(--accent);animation:${glow} 1.5s ease-in-out infinite;`}
   @media(max-width:640px){font-size:42px;}
+  :fullscreen &, :-webkit-full-screen &{ font-size:min(18vmin,160px);letter-spacing:-2px; }
 `;
 const StatusLabel = styled.div<{$urgent?:boolean}>`
   font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
   color:${p=>p.$urgent?"var(--accent)":"var(--text-muted)"};
+  :fullscreen &, :-webkit-full-screen &{ font-size:min(2.5vmin,20px); }
 `;
 
 /* Blind cards */
 const BlindsRow = styled.div`
   display:flex;gap:10px;width:100%;justify-content:center;
+  :fullscreen &, :-webkit-full-screen &{ gap:20px;max-width:860px; }
 `;
 const BlindCard = styled.div`
   flex:1;background:var(--surface2);border:1px solid var(--border);
@@ -596,10 +601,18 @@ const BlindCard = styled.div`
   .lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;}
   .val{font-size:22px;font-weight:800;color:var(--text);}
   @media(max-width:640px){.val{font-size:18px;}}
+  :fullscreen &, :-webkit-full-screen &{
+    padding:20px 16px;
+    .lbl{font-size:min(2vmin,16px);}
+    .val{font-size:min(7vmin,60px);}
+  }
 `;
 
 const TimerCtrl = styled.div`
   display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;
+  :fullscreen &, :-webkit-full-screen &{ gap:16px;
+    button{ transform:scale(1.4); }
+  }
 `;
 
 
