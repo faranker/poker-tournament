@@ -761,21 +761,8 @@ export default function App() {
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        const u = await getSessionUser();
-        setUser(u);
-        if (u) {
-          getExportCount(u.id).then(setExportCount);
-          /* load cloud state on login */
-          const cloud = await loadCloud();
-          if (cloud) applyGameState(cloud);
-        }
-      } else {
-        setUser(null);
-        setExportCount(0);
-      }
-    });
+    /* Custom JWT auth — supabase client used for DB only, not for auth sessions */
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {});
     return () => subscription.unsubscribe();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -982,7 +969,7 @@ export default function App() {
 
   const saveHistory = async () => {
     if (!user) return;
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("poker_token");
     if (!token) return;
     try {
       const isCash = mode === "CASH";
@@ -1608,7 +1595,7 @@ export default function App() {
         {showHistory && user && (
           <HistoryModal
             lang={lang}
-            token={localStorage.getItem("token") || ""}
+            token={localStorage.getItem("poker_token") || ""}
             onClose={() => setShowHistory(false)}
           />
         )}
