@@ -172,6 +172,8 @@ const PLANS: PlanDef[] = [
   },
 ];
 
+const PLAN_RANK: Record<Plan, number> = { free: 0, cash_pro: 1, full_pro: 2 };
+
 export function PricingModal({ currentPlan, lang, onClose, onUpgrade }: Props) {
   const isTH = lang === "TH";
   const [cycle, setCycle] = useState<BillingCycle>("monthly");
@@ -200,6 +202,7 @@ export function PricingModal({ currentPlan, lang, onClose, onUpgrade }: Props) {
           <Grid>
             {PLANS.map(p => {
               const isCurrent = currentPlan === p.key;
+              const isDowngrade = PLAN_RANK[p.key] < PLAN_RANK[currentPlan];
               const features = isTH ? p.featuresTH : p.featuresEN;
               const price = cycle==="yearly" ? p.yearly : p.monthly;
               const priceUnit = cycle==="yearly"
@@ -228,13 +231,15 @@ export function PricingModal({ currentPlan, lang, onClose, onUpgrade }: Props) {
                       </Feature>
                     ))}
                   </FeatureList>
-                  <Btn $plan={p.key} $full disabled={p.key === "free"}
+                  <Btn $plan={p.key} $full disabled={p.key === "free" || isDowngrade}
                     onClick={() => onUpgrade(p.key, cycle)}>
                     {p.key === "free"
                       ? (isTH ? "ฟรี" : "Free")
-                      : isCurrent
-                        ? (isTH ? "🔄 ต่ออายุ" : "🔄 Renew")
-                        : (isTH ? "อัพเกรด" : "Upgrade")}
+                      : isDowngrade
+                        ? (isTH ? "แพลนปัจจุบันสูงกว่า" : "Current plan is higher")
+                        : isCurrent
+                          ? (isTH ? "🔄 ต่ออายุ" : "🔄 Renew")
+                          : (isTH ? "อัพเกรด" : "Upgrade")}
                   </Btn>
                 </PlanCard>
               );
