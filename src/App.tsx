@@ -23,7 +23,6 @@ import {
   FREE_MAX_PLAYERS, FREE_MAX_EXPORTS,
   PLAN_COLORS,
 } from "./auth";
-import { supabase } from "./lib/supabase";
 import {
   useGamePersistence, loadLocal, loadCloud,
   type GameState,
@@ -761,9 +760,7 @@ export default function App() {
       }
     });
 
-    /* Custom JWT auth — supabase client used for DB only, not for auth sessions */
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {});
-    return () => subscription.unsubscribe();
+    return () => {};
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
