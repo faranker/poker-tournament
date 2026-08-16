@@ -1,7 +1,7 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import styled, { css, keyframes } from "styled-components";
-import { Check, X, Spade, User, Crown, Calendar } from "lucide-react";
+import { Check, X, Spade, Crown, Calendar } from "lucide-react";
 import type { Plan } from "../auth";
 import { PLAN_COLORS } from "../auth";
 import type { AuthUser } from "../auth";
