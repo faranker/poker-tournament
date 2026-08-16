@@ -248,8 +248,8 @@ export function PricingModal({ currentPlan, lang, onClose, onUpgrade }: Props) {
 
           <Note>
             {isTH
-              ? "💳 PromptPay QR · ราคารวม VAT แล้ว"
-              : "💳 PromptPay QR · VAT included"}
+              ? "💳 PromptPay QR"
+              : "💳 PromptPay QR"}
             <br />
             {isTH
               ? "พร้อมให้บริการแล้ว ชำระเงินผ่าน PromptPay QR ได้ทันที"
