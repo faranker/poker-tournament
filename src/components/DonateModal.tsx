@@ -30,23 +30,13 @@ const CloseBtn = styled.button`
 `;
 const Body = styled.div`padding:16px 20px 20px;display:flex;flex-direction:column;gap:14px;`;
 
-const AmountRow = styled.div`display:flex;gap:8px;flex-wrap:wrap;`;
-const AmountBtn = styled.button<{$active?:boolean}>`
-  flex:1;min-width:60px;padding:8px 4px;border-radius:var(--radius-sm);
-  font-size:14px;font-weight:800;font-family:inherit;cursor:pointer;transition:all .15s;
-  border:2px solid ${p=>p.$active?"#e879a0":"var(--border)"};
-  background:${p=>p.$active?"#e879a022":"var(--surface2)"};
-  color:${p=>p.$active?"#e879a0":"var(--text-muted)"};
-  &:hover{border-color:#e879a0;color:#e879a0;}
-`;
-const CustomInput = styled.input`
+const NameInput = styled.input`
   width:100%;padding:9px 11px;border-radius:var(--radius-sm);
   border:1px solid var(--border);background:var(--surface2);
   color:var(--text);font-size:15px;font-family:inherit;
   &:focus{outline:none;border-color:#e879a0;box-shadow:0 0 0 3px #e879a022;}
   &::placeholder{color:var(--text-dim);}
 `;
-const NameInput = styled(CustomInput)``;
 
 const UploadArea = styled.label<{$hasFile?:boolean;$done?:boolean}>`
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
@@ -104,7 +94,6 @@ const FieldLabel = styled.div`font-size:11px;font-weight:700;text-transform:uppe
   letter-spacing:.07em;color:var(--text-muted);margin-bottom:5px;`;
 
 const API = import.meta.env.VITE_API_URL as string;
-const AMOUNTS = [29, 49, 99, 199];
 
 type Donor = { display_name: string; amount: number };
 
@@ -117,7 +106,7 @@ interface Props {
 
 export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) {
   const isTH = lang === "TH";
-  const [amount,    setAmount]    = useState<number | "">(49);
+  const [amount] = useState<number>(0); // set by admin from slip
   const [name,      setName]      = useState(defaultName);
   const [file,      setFile]      = useState<File | null>(null);
   const [preview,   setPreview]   = useState<string | null>(null);
@@ -155,7 +144,7 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
     setLoading(false);
   };
 
-  const canSubmit = !!file && !!name.trim() && !!amount;
+  const canSubmit = !!file && !!name.trim();
 
   return (
     <Dialog.Root open onOpenChange={open => { if (!open) onClose(); }}>
@@ -211,24 +200,6 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
                   />
                 </div>
 
-                <div>
-                  <FieldLabel>{isTH?"จำนวนเงิน (฿)":"Amount (฿)"}</FieldLabel>
-                  <AmountRow>
-                    {AMOUNTS.map(a => (
-                      <AmountBtn key={a} $active={amount===a} onClick={() => setAmount(a)}>
-                        ฿{a}
-                      </AmountBtn>
-                    ))}
-                  </AmountRow>
-                  <CustomInput
-                    type="number" inputMode="numeric"
-                    placeholder={isTH?"หรือกรอกจำนวนเอง...":"Or enter custom amount..."}
-                    style={{marginTop:8}}
-                    value={AMOUNTS.includes(amount as number) ? "" : amount}
-                    onChange={e => setAmount(e.target.value ? Number(e.target.value) : "")}
-                    onFocus={() => { if (AMOUNTS.includes(amount as number)) setAmount(""); }}
-                  />
-                </div>
 
                 {/* QR Code */}
                 <div style={{display:"flex",flexDirection:"column",alignItems:"center",

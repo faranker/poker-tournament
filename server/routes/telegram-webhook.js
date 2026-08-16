@@ -17,9 +17,37 @@ router.post("/webhook", async (req, res) => {
 
   /* donate_approve_N | donate_reject_N */
   if (data.startsWith("donate_")) {
-    const parts = data.split("_");           // ["donate","approve","5"]
+    const parts = data.split("_");           // ["donate","approve","5"] or ["donate","set","5","99"]
     const dAction = parts[1];
     const dId     = parseInt(parts[2], 10);
+
+    /* donate_set_ID_AMOUNT */
+    if (dAction === "set") {
+      const setAmount = parseInt(parts[3], 10);
+      if (!dId || !setAmount) { await answerCallback(callbackId, "❓ ข้อมูลไม่ถูกต้อง"); return; }
+      try {
+        const { rows } = await query(
+          "select * from donations where id=$1 and status in ('pending','pending_amount')", [dId]
+        );
+        if (!rows[0]) { await answerCallback(callbackId, "⚠️ ไม่พบหรือดำเนินการแล้ว"); return; }
+        const d = rows[0];
+        await query(
+          "update donations set status='approved', amount=$1, approved_at=now() where id=$2",
+          [setAmount, dId]
+        );
+        await answerCallback(callbackId, `✅ Approved ฿${setAmount}!`);
+        await editMessageCaption(cb.message,
+          `🩷 <b>APPROVED — Donation #${dId}</b>\n\n` +
+          `👤 ชื่อ: <b>${d.display_name}</b>\n` +
+          `💰 ยอด: <b>${setAmount.toLocaleString()} บาท</b>\n` +
+          `🕐 Approved: ${new Date().toLocaleString("th-TH")}`
+        );
+      } catch (err) {
+        console.error("[donate-set]", err);
+        await answerCallback(callbackId, "❌ เกิดข้อผิดพลาด");
+      }
+      return;
+    }
     if (!dId || !["approve","reject"].includes(dAction)) {
       await answerCallback(callbackId, "❓ ไม่รู้จัก action นี้");
       return;
@@ -32,13 +60,24 @@ router.post("/webhook", async (req, res) => {
       const d = rows[0];
 
       if (dAction === "approve") {
-        await query("update donations set status='approved', approved_at=now() where id=$1", [dId]);
-        await answerCallback(callbackId, `✅ Approved donation #${dId}!`);
+        /* แสดงปุ่มเลือกยอดเงิน */
+        await answerCallback(callbackId, `เลือกยอดเงินตาม slip`);
         await editMessageCaption(cb.message,
-          `🩷 <b>APPROVED — Donation #${dId}</b>\n\n` +
+          `🩷 <b>Donation #${dId}</b>\n\n` +
           `👤 ชื่อ: <b>${d.display_name}</b>\n` +
-          `💰 ยอด: <b>${Number(d.amount).toLocaleString()} บาท</b>\n` +
-          `🕐 Approved: ${new Date().toLocaleString("th-TH")}`
+          `💰 เลือกยอดตาม slip ที่แนบมา`,
+          { inline_keyboard: [
+            [
+              { text: "฿29",  callback_data: `donate_set_${dId}_29`  },
+              { text: "฿49",  callback_data: `donate_set_${dId}_49`  },
+              { text: "฿99",  callback_data: `donate_set_${dId}_99`  },
+            ],
+            [
+              { text: "฿199", callback_data: `donate_set_${dId}_199` },
+              { text: "฿499", callback_data: `donate_set_${dId}_499` },
+              { text: "❌ ยกเลิก", callback_data: `donate_reject_${dId}` },
+            ],
+          ]}
         );
       } else {
         await query("update donations set status='rejected' where id=$1 and status='pending'", [dId]);
@@ -181,13 +220,13 @@ function answerCallback(callbackQueryId, text) {
   return telegramPost("answerCallbackQuery", { callback_query_id: callbackQueryId, text });
 }
 
-function editMessageCaption(message, newCaption) {
+function editMessageCaption(message, newCaption, replyMarkup = { inline_keyboard: [] }) {
   return telegramPost("editMessageCaption", {
     chat_id:      message.chat.id,
     message_id:   message.message_id,
     caption:      newCaption,
     parse_mode:   "HTML",
-    reply_markup: JSON.stringify({ inline_keyboard: [] }), // ลบปุ่มออก
+    reply_markup: JSON.stringify(replyMarkup),
   });
 }
 
