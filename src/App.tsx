@@ -205,7 +205,7 @@ const ModeTabs = styled.div`
   @media(max-width:480px){display:none}
 `;
 const ModeTab = styled.button<{$active?:boolean}>`
-  padding:5px 14px;border-radius:8px;border:none;font-size:14px;font-weight:700;
+  padding:5px 14px;border-radius:8px;border:none;font-size:16px;font-weight:700;
   cursor:pointer;white-space:nowrap;transition:all .18s;
   ${p=>p.$active
     ? css`background:var(--accent);color:#fff;box-shadow:0 2px 8px var(--accent-glow);`
@@ -379,8 +379,8 @@ const Btn = styled.button<{$v?:BtnV;$sm?:boolean;$full?:boolean}>`
   display:inline-flex;align-items:center;justify-content:center;gap:5px;
   border:none;border-radius:var(--radius-sm);font-weight:600;cursor:pointer;
   transition:all .18s;white-space:nowrap;font-family:inherit;
-  padding:${p=>p.$sm?"5px 11px":"8px 14px"};
-  font-size:${p=>p.$sm?"11px":"13px"};
+  padding:${p=>p.$sm?"6px 13px":"10px 16px"};
+  font-size:${p=>p.$sm?"13px":"15px"};
   width:${p=>p.$full?"100%":"auto"};
 
   ${p=>{switch(p.$v){
@@ -505,7 +505,7 @@ const StatRow = styled.div`
 `;
 
 const BalanceBadge = styled.div<{$ok?:boolean}>`
-  padding:5px 12px;border-radius:7px;font-size:14px;font-weight:700;
+  padding:5px 12px;border-radius:7px;font-size:15px;font-weight:700;
   ${p=>p.$ok
     ? css`background:var(--success-soft);color:var(--success);border:1px solid var(--success);`
     : css`background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent);`}
