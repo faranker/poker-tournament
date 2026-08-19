@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import styled, { keyframes } from "styled-components";
-import { Upload, X, CheckCircle, Clock } from "lucide-react";
+import { Upload, X, CheckCircle, Clock, AlertTriangle } from "lucide-react";
 import type { Plan } from "../auth";
 
 const overlayShow = keyframes`from{opacity:0}to{opacity:1}`;
@@ -254,13 +254,13 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess: _on
                         ? <>
                             กรุณาอัปโหลดสลิปการโอนเงิน หลังจากอัปโหลดแล้ว<br/>
                             ทีมงานจะตรวจสอบและเปิดใช้งานภายใน <b>5–10 นาที</b><br/><br/>
-                            <span style={{color:"#f59e0b"}}>⚠️ ช่วงเวลา 23:00–02:00 น. ระบบธนาคารอาจล่าช้า</span><br/>
+                            <span style={{color:"#f59e0b"}}><AlertTriangle size={13} style={{display:"inline",verticalAlign:"middle",marginRight:4}}/> ช่วงเวลา 23:00–02:00 น. ระบบธนาคารอาจล่าช้า</span><br/>
                             ทำให้ตรวจสอบยอดเงินไม่ได้ตามปกติ
                           </>
                         : <>
                             Please upload your payment slip. After uploading,<br/>
                             our team will verify and activate within <b>5–10 minutes</b><br/><br/>
-                            <span style={{color:"#f59e0b"}}>⚠️ During 11 PM–2 AM banking systems may be slow</span><br/>
+                            <span style={{color:"#f59e0b"}}><AlertTriangle size={13} style={{display:"inline",verticalAlign:"middle",marginRight:4}}/> During 11 PM–2 AM banking systems may be slow</span><br/>
                             and verification may take longer than usual.
                           </>
                       }
@@ -297,11 +297,11 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess: _on
                     <div style={{lineHeight:1.65,fontSize:12}}>
                       {isTH
                         ? <>
-                            <b>อัปโหลดสลิปเรียบร้อยแล้ว ✅</b><br/>
+                            <b>อัปโหลดสลิปเรียบร้อยแล้ว <CheckCircle size={14} style={{display:"inline",verticalAlign:"middle",marginLeft:4}}/></b><br/>
                             กรุณารอทีมงานตรวจสอบและเปิดใช้งานภายใน <b>5–10 นาที</b>
                           </>
                         : <>
-                            <b>Slip uploaded successfully ✅</b><br/>
+                            <b>Slip uploaded successfully <CheckCircle size={14} style={{display:"inline",verticalAlign:"middle",marginLeft:4}}/></b><br/>
                             Please wait for our team to verify and activate within <b>5–10 minutes</b>
                           </>
                       }
@@ -312,11 +312,11 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess: _on
                     <div style={{lineHeight:1.65,fontSize:12}}>
                       {isTH
                         ? <>
-                            <span style={{color:"#f59e0b"}}>⚠️ ช่วงเวลา 23:00–02:00 น. ระบบธนาคารอาจล่าช้า</span><br/>
+                            <span style={{color:"#f59e0b"}}><AlertTriangle size={13} style={{display:"inline",verticalAlign:"middle",marginRight:4}}/> ช่วงเวลา 23:00–02:00 น. ระบบธนาคารอาจล่าช้า</span><br/>
                             ทำให้การตรวจสอบใช้เวลานานกว่าปกติ
                           </>
                         : <>
-                            <span style={{color:"#f59e0b"}}>⚠️ During 11 PM–2 AM banking systems may be slow</span><br/>
+                            <span style={{color:"#f59e0b"}}><AlertTriangle size={13} style={{display:"inline",verticalAlign:"middle",marginRight:4}}/> During 11 PM–2 AM banking systems may be slow</span><br/>
                             and verification may take longer than usual.
                           </>
                       }

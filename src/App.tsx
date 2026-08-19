@@ -7,7 +7,7 @@ import html2canvas from "html2canvas";
 import {
   Plus, X, Play, Pause, SkipBack, SkipForward,
   Coffee, Camera, Trophy, Banknote, TrendingUp, TrendingDown, Check, ChevronDown,
-  Maximize, Minimize, Clock,
+  Maximize, Minimize, Clock, Loader2, CheckCircle,
 } from "lucide-react";
 import { SummaryCard } from "./components/SummaryCard";
 import PokerInsurance from "./components/PokerInsurance";
@@ -161,7 +161,7 @@ const GlobalStyle = createGlobalStyle<{ $t: ThemeKey }>`
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   :root{ ${p => themeVars[p.$t]} }
   body{background:var(--bg);color:var(--text);font-family:'Noto Sans Thai',system-ui,sans-serif;
-       -webkit-font-smoothing:antialiased;font-size:16px;}
+       -webkit-font-smoothing:antialiased;font-size:17px;}
   input[type=number]::-webkit-inner-spin-button{opacity:1}
   ::-webkit-scrollbar{width:5px;height:5px}
   ::-webkit-scrollbar-track{background:var(--surface2)}
@@ -250,7 +250,7 @@ const NavAvatar = styled.button<{$color:string}>`
   display:flex;align-items:center;justify-content:center;
   position:relative;transition:all .18s;flex-shrink:0;
   &:hover{background:${p=>p.$color}44;transform:scale(1.08);}
-  @media(max-width:480px){width:30px;height:30px;font-size:13px;}
+  @media(max-width:480px){width:30px;height:30px;font-size:15px;}
 `;
 const NavAvatarDot = styled.span<{$color:string}>`
   position:absolute;bottom:0;right:0;width:9px;height:9px;border-radius:50%;
@@ -357,7 +357,7 @@ const CardTitle = styled.h2`
 `;
 
 const Label = styled.p`
-  font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
   color:var(--text-muted);margin-bottom:5px;margin-top:12px;
   &:first-child{margin-top:0;}
 `;
@@ -446,7 +446,7 @@ const PlayerCardTop = styled.div`
 `;
 
 const PlayerName = styled.div`font-size:16px;font-weight:700;color:var(--text);`;
-const PlayerSub  = styled.div`font-size:13px;color:var(--text-muted);margin-top:1px;`;
+const PlayerSub  = styled.div`font-size:15px;color:var(--text-muted);margin-top:1px;`;
 
 const MobileBuyBtns = styled.div`display:flex;gap:8px;margin-bottom:8px;`;
 const MobileBuyBtn = styled.button<{$variant:"buy"|"sell"}>`
@@ -478,7 +478,7 @@ const TableHeader = styled.div`
   display:grid;
   grid-template-columns:40px 1fr 110px auto 120px 32px;
   gap:10px;padding:0 10px 8px;
-  font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
   color:var(--text-muted);border-bottom:1px solid var(--border);margin-bottom:6px;
   @media(max-width:768px){display:none;}
 `;
@@ -487,7 +487,7 @@ const TableHeader = styled.div`
 const RankBadge = styled.span<{$pos:number}>`
   display:inline-flex;align-items:center;justify-content:center;
   min-width:26px;height:22px;padding:0 6px;border-radius:6px;
-  font-size:13px;font-weight:900;margin-right:6px;letter-spacing:.02em;
+  font-size:15px;font-weight:900;margin-right:6px;letter-spacing:.02em;
   ${p=>p.$pos===1?css`background:var(--gold);color:#000;box-shadow:0 1px 6px rgba(245,197,66,.5);`
     :p.$pos===2?css`background:var(--silver);color:#000;box-shadow:0 1px 6px rgba(192,192,192,.4);`
     :p.$pos===3?css`background:var(--bronze);color:#fff;box-shadow:0 1px 6px rgba(205,127,50,.4);`
@@ -549,7 +549,7 @@ const FsBtn = styled.button`
   &:hover{color:var(--text);background:var(--surface2);}
 `;
 const LevelBadge = styled.div`
-  font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
   color:var(--text-muted);background:var(--surface2);border:1px solid var(--border);
   padding:3px 14px;border-radius:20px;
   :fullscreen &, :-webkit-full-screen &{ font-size:22px;padding:6px 28px; }
@@ -585,7 +585,7 @@ const BigTimer = styled.div<{$urgent?:boolean}>`
   :fullscreen &, :-webkit-full-screen &{ font-size:min(13vmin,110px);letter-spacing:-2px; }
 `;
 const StatusLabel = styled.div<{$urgent?:boolean}>`
-  font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  font-size:15px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
   color:${p=>p.$urgent?"var(--accent)":"var(--text-muted)"};
   :fullscreen &, :-webkit-full-screen &{ font-size:min(2.5vmin,20px); }
 `;
@@ -598,7 +598,7 @@ const BlindsRow = styled.div`
 const BlindCard = styled.div`
   flex:1;background:var(--surface2);border:1px solid var(--border);
   border-radius:var(--radius-sm);padding:10px 8px;text-align:center;
-  .lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;}
+  .lbl{font-size:15px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;}
   .val{font-size:22px;font-weight:800;color:var(--text);}
   @media(max-width:640px){.val{font-size:18px;}}
   :fullscreen &, :-webkit-full-screen &{
@@ -621,7 +621,7 @@ const TimerCtrl = styled.div`
 /* Tournament table */
 const TournTable = styled.table`
   width:100%;border-collapse:collapse;font-size:15px;
-  th{background:var(--surface2);color:var(--text-muted);font-size:12px;font-weight:700;
+  th{background:var(--surface2);color:var(--text-muted);font-size:14px;font-weight:700;
      text-transform:uppercase;letter-spacing:.06em;padding:8px 10px;text-align:left;
      border-bottom:1px solid var(--border);}
   td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text);}
@@ -639,7 +639,7 @@ const ActiveDot = styled.span`
 /* Payout row */
 const PayRow = styled.div`
   display:flex;align-items:center;gap:8px;margin-bottom:8px;
-  .num{font-size:13px;color:var(--text-muted);font-weight:700;min-width:22px;}
+  .num{font-size:15px;color:var(--text-muted);font-weight:700;min-width:22px;}
 `;
 
 /* Prize pool box */
@@ -649,7 +649,7 @@ const PrizeBox = styled.div`
   display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;
 `;
 const PrizeItem = styled.div`
-  .lbl{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;}
+  .lbl{font-size:14px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;}
   .val{font-size:18px;font-weight:700;margin-top:2px;}
 `;
 
@@ -1113,7 +1113,7 @@ export default function App() {
       </TableHeader>
 
       {players.length===0 && (
-        <p style={{color:"var(--text-dim)",textAlign:"center",padding:"20px 0",fontSize:13}}>{t("noPlayer")}</p>
+        <p style={{color:"var(--text-dim)",textAlign:"center",padding:"20px 0",fontSize:15}}>{t("noPlayer")}</p>
       )}
 
       {players.map((p,i)=>{
@@ -1125,8 +1125,8 @@ export default function App() {
             <PlayerRow>
               <Avatar $c={color}>{initials(p.name)}</Avatar>
               <div>
-                <div style={{fontWeight:700,fontSize:13}}>
-                  {pos&&<RankBadge $pos={pos}>{pos===1?"🥇":pos===2?"🥈":pos===3?"🥉":`#${pos}`}</RankBadge>}
+                <div style={{fontWeight:700,fontSize:15}}>
+                  {pos&&<RankBadge $pos={pos}>#{pos}</RankBadge>}
                   {p.name}
                 </div>
               </div>
@@ -1137,7 +1137,7 @@ export default function App() {
               </div>
               <div onClick={e=>e.stopPropagation()}>
                 <Input type="number" value={p.cashout===0?"":p.cashout}
-                  style={{fontSize:13,fontWeight:600}}
+                  style={{fontSize:15,fontWeight:600}}
                   onChange={e=>{const np=[...players];np[i].cashout=Number(e.target.value)||0;setPlayers(np);}}
                   onBlur={e=>{if(e.target.value===""){const np=[...players];np[i].cashout=0;setPlayers(np);}}} />
               </div>
@@ -1202,14 +1202,14 @@ export default function App() {
           const color=AVATAR_COLORS[players.findIndex(p=>p.name===r.name)%AVATAR_COLORS.length];
           return (
             <SummaryPlayerItem key={i}>
-              <Avatar $c={color} style={{width:32,height:32,fontSize:11}}>{initials(r.name)}</Avatar>
+              <Avatar $c={color} style={{width:32,height:32,fontSize:15}}>{initials(r.name)}</Avatar>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontWeight:700,fontSize:13}}>{r.name}</div>
+                <div style={{fontWeight:700,fontSize:15}}>{r.name}</div>
                 <div style={{display:"flex",gap:10,marginTop:2,flexWrap:"wrap"}}>
-                  <span style={{fontSize:13,fontWeight:700,color:"var(--info)"}}>
+                  <span style={{fontSize:15,fontWeight:700,color:"var(--info)"}}>
                     {t("buyIn")}: {fmtN(r.count)}
                   </span>
-                  <span style={{fontSize:13,fontWeight:700,color:"var(--success)"}}>
+                  <span style={{fontSize:15,fontWeight:700,color:"var(--success)"}}>
                     {t("cashOut")}: {fmtN(r.total)}
                   </span>
                 </div>
@@ -1260,7 +1260,7 @@ export default function App() {
         <span></span>
       </TableHeader>
       {players.length===0 && (
-        <p style={{color:"var(--text-dim)",textAlign:"center",padding:"20px 0",fontSize:13}}>{t("noPlayer")}</p>
+        <p style={{color:"var(--text-dim)",textAlign:"center",padding:"20px 0",fontSize:15}}>{t("noPlayer")}</p>
       )}
       {players.map((p,i)=>{
         const pos=getPos(p.name);
@@ -1273,13 +1273,14 @@ export default function App() {
                     width:36,height:36,borderRadius:"50%",flexShrink:0,
                     background:pos===1?"var(--gold)":pos===2?"var(--silver)":"var(--bronze)",
                     display:"flex",alignItems:"center",justifyContent:"center",
-                    fontSize:20,boxShadow:`0 2px 8px ${pos===1?"rgba(245,197,66,.4)":pos===2?"rgba(192,192,192,.3)":"rgba(205,127,50,.4)"}`
+                    fontSize:13,fontWeight:900,color:"#fff",letterSpacing:"-0.5px",
+                    boxShadow:`0 2px 8px ${pos===1?"rgba(245,197,66,.4)":pos===2?"rgba(192,192,192,.3)":"rgba(205,127,50,.4)"}`
                   }}>
-                    {pos===1?"🥇":pos===2?"🥈":"🥉"}
+                    #{pos}
                   </div>
                 : <Avatar $c={color}>{initials(p.name)}</Avatar>}
               <div>
-                <div style={{fontWeight:700,fontSize:13}}>
+                <div style={{fontWeight:700,fontSize:15}}>
                   {pos && pos>3 && <RankBadge $pos={pos}>#{pos}</RankBadge>}
                   {p.name}
                 </div>
@@ -1290,7 +1291,7 @@ export default function App() {
               <div style={{textAlign:"center"}}>
                 <CountBox onClick={e=>e.stopPropagation()}>
                   <CountBtn onClick={()=>tournBuy(i,-1)}>−</CountBtn>
-                  <span style={{minWidth:20,textAlign:"center",fontSize:13,fontWeight:700}}>{p.count}</span>
+                  <span style={{minWidth:20,textAlign:"center",fontSize:15,fontWeight:700}}>{p.count}</span>
                   <CountBtn onClick={()=>tournBuy(i,1)}>+</CountBtn>
                 </CountBox>
               </div>
@@ -1310,8 +1311,9 @@ export default function App() {
                   ? <div style={{
                       width:36,height:36,borderRadius:"50%",flexShrink:0,
                       background:pos===1?"var(--gold)":pos===2?"var(--silver)":"var(--bronze)",
-                      display:"flex",alignItems:"center",justifyContent:"center",fontSize:20
-                    }}>{pos===1?"🥇":pos===2?"🥈":"🥉"}</div>
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      fontSize:13,fontWeight:900,color:"#fff",letterSpacing:"-0.5px"
+                    }}>#{pos}</div>
                   : <Avatar $c={color}>{initials(p.name)}</Avatar>}
                 <div style={{flex:1}}>
                   <PlayerName>
@@ -1375,7 +1377,7 @@ export default function App() {
               <tr key={i}>
                 <td>
                   <RankBadge $pos={w.rank??99}>
-                    {w.rank===1?"🥇":w.rank===2?"🥈":w.rank===3?"🥉":w.rank?`#${w.rank}`:"—"}
+                    {w.rank?`#${w.rank}`:"—"}
                   </RankBadge>{w.name}
                 </td>
                 <td>{fmtN(w.prize??0)}</td>
@@ -1463,7 +1465,7 @@ export default function App() {
           <div style={{width:"100%",background:"var(--surface2)",border:"1px solid var(--border)",
             borderRadius:"var(--radius-sm)",padding:"10px 16px",display:"flex",
             flexDirection:"column",alignItems:"center",gap:4}}>
-            <span style={{fontSize:11,fontWeight:700,textTransform:"uppercase",
+            <span style={{fontSize:15,fontWeight:700,textTransform:"uppercase",
               letterSpacing:".1em",color:"var(--text-muted)"}}>
               {lang==="TH"?"Level ถัดไป":"Next Level"}
             </span>
@@ -1529,7 +1531,7 @@ export default function App() {
                 : r.isBreak?{background:"rgba(96,165,250,.07)",color:"var(--text-muted)"}:{}}>
                 <td style={{width:20}}>{i===roundIndex&&running&&<ActiveDot/>}</td>
                 {r.isBreak
-                  ? <td colSpan={3} style={{fontSize:12,fontWeight:700,letterSpacing:".04em",color:"#60a5fa"}}>☕ Break</td>
+                  ? <td colSpan={3} style={{fontSize:14,fontWeight:700,letterSpacing:".04em",color:"#60a5fa"}}>☕ Break</td>
                   : <><td>{r.sb?fmtN(r.sb):"—"}</td><td>{r.bb?fmtN(r.bb):"—"}</td><td>{r.ante?fmtN(r.ante):"—"}</td></>
                 }
                 <td>{fmt(r.duration)}</td>
@@ -1742,12 +1744,14 @@ export default function App() {
           <div style={{
             position:"fixed",bottom:16,right:16,zIndex:9999,
             background:"var(--surface)",border:"1px solid var(--border2)",
-            borderRadius:8,padding:"6px 12px",fontSize:12,fontWeight:700,
+            borderRadius:8,padding:"6px 12px",fontSize:14,fontWeight:700,
             color: saveStatus==="saved" ? "var(--success)" : "var(--text-muted)",
             boxShadow:"var(--shadow-lg)",display:"flex",alignItems:"center",gap:6,
             transition:"opacity .3s",
           }}>
-            {saveStatus==="saving" ? "⏳ กำลังบันทึก..." : "✅ บันทึกแล้ว"}
+            {saveStatus==="saving"
+              ? <><Loader2 size={14} style={{animation:"spin 1s linear infinite"}}/> กำลังบันทึก...</>
+              : <><CheckCircle size={14}/> บันทึกแล้ว</>}
           </div>
         )}
 
@@ -1809,7 +1813,7 @@ export default function App() {
                     <div style={{fontWeight:700,color:"var(--text)"}}>
                       {lang==="TH"?"กรุณาเข้าสู่ระบบก่อนใช้งาน":"Please sign in to use this feature"}
                     </div>
-                    <div style={{fontSize:12,color:"var(--text-dim)"}}>
+                    <div style={{fontSize:14,color:"var(--text-dim)"}}>
                       {lang==="TH"?"ฟีเจอร์ประกันสำหรับสมาชิก Cash Pro / Full Pro":"Insurance feature for Cash Pro / Full Pro members"}
                     </div>
                     <button style={{padding:"9px 22px",borderRadius:8,border:"none",background:"var(--accent)",color:"#fff",fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:14}} onClick={()=>setShowLogin(true)}>

@@ -43,17 +43,17 @@ const ModeBadge = styled.span<{$cash?:boolean}>`
   color:${p=>p.$cash?"var(--success)":"#818cf8"};
 `;
 const SessionName = styled.div`font-size:14px;font-weight:700;color:var(--text);flex:1;`;
-const SessionDate = styled.div`font-size:12px;color:var(--text-muted);flex-shrink:0;`;
+const SessionDate = styled.div`font-size:14px;color:var(--text-muted);flex-shrink:0;`;
 
 const SessionDetail = styled.div`padding:12px 14px;display:flex;flex-direction:column;gap:8px;`;
 const PlayerRow = styled.div<{$profit:number}>`
   display:flex;align-items:center;gap:8px;padding:6px 10px;
   border-radius:6px;background:var(--surface2);
 `;
-const PName = styled.div`flex:1;font-size:13px;font-weight:600;color:var(--text);`;
-const PDetail = styled.div`font-size:12px;color:var(--text-muted);`;
+const PName = styled.div`flex:1;font-size:15px;font-weight:600;color:var(--text);`;
+const PDetail = styled.div`font-size:14px;color:var(--text-muted);`;
 const PProfit = styled.div<{$pos:boolean}>`
-  font-size:13px;font-weight:800;
+  font-size:15px;font-weight:800;
   color:${p=>p.$pos?"var(--success)":"var(--accent)"};
 `;
 
@@ -107,7 +107,7 @@ export function HistoryModal({ lang, token, onClose }: Props) {
               <Empty>
                 <History size={32} style={{marginBottom:10,opacity:.3}}/>
                 <div>{isTH?"ยังไม่มีประวัติการเล่น":"No sessions yet"}</div>
-                <div style={{fontSize:12,marginTop:6,color:"var(--text-dim)"}}>
+                <div style={{fontSize:14,marginTop:6,color:"var(--text-dim)"}}>
                   {isTH?"ระบบจะบันทึกให้อัตโนมัติเมื่อกด Export หรือ Share":"Auto-saved when you Export or Share"}
                 </div>
               </Empty>
@@ -128,7 +128,7 @@ export function HistoryModal({ lang, token, onClose }: Props) {
                       {isCash ? (
                         <>
                           {s.summary?.totalBuyIn!=null && (
-                            <div style={{display:"flex",gap:16,fontSize:12,color:"var(--text-muted)",marginBottom:4}}>
+                            <div style={{display:"flex",gap:16,fontSize:14,color:"var(--text-muted)",marginBottom:4}}>
                               <span>Buy-in รวม: <b style={{color:"var(--text)"}}>{fmtN(s.summary.totalBuyIn!)}</b></span>
                               <span>Cashout รวม: <b style={{color:"var(--text)"}}>{fmtN(s.summary.totalCashout!)}</b></span>
                             </div>
@@ -150,7 +150,7 @@ export function HistoryModal({ lang, token, onClose }: Props) {
                       ) : (
                         <>
                           {s.summary?.prizePool!=null && (
-                            <div style={{fontSize:12,color:"var(--text-muted)",marginBottom:4}}>
+                            <div style={{fontSize:14,color:"var(--text-muted)",marginBottom:4}}>
                               <Trophy size={12} style={{marginRight:4}}/>
                               Prize Pool: <b style={{color:"var(--text)"}}>{fmtN(s.summary.prizePool!)}</b>
                             </div>
@@ -160,7 +160,7 @@ export function HistoryModal({ lang, token, onClose }: Props) {
                               <PName>
                                 {p.position!=null && (
                                   <span style={{
-                                    fontSize:11,fontWeight:800,marginRight:6,
+                                    fontSize:15,fontWeight:800,marginRight:6,
                                     color:p.position===1?"var(--gold)":p.position===2?"var(--silver)":p.position===3?"var(--bronze)":"var(--text-muted)"
                                   }}>#{p.position}</span>
                                 )}

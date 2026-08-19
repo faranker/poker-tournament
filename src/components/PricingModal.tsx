@@ -1,7 +1,7 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import styled, { css, keyframes } from "styled-components";
-import { Check, X, Spade, Crown, Calendar } from "lucide-react";
+import { Check, X, Spade, Crown, Calendar, CreditCard } from "lucide-react";
 import type { Plan } from "../auth";
 import { PLAN_COLORS } from "../auth";
 import type { AuthUser } from "../auth";
@@ -272,7 +272,7 @@ export function PricingModal({ currentPlan, lang, user, onClose, onUpgrade }: Pr
 
             <div style={{marginTop:"auto",paddingTop:12,borderTop:"1px solid var(--border)"}}>
               <Note style={{margin:0,fontSize:12}}>
-                💳 PromptPay QR<br/>
+                <CreditCard size={13} style={{display:"inline",verticalAlign:"middle",marginRight:5}}/> PromptPay QR<br/>
                 <span style={{color:"var(--success)",fontWeight:700}}>
                   {isTH?"พร้อมให้บริการแล้ว":"Now available"}
                 </span>

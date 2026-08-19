@@ -1,6 +1,7 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import styled, { css, keyframes } from "styled-components";
+import { User, AlertTriangle } from "lucide-react";
 import {
   signIn, signUp, signOut, resetPassword, checkUsername,
   type AuthUser, type Plan,
@@ -194,7 +195,7 @@ export function LoginModal({ user, reason, onLogin, onLogout, onClose, onUpgrade
         <Dialog.Portal>
           <Overlay />
           <Box>
-            <Title>👤 {isTH?"บัญชีของคุณ":"Your Account"}</Title>
+            <Title><User size={16}/>{isTH?"บัญชีของคุณ":"Your Account"}</Title>
             <PlanSection>
               <PlanRow>
                 <div>
@@ -246,7 +247,7 @@ export function LoginModal({ user, reason, onLogin, onLogout, onClose, onUpgrade
                       </span>
                     </div>
                     {countdown.days <= 7 && (
-                      <div style={{fontSize:11,color:"var(--gold)",fontWeight:600}}>⚠ {isTH?"ใกล้หมดอายุ":"Expiring soon"}</div>
+                      <div style={{fontSize:11,color:"var(--gold)",fontWeight:600}}>  <AlertTriangle size={12} style={{display:"inline",verticalAlign:"middle",marginRight:3}}/>{isTH?"ใกล้หมดอายุ":"Expiring soon"}</div>
                     )}
                   </div>
                 )}
@@ -308,7 +309,7 @@ export function LoginModal({ user, reason, onLogin, onLogout, onClose, onUpgrade
             {isTH?"ลืมรหัสผ่าน?":"Forgot password?"}
           </ForgotLink>
 
-          {err && <ErrMsg>⚠ {err}</ErrMsg>}
+          {err && <ErrMsg><AlertTriangle size={14} style={{display:"inline",verticalAlign:"middle",marginRight:4}}/>{err}</ErrMsg>}
           <BtnRow>
             <Btn $v="ghost" onClick={onClose}>{isTH?"ยกเลิก":"Cancel"}</Btn>
             <Btn $v="primary" disabled={loading} onClick={handleLogin}>
@@ -344,7 +345,7 @@ export function LoginModal({ user, reason, onLogin, onLogout, onClose, onUpgrade
             onChange={e=>{setPassword(e.target.value);reset();}}
             onKeyDown={e=>e.key==="Enter"&&handleRegister()} />
 
-          {err && <ErrMsg>⚠ {err}</ErrMsg>}
+          {err && <ErrMsg><AlertTriangle size={14} style={{display:"inline",verticalAlign:"middle",marginRight:4}}/>{err}</ErrMsg>}
           {ok  && <OkMsg>✓ {ok}</OkMsg>}
           <BtnRow>
             <Dialog.Close asChild>
@@ -366,7 +367,7 @@ export function LoginModal({ user, reason, onLogin, onLogout, onClose, onUpgrade
             value={identifier.includes("@")?identifier:email}
             onChange={e=>{identifier.includes("@")?setIdentifier(e.target.value):setEmail(e.target.value);reset();}}
             onKeyDown={e=>e.key==="Enter"&&handleForgot()} />
-          {err && <ErrMsg>⚠ {err}</ErrMsg>}
+          {err && <ErrMsg><AlertTriangle size={14} style={{display:"inline",verticalAlign:"middle",marginRight:4}}/>{err}</ErrMsg>}
           {ok  && <OkMsg>✓ {ok}</OkMsg>}
           <BtnRow>
             <Btn $v="ghost" onClick={()=>{setView("login");reset();}}>{isTH?"กลับ":"Back"}</Btn>
