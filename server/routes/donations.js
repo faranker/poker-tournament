@@ -28,7 +28,7 @@ router.get("/top", async (_req, res) => {
 
 /* ── POST /donations/slip — upload slip ── */
 router.post("/slip", upload.single("slip"), async (req, res) => {
-  const { display_name, amount, user_id, payer_name, payer_bank } = req.body;
+  const { display_name, amount, user_id } = req.body;
   const file = req.file;
 
   if (!file)         return res.status(400).json({ error: "กรุณาแนบสลิป" });
@@ -37,13 +37,13 @@ router.post("/slip", upload.single("slip"), async (req, res) => {
 
   try {
     const { rows } = await query(
-      `insert into donations (display_name, user_id, amount, slip_path, payer_name, payer_bank, status)
-       values ($1, $2, $3, $4, $5, $6, 'pending') returning id`,
-      [display_name, user_id || null, Number(amount), file.path, payer_name || null, payer_bank || null]
+      `insert into donations (display_name, user_id, amount, slip_path, status)
+       values ($1, $2, $3, $4, 'pending') returning id`,
+      [display_name, user_id || null, Number(amount), file.path]
     );
     const donationId = rows[0].id;
 
-    await sendSlipToTelegram({ donationId, display_name, amount, payerName: payer_name, payerBank: payer_bank, filePath: file.path });
+    await sendSlipToTelegram({ donationId, display_name, amount, filePath: file.path });
 
     res.json({ success: true, donationId });
   } catch (err) {
@@ -52,27 +52,8 @@ router.post("/slip", upload.single("slip"), async (req, res) => {
   }
 });
 
-/* อนุมัติ donation ด้วยยอดที่กำหนด — ใช้ร่วมกันจาก Telegram callback และ LINE auto-approve */
-async function approveDonationById(id, amount, { via = "manual" } = {}) {
-  const { rows } = await query(
-    "select * from donations where id=$1 and status in ('pending','pending_amount')", [id]
-  );
-  if (!rows[0]) return null;
-
-  await query(
-    "update donations set status='approved', amount=$1, approved_at=now() where id=$2",
-    [amount, id]
-  );
-
-  const { sendTelegramMessage } = require("./payments");
-  const tag = via === "line-bot" ? "🤖 Auto-approved (LINE)" : "✅ Approved";
-  await sendTelegramMessage(`${tag} — Donation #${id}\n👤 ${rows[0].display_name}\n💰 ฿${Number(amount).toLocaleString()}`);
-
-  return { ...rows[0], amount };
-}
-
 /* ── Telegram ── */
-async function sendSlipToTelegram({ donationId, display_name, amount, payerName, payerBank, filePath }) {
+async function sendSlipToTelegram({ donationId, display_name, amount, filePath }) {
   const token  = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
 
@@ -80,7 +61,6 @@ async function sendSlipToTelegram({ donationId, display_name, amount, payerName,
     `🩷 Donation #${donationId}\n` +
     `👤 ชื่อ: ${display_name}\n` +
     `💰 ยอด: ${Number(amount).toLocaleString()} บาท\n` +
-    (payerName ? `🏦 ผู้โอน: ${payerName}${payerBank ? ` (${payerBank})` : ""}\n` : "") +
     `🕐 เวลา: ${new Date().toLocaleString("th-TH")}`;
 
   const replyMarkup = JSON.stringify({
@@ -113,4 +93,3 @@ async function sendSlipToTelegram({ donationId, display_name, amount, payerName,
 }
 
 module.exports = router;
-module.exports.approveDonationById = approveDonationById;

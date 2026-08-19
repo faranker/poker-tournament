@@ -93,18 +93,6 @@ const StatusBox = styled.div<{$ok?:boolean}>`
 const FieldLabel = styled.div`font-size:11px;font-weight:700;text-transform:uppercase;
   letter-spacing:.07em;color:var(--text-muted);margin-bottom:5px;`;
 
-const Select = styled.select`
-  width:100%;padding:9px 11px;border-radius:var(--radius-sm);
-  border:1px solid var(--border);background:var(--surface2);
-  color:var(--text);font-size:15px;font-family:inherit;
-  &:focus{outline:none;border-color:#e879a0;box-shadow:0 0 0 3px #e879a022;}
-`;
-
-const THAI_BANKS = [
-  "กสิกรไทย (KBank)", "ไทยพาณิชย์ (SCB)", "กรุงเทพ (BBL)", "กรุงไทย (KTB)",
-  "กรุงศรีอยุธยา (Krungsri)", "ทีทีบี (ttb)", "ออมสิน (GSB)", "ธ.ก.ส. (BAAC)", "อื่นๆ",
-];
-
 const API = import.meta.env.VITE_API_URL as string;
 
 type Donor = { display_name: string; amount: number };
@@ -118,10 +106,8 @@ interface Props {
 
 export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) {
   const isTH = lang === "TH";
-  const [amount,    setAmount]    = useState<string>("");
+  const [amount] = useState<number>(0); // set by admin from slip
   const [name,      setName]      = useState(defaultName);
-  const [payerName, setPayerName] = useState("");
-  const [payerBank, setPayerBank] = useState("");
   const [file,      setFile]      = useState<File | null>(null);
   const [preview,   setPreview]   = useState<string | null>(null);
   const [loading,   setLoading]   = useState(false);
@@ -143,26 +129,22 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
     reader.readAsDataURL(f);
   };
 
-  const numAmount = Number(amount);
-
   const handleSubmit = async () => {
-    if (!file || !name || !numAmount) return;
+    if (!file || !name || !amount) return;
     setLoading(true);
     try {
       const form = new FormData();
       form.append("slip", file);
       form.append("display_name", name);
-      form.append("amount", String(numAmount));
+      form.append("amount", String(amount));
       if (userId) form.append("user_id", userId);
-      if (payerName.trim()) form.append("payer_name", payerName.trim());
-      if (payerBank) form.append("payer_bank", payerBank);
       await fetch(`${API}/donations/slip`, { method: "POST", body: form });
       setSubmitted(true);
     } catch { setSubmitted(true); }
     setLoading(false);
   };
 
-  const canSubmit = !!file && !!name.trim() && numAmount > 0;
+  const canSubmit = !!file && !!name.trim();
 
   return (
     <Dialog.Root open onOpenChange={open => { if (!open) onClose(); }}>
@@ -216,34 +198,6 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
                     onChange={e => setName(e.target.value)}
                     maxLength={30}
                   />
-                </div>
-
-                <div>
-                  <FieldLabel>{isTH?"ยอดที่โอน (บาท)":"Amount transferred (THB)"}</FieldLabel>
-                  <NameInput
-                    type="number" min={1} inputMode="decimal"
-                    placeholder="99"
-                    value={amount}
-                    onChange={e => setAmount(e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <FieldLabel>{isTH?"ชื่อบัญชีผู้โอน (สำหรับตรวจสอบอัตโนมัติ)":"Sender account name (for auto-verification)"}</FieldLabel>
-                  <NameInput
-                    placeholder={isTH?"ชื่อ-นามสกุลตามบัญชีธนาคาร":"Name as on your bank account"}
-                    value={payerName}
-                    onChange={e => setPayerName(e.target.value)}
-                    maxLength={60}
-                  />
-                </div>
-
-                <div>
-                  <FieldLabel>{isTH?"ธนาคารที่โอน":"Bank"}</FieldLabel>
-                  <Select value={payerBank} onChange={e => setPayerBank(e.target.value)}>
-                    <option value="">{isTH?"เลือกธนาคาร":"Select bank"}</option>
-                    {THAI_BANKS.map(b => <option key={b} value={b}>{b}</option>)}
-                  </Select>
                 </div>
 
 

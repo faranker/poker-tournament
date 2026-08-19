@@ -38,22 +38,6 @@ create table if not exists payment_requests (
   billing_cycle text not null default 'monthly',
   amount       numeric not null,
   slip_path    text,
-  payer_name   text,
-  payer_bank   text,
-  status       text not null default 'pending' check (status in ('pending','approved','rejected')),
-  approved_at  timestamptz,
-  created_at   timestamptz default now()
-);
-
--- Donations (tips)
-create table if not exists donations (
-  id           serial primary key,
-  display_name text not null,
-  user_id      uuid references users(id) on delete set null,
-  amount       numeric not null default 0,
-  slip_path    text,
-  payer_name   text,
-  payer_bank   text,
   status       text not null default 'pending' check (status in ('pending','approved','rejected')),
   approved_at  timestamptz,
   created_at   timestamptz default now()
@@ -84,5 +68,3 @@ create trigger on_user_created
 -- Indexes for performance
 create index if not exists idx_export_logs_user_id on export_logs(user_id);
 create index if not exists idx_export_logs_exported_at on export_logs(exported_at);
-create index if not exists idx_payment_requests_status_amount on payment_requests(status, amount);
-create index if not exists idx_donations_status_amount on donations(status, amount);
