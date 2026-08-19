@@ -19,6 +19,7 @@ app.use("/telegram",      require("./routes/telegram-webhook"));
 app.use("/sessions",      require("./routes/sessions"));
 app.use("/history",       require("./routes/history"));
 app.use("/donations",     require("./routes/donations"));
+app.use("/auto-approve",  require("./routes/auto-approve"));
 
 /* Health check */
 app.get("/health", async (_req, res) => {

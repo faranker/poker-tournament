@@ -144,6 +144,26 @@ const StatusBox = styled.div<{$ok?:boolean}>`
   color:${p=>p.$ok?"#22c55e":"#f59e0b"};
 `;
 
+const FieldLabel = styled.div`font-size:12px;font-weight:700;color:#4a8a4a;margin-bottom:6px;`;
+const TextInput = styled.input`
+  width:100%;padding:9px 11px;border-radius:8px;
+  border:1px solid #2a3a2a;background:#0d1117;color:#e2e8f0;
+  font-size:14px;font-family:inherit;
+  &:focus{outline:none;border-color:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.15);}
+  &::placeholder{color:#4a6a4a;}
+`;
+const Select = styled.select`
+  width:100%;padding:9px 11px;border-radius:8px;
+  border:1px solid #2a3a2a;background:#0d1117;color:#e2e8f0;
+  font-size:14px;font-family:inherit;
+  &:focus{outline:none;border-color:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.15);}
+`;
+
+const THAI_BANKS = [
+  "กสิกรไทย (KBank)", "ไทยพาณิชย์ (SCB)", "กรุงเทพ (BBL)", "กรุงไทย (KTB)",
+  "กรุงศรีอยุธยา (Krungsri)", "ทีทีบี (ttb)", "ออมสิน (GSB)", "ธ.ก.ส. (BAAC)", "อื่นๆ",
+];
+
 /* Plan config */
 const PLAN_PRICES: Record<string, { monthly: number; yearly: number; name: string }> = {
   cash_pro: { monthly: 49,  yearly: 299, name: "Cash Pro" },
@@ -163,6 +183,8 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess: _on
   const [preview,   setPreview]   = useState<string | null>(null);
   const [loading,   setLoading]   = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [payerName, setPayerName] = useState("");
+  const [payerBank, setPayerBank] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const isTH = lang === "TH";
 
@@ -185,6 +207,8 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess: _on
       form.append("plan", plan);
       form.append("billing_cycle", billingCycle);
       form.append("amount", String(amount));
+      if (payerName.trim()) form.append("payer_name", payerName.trim());
+      if (payerBank) form.append("payer_bank", payerBank);
       await fetch(`${import.meta.env.VITE_API_URL}/payments/slip`, {
         method: "POST",
         headers: { Authorization: `Bearer ${localStorage.getItem("poker_token")}` },
@@ -238,6 +262,30 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess: _on
               <div className="acc">บัญชี: xxx-x-x3766-x</div>
               <div className="ref">เลขที่อ้างอิง: 004999009272732</div>
             </AccountInfo>
+
+            {!submitted && (
+              <div style={{borderTop:"1px solid #1a2a1a",paddingTop:16,display:"flex",flexDirection:"column",gap:10}}>
+                <div style={{fontSize:13,fontWeight:700,color:"#4a8a4a"}}>
+                  {isTH ? "🏦 บัญชีที่โอนออก (สำหรับตรวจสอบอัตโนมัติ)" : "🏦 Sending account (for auto-verification)"}
+                </div>
+                <div>
+                  <FieldLabel>{isTH ? "ชื่อบัญชีผู้โอน" : "Sender account name"}</FieldLabel>
+                  <TextInput
+                    placeholder={isTH ? "ชื่อ-นามสกุลตามบัญชีธนาคาร" : "Name as on your bank account"}
+                    value={payerName}
+                    onChange={e => setPayerName(e.target.value)}
+                    maxLength={60}
+                  />
+                </div>
+                <div>
+                  <FieldLabel>{isTH ? "ธนาคารที่โอน" : "Bank"}</FieldLabel>
+                  <Select value={payerBank} onChange={e => setPayerBank(e.target.value)}>
+                    <option value="">{isTH ? "เลือกธนาคาร" : "Select bank"}</option>
+                    {THAI_BANKS.map(b => <option key={b} value={b}>{b}</option>)}
+                  </Select>
+                </div>
+              </div>
+            )}
 
             <div style={{borderTop:"1px solid #1a2a1a",paddingTop:16}}>
               <div style={{fontSize:13,fontWeight:700,color:"#4a8a4a",marginBottom:10}}>

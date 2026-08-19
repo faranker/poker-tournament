@@ -22,7 +22,7 @@ const upload = multer({
 
 /* POST /payments/slip — รับสลิป + ส่ง Telegram */
 router.post("/slip", requireAuth, upload.single("slip"), async (req, res) => {
-  const { plan, billing_cycle, amount } = req.body;
+  const { plan, billing_cycle, amount, payer_name, payer_bank } = req.body;
   const file = req.file;
 
   if (!file) return res.status(400).json({ error: "กรุณาแนบสลิป" });
@@ -31,9 +31,9 @@ router.post("/slip", requireAuth, upload.single("slip"), async (req, res) => {
   try {
     /* บันทึก payment request ลง DB */
     const { rows } = await query(
-      `insert into payment_requests (user_id, plan, billing_cycle, amount, slip_path, status)
-       values ($1, $2, $3, $4, $5, 'pending') returning id`,
-      [req.user.id, plan, billing_cycle || "monthly", amount, file.path]
+      `insert into payment_requests (user_id, plan, billing_cycle, amount, slip_path, payer_name, payer_bank, status)
+       values ($1, $2, $3, $4, $5, $6, $7, 'pending') returning id`,
+      [req.user.id, plan, billing_cycle || "monthly", amount, file.path, payer_name || null, payer_bank || null]
     );
     const requestId = rows[0].id;
 
@@ -53,6 +53,8 @@ router.post("/slip", requireAuth, upload.single("slip"), async (req, res) => {
       plan: PLAN_NAMES[plan] || plan,
       billingCycle: billing_cycle === "yearly" ? "รายปี" : "รายเดือน",
       amount,
+      payerName: payer_name,
+      payerBank: payer_bank,
       filePath: file.path,
     });
 
@@ -63,42 +65,46 @@ router.post("/slip", requireAuth, upload.single("slip"), async (req, res) => {
   }
 });
 
+/* อัปเดต plan + สถานะ request ให้เป็น approved — ใช้ร่วมกันจาก Telegram approve และ LINE auto-approve */
+async function approvePaymentRequestById(id, { via = "manual" } = {}) {
+  const { rows } = await query(
+    "select * from payment_requests where id = $1 and status = 'pending'",
+    [id]
+  );
+  if (!rows[0]) return null;
+
+  const pr = rows[0];
+  const months = PLAN_MONTHS[pr.billing_cycle] || 1;
+  const expiresAt = new Date();
+  expiresAt.setMonth(expiresAt.getMonth() + months);
+
+  await query(
+    `insert into subscriptions (user_id, plan, expires_at)
+     values ($1, $2, $3)
+     on conflict (user_id) do update set plan=$2, expires_at=$3, updated_at=now()`,
+    [pr.user_id, pr.plan, expiresAt]
+  );
+
+  await query(
+    "update payment_requests set status='approved', approved_at=now() where id=$1",
+    [id]
+  );
+
+  const tag = via === "line-bot" ? "🤖 Auto-approved (LINE)" : "✅ Approved";
+  await sendTelegramMessage(`${tag} #${id}\nPlan: ${PLAN_NAMES[pr.plan]}\nExpires: ${expiresAt.toLocaleDateString("th-TH")}`);
+
+  return { ...pr, expiresAt };
+}
+
 /* POST /payments/approve/:id — Approve จาก Telegram callback */
 router.post("/approve/:id", async (req, res) => {
   const adminKey = req.headers["x-admin-key"];
   if (adminKey !== process.env.ADMIN_KEY)
     return res.status(403).json({ error: "Forbidden" });
 
-  const { id } = req.params;
   try {
-    const { rows } = await query(
-      "select * from payment_requests where id = $1 and status = 'pending'",
-      [id]
-    );
-    if (!rows[0]) return res.status(404).json({ error: "ไม่พบ request นี้" });
-
-    const pr = rows[0];
-    const months = PLAN_MONTHS[pr.billing_cycle] || 1;
-    const expiresAt = new Date();
-    expiresAt.setMonth(expiresAt.getMonth() + months);
-
-    /* อัปเดต plan */
-    await query(
-      `insert into subscriptions (user_id, plan, expires_at)
-       values ($1, $2, $3)
-       on conflict (user_id) do update set plan=$2, expires_at=$3, updated_at=now()`,
-      [pr.user_id, pr.plan, expiresAt]
-    );
-
-    /* อัปเดต status */
-    await query(
-      "update payment_requests set status='approved', approved_at=now() where id=$1",
-      [id]
-    );
-
-    /* แจ้ง Telegram ว่า approve แล้ว */
-    await sendTelegramMessage(`✅ Approved #${id}\nPlan: ${PLAN_NAMES[pr.plan]}\nExpires: ${expiresAt.toLocaleDateString("th-TH")}`);
-
+    const approved = await approvePaymentRequestById(req.params.id);
+    if (!approved) return res.status(404).json({ error: "ไม่พบ request นี้" });
     res.json({ success: true });
   } catch (err) {
     console.error(err);
@@ -138,7 +144,7 @@ async function sendTelegramMessage(text) {
   });
 }
 
-async function sendSlipToTelegram({ requestId, username, email, plan, billingCycle, amount, filePath }) {
+async function sendSlipToTelegram({ requestId, username, email, plan, billingCycle, amount, payerName, payerBank, filePath }) {
   const token  = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
 
@@ -147,6 +153,7 @@ async function sendSlipToTelegram({ requestId, username, email, plan, billingCyc
     `👤 User: ${username} (${email})\n` +
     `📦 Plan: ${plan} · ${billingCycle}\n` +
     `💰 ยอด: ${Number(amount).toLocaleString()} บาท\n` +
+    (payerName ? `🏦 ผู้โอน: ${payerName}${payerBank ? ` (${payerBank})` : ""}\n` : "") +
     `🕐 เวลา: ${new Date().toLocaleString("th-TH")}`;
 
   const replyMarkup = JSON.stringify({
@@ -180,3 +187,5 @@ async function sendSlipToTelegram({ requestId, username, email, plan, billingCyc
 }
 
 module.exports = router;
+module.exports.approvePaymentRequestById = approvePaymentRequestById;
+module.exports.sendTelegramMessage = sendTelegramMessage;
