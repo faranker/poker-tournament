@@ -83,7 +83,6 @@ const DownloadBtn = styled.button`
   &:hover:not(:disabled){opacity:.88;}
   &:disabled{opacity:.5;cursor:not-allowed;}
 `;
-const Note = styled.div`font-size:13px;color:var(--text-muted);text-align:center;`;
 
 type Theme = "dark"|"light"|"custom";
 
