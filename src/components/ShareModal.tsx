@@ -68,7 +68,7 @@ const ThemePreview = styled.div<{$theme:"dark"|"light"|"custom";$bg?:string}>`
   width:100%;aspect-ratio:16/9;border-radius:6px;overflow:hidden;
   background:${p=>
     p.$theme==="dark"?"#111624":
-    p.$theme==="light"?"#f8fafc":
+    p.$theme==="light"?"#f8f6f0":
     p.$bg?`url(${p.$bg}) center/cover`:"#334155"};
   border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
   font-size:11px;font-weight:700;
@@ -179,11 +179,11 @@ export function ShareModal({ lang, mode, players, tournament, prizeWinners, sumB
   };
 
   const LIGHT_VARS: Record<string,string> = {
-    "--surface":"#ffffff","--surface2":"#f1f5f9","--surface3":"#e2e8f0",
-    "--border":"#e2e8f0","--border2":"#cbd5e1",
-    "--text":"#0f172a","--text-muted":"#475569","--text-dim":"#94a3b8",
-    "--success":"#16a34a","--accent":"#ef4444",
-    "--gold":"#d97706","--silver":"#64748b","--bronze":"#92400e","--info":"#2563eb",
+    "--surface":"#f8f6f0","--surface2":"#edeae0","--surface3":"#e0ddd4",
+    "--border":"#d4d0c4","--border2":"#b8b4a8",
+    "--text":"#1a1814","--text-muted":"#3d3a30","--text-dim":"#6b6860",
+    "--success":"#15803d","--accent":"#dc2626",
+    "--gold":"#92400e","--silver":"#44403c","--bronze":"#7c2d12","--info":"#1e40af",
   };
 
   const handleDownload = async () => {
@@ -192,13 +192,13 @@ export function ShareModal({ lang, mode, players, tournament, prizeWinners, sumB
     const el = summaryRef.current;
 
     try {
-      const bgColor = theme==="dark"?"#111624":theme==="light"?"#f8fafc":null;
+      const bgColor = theme==="dark"?"#111624":theme==="light"?"#f8f6f0":null;
       const canvas = await html2canvas(el, {
         backgroundColor: bgColor,
         scale:2, useCORS:true, logging:false,
         onclone: (_doc, clonedEl) => {
           if (theme === "light") {
-            clonedEl.style.background = "#f8fafc";
+            clonedEl.style.background = "#f8f6f0";
             Object.entries(LIGHT_VARS).forEach(([k,v]) => clonedEl.style.setProperty(k,v));
           } else if (theme === "dark") {
             clonedEl.style.background = "#111624";
