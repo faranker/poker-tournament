@@ -1545,7 +1545,6 @@ export default function App() {
             totalCashout={totalCashout}
             normalPrize={normalPrize}
             summaryRef={summaryRef}
-            token={localStorage.getItem("poker_token")||undefined}
             onClose={()=>setShowShare(false)}
           />
         )}

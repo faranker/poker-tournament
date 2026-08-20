@@ -101,25 +101,19 @@ interface Props {
   totalCashout: number;
   normalPrize: number;
   summaryRef: RefObject<HTMLDivElement | null>;
-  token?: string;
   onClose: () => void;
 }
 
 function fmtN(n:number){ return Math.round(n).toLocaleString(); }
 
-export function ShareModal({ lang, mode, players, tournament, prizeWinners, sumBuyIn, totalCashout, normalPrize, summaryRef, token, onClose }: Props) {
+export function ShareModal({ lang, mode, players, tournament, prizeWinners, sumBuyIn, totalCashout, normalPrize, summaryRef, onClose }: Props) {
   const [tab, setTab] = useState<"text"|"image">("text");
   const [theme, setTheme] = useState<Theme>("dark");
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [customBg, setCustomBg] = useState<string|null>(null);
   const isTH = lang === "TH";
 
-  useState(() => {
-    if (!token) return;
-    fetch("/api/auth/profile/bg", { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json()).then(d => { if (d.bg_image) setCustomBg(d.bg_image); }).catch(() => {});
-  });
+  const customBg = localStorage.getItem("poker_bg_image");
 
   const getSep = () => "━━━━━━━━━━━━━━━━";
 
