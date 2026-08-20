@@ -11,8 +11,10 @@ create table if not exists users (
   password    text not null,
   created_at  timestamptz default now(),
   reset_token text,
-  reset_expires timestamptz
+  reset_expires timestamptz,
+  bg_image text
 );
+alter table users add column if not exists bg_image text;
 
 -- Subscriptions (plan management)
 create table if not exists subscriptions (

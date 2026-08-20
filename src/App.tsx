@@ -3,11 +3,10 @@ import { useState, useEffect, useRef } from "react";
 import styled, { createGlobalStyle, keyframes, css } from "styled-components";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Select from "@radix-ui/react-select";
-import html2canvas from "html2canvas";
 import {
   Plus, X, Play, Pause, SkipBack, SkipForward,
-  Coffee, Camera, Trophy, Banknote, TrendingUp, TrendingDown, Check, ChevronDown,
-  Maximize, Minimize, Clock, Loader2, CheckCircle,
+  Coffee, Trophy, Banknote, TrendingUp, TrendingDown, Check, ChevronDown,
+  Maximize, Minimize, Clock, Loader2, CheckCircle, Share2,
 } from "lucide-react";
 import { SummaryCard } from "./components/SummaryCard";
 import PokerInsurance from "./components/PokerInsurance";
@@ -16,10 +15,11 @@ import { PricingModal } from "./components/PricingModal";
 import { PaymentModal } from "./components/PaymentModal";
 import { DonateModal } from "./components/DonateModal";
 import { HistoryModal } from "./components/HistoryModal";
+import { ShareModal } from "./components/ShareModal";
 import { AppDialog, type DialogConfig } from "./components/AppDialog";
 import {
   getSessionUser, refreshUser, type AuthUser, type Plan,
-  getExportCount, incExportCount,
+  getExportCount,
   FREE_MAX_PLAYERS, FREE_MAX_EXPORTS,
   PLAN_COLORS,
 } from "./auth";
@@ -703,6 +703,7 @@ export default function App() {
   const [paymentPlan, setPaymentPlan] = useState<{plan: Plan; cycle: "monthly"|"yearly"}|null>(null);
   const [showDonate,   setShowDonate]  = useState(false);
   const [showHistory,  setShowHistory] = useState(false);
+  const [showShare,    setShowShare]   = useState(false);
   const timerRef = useRef<HTMLDivElement>(null);
   const [isFs, setIsFs] = useState(false);
   useEffect(()=>{
@@ -989,62 +990,7 @@ export default function App() {
     } catch { /* silent */ }
   };
 
-  const exportAsImage = async () => {
-    if(!user) {
-      setLoginReason(lang==="TH" ? "กรุณาเข้าสู่ระบบเพื่อส่งออกรูป" : "Please sign in to export image");
-      setShowLogin(true); return;
-    }
-    if(plan==="free" && exportCount>=FREE_MAX_EXPORTS) {
-      setLoginReason(lang==="TH"
-        ? `ใช้ Export ครบ ${FREE_MAX_EXPORTS} ครั้งแล้วในเดือนนี้ — อัพเกรดเพื่อ Export ไม่จำกัด`
-        : `You've used ${FREE_MAX_EXPORTS} exports this month — upgrade for unlimited`);
-      setShowLogin(true); return;
-    }
-    const el=summaryRef.current; if(!el) return;
-    const canvas=await html2canvas(el,{backgroundColor:"#111624",scale:2,useCORS:true,logging:false});
-    const link=document.createElement("a");
-    link.download=`${tournament.name||"poker"}-${new Date().toLocaleDateString("th-TH").replace(/\//g,"-")}.png`;
-    link.href=canvas.toDataURL("image/png"); link.click();
-    if(plan==="free" && user) { const c = await incExportCount(user.id); setExportCount(c); }
-    saveHistory();
-  };
 
-  const handleShare = async () => {
-    if(!user) {
-      setLoginReason(lang==="TH" ? "กรุณาเข้าสู่ระบบเพื่อแชร์ผลลัพธ์" : "Please sign in to share results");
-      setShowLogin(true); return;
-    }
-    if(plan==="free" && exportCount>=FREE_MAX_EXPORTS) {
-      setLoginReason(lang==="TH"
-        ? `ใช้ Export/Share ครบ ${FREE_MAX_EXPORTS} ครั้งแล้วในเดือนนี้ — อัพเกรดเพื่อใช้ไม่จำกัด`
-        : `You've used ${FREE_MAX_EXPORTS} exports/shares this month — upgrade for unlimited`);
-      setShowLogin(true); return;
-    }
-    window.open(`https://line.me/R/msg/text/?${encodeURIComponent(generateText())}`);
-    if(plan==="free" && user) { const c = await incExportCount(user.id); setExportCount(c); }
-    saveHistory();
-  };
-
-  const generateText = () => {
-    const l=T[lang];
-    let txt=`🏆 ${tournament.name||"Poker Game"}\n\n`;
-    txt+=`${l.date}: ${new Date().toLocaleDateString()}\n`;
-    txt+=`${l.modeLabel}: ${mode==="CASH"?l.cashGame:l.tournament}\n\n`;
-    if(mode==="CASH"){
-      txt+=`${l.totalBuyIn}: ${fmtN(sumBuyIn)}\n${l.totalCashout}: ${fmtN(totalCashout)}\n\n`;
-      players.forEach(p=>{
-        const prf=(p.cashout||0)-p.buyInTotal;
-        txt+=`• ${p.name} (${fmtN(p.buyInTotal)} → ${fmtN(p.cashout)}) = ${prf>=0?"+":""}${fmtN(prf)}\n`;
-      });
-    } else {
-      txt+=`Buy-In: ${fmtN(tournament.buyIn)}\n${l.prizePool}: ${fmtN(normalPrize)}\n\n`;
-      prizeWinners.forEach((w,i)=>{
-        const m=i===0?"🥇":i===1?"🥈":i===2?"🥉":`${i+1}.`;
-        txt+=`${m} ${w.name} — ${fmtN(w.amount)}\n`;
-      });
-    }
-    return txt;
-  };
 
   /* ─────────────────────────────────────────
      Settings Panel (shared)
@@ -1226,14 +1172,8 @@ export default function App() {
       </>}
 
       <ShareBtns>
-        <Btn $v="success" disabled={players.length===0} onClick={handleShare}>
-          {t("shareToLine")}
-          {plan==="free" && <span style={{fontSize:10,opacity:.75,fontWeight:500,marginLeft:2}}>
-            {Math.max(0,FREE_MAX_EXPORTS-exportCount)}/{FREE_MAX_EXPORTS}
-          </span>}
-        </Btn>
-        <Btn $v="secondary" disabled={players.length===0} onClick={exportAsImage}>
-          <Camera size={14} /> {t("exportImg")}
+        <Btn $v="success" disabled={players.length===0} onClick={()=>setShowShare(true)}>
+          <Share2 size={15}/>{lang==="TH"?"แชร์ผลลัพธ์":"Share Results"}
           {plan==="free" && <span style={{fontSize:10,opacity:.75,fontWeight:500,marginLeft:2}}>
             {Math.max(0,FREE_MAX_EXPORTS-exportCount)}/{FREE_MAX_EXPORTS}
           </span>}
@@ -1391,14 +1331,8 @@ export default function App() {
         </TournTable>
       </TableScroll>
       <ShareBtns>
-        <Btn $v="success" disabled={players.length===0} onClick={handleShare}>
-          {t("shareToLine")}
-          {plan==="free" && <span style={{fontSize:10,opacity:.75,fontWeight:500,marginLeft:2}}>
-            {Math.max(0,FREE_MAX_EXPORTS-exportCount)}/{FREE_MAX_EXPORTS}
-          </span>}
-        </Btn>
-        <Btn $v="secondary" disabled={players.length===0} onClick={exportAsImage}>
-          <Camera size={14} /> {t("exportImg")}
+        <Btn $v="success" disabled={players.length===0} onClick={()=>setShowShare(true)}>
+          <Share2 size={15}/>{lang==="TH"?"แชร์ผลลัพธ์":"Share Results"}
           {plan==="free" && <span style={{fontSize:10,opacity:.75,fontWeight:500,marginLeft:2}}>
             {Math.max(0,FREE_MAX_EXPORTS-exportCount)}/{FREE_MAX_EXPORTS}
           </span>}
@@ -1596,6 +1530,23 @@ export default function App() {
             lang={lang}
             token={localStorage.getItem("poker_token") || ""}
             onClose={() => setShowHistory(false)}
+          />
+        )}
+
+        {/* ── Share Modal ── */}
+        {showShare && (saveHistory(), true) && (
+          <ShareModal
+            lang={lang}
+            mode={mode}
+            players={players}
+            tournament={tournament}
+            prizeWinners={prizeWinners}
+            sumBuyIn={sumBuyIn}
+            totalCashout={totalCashout}
+            normalPrize={normalPrize}
+            summaryRef={summaryRef}
+            token={localStorage.getItem("poker_token")||undefined}
+            onClose={()=>setShowShare(false)}
           />
         )}
 

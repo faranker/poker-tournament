@@ -89,6 +89,29 @@ router.get("/me", require("../middleware/auth"), async (req, res) => {
   }
 });
 
+/* GET /auth/profile/bg — ดึง background image */
+router.get("/profile/bg", require("../middleware/auth"), async (req, res) => {
+  try {
+    const { rows } = await query("select bg_image from users where id = $1", [req.user.id]);
+    res.json({ bg_image: rows[0]?.bg_image || null });
+  } catch (err) {
+    res.status(500).json({ error: "เกิดข้อผิดพลาด" });
+  }
+});
+
+/* PUT /auth/profile/bg — บันทึก background image (base64, max 1MB) */
+router.put("/profile/bg", require("../middleware/auth"), async (req, res) => {
+  const { bg_image } = req.body;
+  if (bg_image && Buffer.byteLength(bg_image, "utf8") > 1.5 * 1024 * 1024)
+    return res.status(400).json({ error: "รูปใหญ่เกินไป (max 1MB)" });
+  try {
+    await query("update users set bg_image = $1 where id = $2", [bg_image || null, req.user.id]);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: "เกิดข้อผิดพลาด" });
+  }
+});
+
 /* POST /auth/check-username */
 router.post("/check-username", async (req, res) => {
   const { username } = req.body;

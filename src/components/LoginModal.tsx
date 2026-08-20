@@ -1,7 +1,7 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import styled, { css, keyframes } from "styled-components";
-import { User, AlertTriangle } from "lucide-react";
+import { User, AlertTriangle, ImagePlus, X } from "lucide-react";
 import {
   signIn, signUp, signOut, resetPassword, checkUsername,
   type AuthUser, type Plan,
@@ -83,6 +83,70 @@ const PlanSection = styled.div`
 `;
 const PlanRow = styled.div`display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;`;
 
+
+function BgUploadSection({ isTH, token }: { isTH: boolean; token: string }) {
+  const [bg, setBg] = useState<string|null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useState(() => {
+    fetch("/api/auth/profile/bg", { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(d => { if (d.bg_image) setBg(d.bg_image); }).catch(() => {});
+  });
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]; if (!f) return;
+    const reader = new FileReader();
+    reader.onload = async ev => {
+      const result = ev.target?.result as string;
+      setSaving(true);
+      try {
+        await fetch("/api/auth/profile/bg", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ bg_image: result }),
+        });
+        setBg(result);
+      } finally { setSaving(false); }
+    };
+    reader.readAsDataURL(f);
+  };
+  const handleRemove = async () => {
+    setSaving(true);
+    try {
+      await fetch("/api/auth/profile/bg", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ bg_image: null }),
+      });
+      setBg(null);
+    } finally { setSaving(false); }
+  };
+  return (
+    <div style={{marginBottom:14}}>
+      <p style={{fontSize:13,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",color:"var(--text-muted)",marginBottom:8}}>
+        {isTH?"Custom Background (Share ภาพ)":"Custom Background (Image Share)"}
+      </p>
+      {bg ? (
+        <div style={{position:"relative",borderRadius:8,overflow:"hidden",border:"1px solid var(--border)"}}>
+          <img src={bg} alt="bg" style={{width:"100%",height:80,objectFit:"cover",display:"block"}}/>
+          <button onClick={handleRemove} disabled={saving} style={{
+            position:"absolute",top:6,right:6,background:"rgba(0,0,0,.6)",border:"none",
+            borderRadius:6,padding:"3px 6px",cursor:"pointer",color:"#fff",display:"flex",alignItems:"center",gap:4,fontSize:12,opacity:saving?.6:1
+          }}><X size={12}/>{saving?(isTH?"กำลังลบ...":"Removing..."):(isTH?"ลบ":"Remove")}</button>
+        </div>
+      ) : (
+        <label style={{
+          display:"flex",alignItems:"center",gap:8,padding:"10px 14px",
+          border:"1.5px dashed var(--border2)",borderRadius:8,cursor:saving?"not-allowed":"pointer",
+          color:"var(--text-muted)",fontSize:13,fontWeight:600,opacity:saving?.6:1
+        }}>
+          <ImagePlus size={16}/>{saving?(isTH?"กำลังบันทึก...":"Saving..."):(isTH?"อัปโหลดรูป Background":"Upload Background Image")}
+          <input type="file" accept="image/*" style={{display:"none"}} onChange={handleFile} disabled={saving}/>
+        </label>
+      )}
+    </div>
+  );
+}
 
 const UsernameStatus = styled.span<{$ok?:boolean|null}>`
   font-size:13px;margin-left:6px;
@@ -258,6 +322,7 @@ export function LoginModal({ user, reason, onLogin, onLogout, onClose, onUpgrade
                 )}
               </div>
             </PlanSection>
+            <BgUploadSection isTH={isTH} token={localStorage.getItem("poker_token")||""}/>
             <BtnRow style={{justifyContent:"space-between"}}>
               <Btn $v="ghost" onClick={handleLogout}>{isTH?"ออกจากระบบ":"Logout"}</Btn>
               <div style={{display:"flex",gap:8}}>
