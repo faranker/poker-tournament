@@ -191,26 +191,24 @@ export function ShareModal({ lang, mode, players, tournament, prizeWinners, sumB
     if (!summaryRef.current) return;
     setDownloading(true);
     const el = summaryRef.current;
-    const prevBg = el.style.background;
-    const prevBgImg = el.style.backgroundImage;
-    const prevBgSize = el.style.backgroundSize;
-    const prevBgPos = el.style.backgroundPosition;
 
     try {
-      if (theme === "dark") {
-        el.style.background = "#111624";
-      } else if (theme === "light") {
-        el.style.background = "#f8fafc";
-        Object.entries(LIGHT_VARS).forEach(([k,v]) => el.style.setProperty(k,v));
-      } else if (theme === "custom" && customBg) {
-        el.style.backgroundImage = `url(${customBg})`;
-        el.style.backgroundSize = "cover";
-        el.style.backgroundPosition = "center";
-      }
-
+      const bgColor = theme==="dark"?"#111624":theme==="light"?"#f8fafc":null;
       const canvas = await html2canvas(el, {
-        backgroundColor: null,
+        backgroundColor: bgColor,
         scale:2, useCORS:true, logging:false,
+        onclone: (_doc, clonedEl) => {
+          if (theme === "light") {
+            clonedEl.style.background = "#f8fafc";
+            Object.entries(LIGHT_VARS).forEach(([k,v]) => clonedEl.style.setProperty(k,v));
+          } else if (theme === "dark") {
+            clonedEl.style.background = "#111624";
+          } else if (theme === "custom" && customBg) {
+            clonedEl.style.backgroundImage = `url(${customBg})`;
+            clonedEl.style.backgroundSize = "cover";
+            clonedEl.style.backgroundPosition = "center";
+          }
+        },
       });
 
       const link = document.createElement("a");
@@ -218,13 +216,6 @@ export function ShareModal({ lang, mode, players, tournament, prizeWinners, sumB
       link.href = canvas.toDataURL("image/png");
       link.click();
     } finally {
-      el.style.background = prevBg;
-      el.style.backgroundImage = prevBgImg;
-      el.style.backgroundSize = prevBgSize;
-      el.style.backgroundPosition = prevBgPos;
-      if (theme === "light") {
-        Object.keys(LIGHT_VARS).forEach(k => el.style.removeProperty(k));
-      }
       setDownloading(false);
     }
   };
