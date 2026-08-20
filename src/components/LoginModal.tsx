@@ -1,7 +1,7 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import styled, { css, keyframes } from "styled-components";
-import { User, AlertTriangle, ImagePlus, X } from "lucide-react";
+import { User, AlertTriangle } from "lucide-react";
 import {
   signIn, signUp, signOut, resetPassword, checkUsername,
   type AuthUser, type Plan,
@@ -84,45 +84,6 @@ const PlanSection = styled.div`
 const PlanRow = styled.div`display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;`;
 
 
-function BgUploadSection({ isTH }: { isTH: boolean }) {
-  const [bg, setBg] = useState<string|null>(localStorage.getItem("poker_bg_image"));
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0]; if (!f) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const result = ev.target?.result as string;
-      localStorage.setItem("poker_bg_image", result);
-      setBg(result);
-    };
-    reader.readAsDataURL(f);
-  };
-  const handleRemove = () => { localStorage.removeItem("poker_bg_image"); setBg(null); };
-  return (
-    <div style={{marginBottom:14}}>
-      <p style={{fontSize:13,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",color:"var(--text-muted)",marginBottom:8}}>
-        {isTH?"Custom Background (Share ภาพ)":"Custom Background (Image Share)"}
-      </p>
-      {bg ? (
-        <div style={{position:"relative",borderRadius:8,overflow:"hidden",border:"1px solid var(--border)"}}>
-          <img src={bg} alt="bg" style={{width:"100%",height:80,objectFit:"cover",display:"block"}}/>
-          <button onClick={handleRemove} style={{
-            position:"absolute",top:6,right:6,background:"rgba(0,0,0,.6)",border:"none",
-            borderRadius:6,padding:"3px 6px",cursor:"pointer",color:"#fff",display:"flex",alignItems:"center",gap:4,fontSize:12
-          }}><X size={12}/>{isTH?"ลบ":"Remove"}</button>
-        </div>
-      ) : (
-        <label style={{
-          display:"flex",alignItems:"center",gap:8,padding:"10px 14px",
-          border:"1.5px dashed var(--border2)",borderRadius:8,cursor:"pointer",
-          color:"var(--text-muted)",fontSize:13,fontWeight:600
-        }}>
-          <ImagePlus size={16}/>{isTH?"อัปโหลดรูป Background":"Upload Background Image"}
-          <input type="file" accept="image/*" style={{display:"none"}} onChange={handleFile}/>
-        </label>
-      )}
-    </div>
-  );
-}
 
 const UsernameStatus = styled.span<{$ok?:boolean|null}>`
   font-size:13px;margin-left:6px;
@@ -298,7 +259,6 @@ export function LoginModal({ user, reason, onLogin, onLogout, onClose, onUpgrade
                 )}
               </div>
             </PlanSection>
-            <BgUploadSection isTH={isTH}/>
             <BtnRow style={{justifyContent:"space-between"}}>
               <Btn $v="ghost" onClick={handleLogout}>{isTH?"ออกจากระบบ":"Logout"}</Btn>
               <div style={{display:"flex",gap:8}}>

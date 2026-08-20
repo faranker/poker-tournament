@@ -111,9 +111,20 @@ export function ShareModal({ lang, mode, players, tournament, prizeWinners, sumB
   const [theme, setTheme] = useState<Theme>("dark");
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [customBg, setCustomBg] = useState<string|null>(localStorage.getItem("poker_bg_image"));
   const isTH = lang === "TH";
 
-  const customBg = localStorage.getItem("poker_bg_image");
+  const handleBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]; if (!f) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const result = ev.target?.result as string;
+      localStorage.setItem("poker_bg_image", result);
+      setCustomBg(result);
+    };
+    reader.readAsDataURL(f);
+  };
+  const handleBgRemove = () => { localStorage.removeItem("poker_bg_image"); setCustomBg(null); };
 
   const getSep = () => "━━━━━━━━━━━━━━━━";
 
@@ -182,9 +193,14 @@ export function ShareModal({ lang, mode, players, tournament, prizeWinners, sumB
     const el = summaryRef.current;
     const prevBg = el.style.background;
     const prevBgImg = el.style.backgroundImage;
+    const prevBgSize = el.style.backgroundSize;
+    const prevBgPos = el.style.backgroundPosition;
 
     try {
-      if (theme === "light") {
+      if (theme === "dark") {
+        el.style.background = "#111624";
+      } else if (theme === "light") {
+        el.style.background = "#f8fafc";
         Object.entries(LIGHT_VARS).forEach(([k,v]) => el.style.setProperty(k,v));
       } else if (theme === "custom" && customBg) {
         el.style.backgroundImage = `url(${customBg})`;
@@ -192,9 +208,8 @@ export function ShareModal({ lang, mode, players, tournament, prizeWinners, sumB
         el.style.backgroundPosition = "center";
       }
 
-      const bgColor = theme==="dark"?"#111624":theme==="light"?"#f8fafc":undefined;
       const canvas = await html2canvas(el, {
-        backgroundColor: bgColor ?? null,
+        backgroundColor: null,
         scale:2, useCORS:true, logging:false,
       });
 
@@ -203,13 +218,12 @@ export function ShareModal({ lang, mode, players, tournament, prizeWinners, sumB
       link.href = canvas.toDataURL("image/png");
       link.click();
     } finally {
+      el.style.background = prevBg;
+      el.style.backgroundImage = prevBgImg;
+      el.style.backgroundSize = prevBgSize;
+      el.style.backgroundPosition = prevBgPos;
       if (theme === "light") {
         Object.keys(LIGHT_VARS).forEach(k => el.style.removeProperty(k));
-      } else if (theme === "custom") {
-        el.style.background = prevBg;
-        el.style.backgroundImage = prevBgImg;
-        el.style.backgroundSize = "";
-        el.style.backgroundPosition = "";
       }
       setDownloading(false);
     }
@@ -277,12 +291,33 @@ export function ShareModal({ lang, mode, players, tournament, prizeWinners, sumB
                   </ThemeCard>
                 </ThemeGrid>
 
-                {theme === "custom" && !customBg && (
-                  <Note>
-                    {isTH
-                      ? "อัปโหลดรูป Background ได้ที่ บัญชีของคุณ → Custom Background"
-                      : "Upload a background image in Your Account → Custom Background"}
-                  </Note>
+                {theme === "custom" && (
+                  customBg ? (
+                    <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",
+                      background:"var(--surface2)",border:"1px solid var(--border)",borderRadius:8}}>
+                      <img src={customBg} alt="bg" style={{width:56,height:36,objectFit:"cover",borderRadius:5,flexShrink:0,border:"1px solid var(--border)"}}/>
+                      <div style={{flex:1,fontSize:13,color:"var(--text-muted)",fontWeight:600,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                        {isTH?"รูป Background ที่เลือก":"Selected background"}
+                      </div>
+                      <label style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",
+                        borderRadius:6,border:"1px solid var(--border2)",cursor:"pointer",
+                        fontSize:12,fontWeight:700,color:"var(--text-muted)",background:"var(--surface3)",flexShrink:0}}>
+                        <ImagePlus size={12}/>{isTH?"เปลี่ยน":"Change"}
+                        <input type="file" accept="image/*" style={{display:"none"}} onChange={handleBgUpload}/>
+                      </label>
+                      <button onClick={handleBgRemove} style={{background:"none",border:"none",
+                        cursor:"pointer",color:"var(--text-muted)",padding:4,display:"flex",flexShrink:0}}>
+                        <X size={15}/>
+                      </button>
+                    </div>
+                  ) : (
+                    <label style={{display:"flex",alignItems:"center",gap:8,padding:"12px 16px",
+                      border:"1.5px dashed var(--border2)",borderRadius:8,cursor:"pointer",
+                      color:"var(--text-muted)",fontSize:13,fontWeight:600,justifyContent:"center"}}>
+                      <ImagePlus size={16}/>{isTH?"อัปโหลดรูป Background":"Upload Background Image"}
+                      <input type="file" accept="image/*" style={{display:"none"}} onChange={handleBgUpload}/>
+                    </label>
+                  )
                 )}
 
                 <DownloadBtn onClick={handleDownload} disabled={downloading||(theme==="custom"&&!customBg)}>
