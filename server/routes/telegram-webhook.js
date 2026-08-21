@@ -1,9 +1,7 @@
 const router  = require("express").Router();
 const https   = require("https");
 const { query } = require("../db");
-
-const PLAN_NAMES  = { cash_pro: "Cash Pro", full_pro: "Full Pro" };
-const PLAN_MONTHS = { monthly: 1, yearly: 12 };
+const { approvePaymentRequest, PLAN_NAMES } = require("../services/paymentApproval");
 
 /* ── POST /telegram/webhook  (Telegram → server) ── */
 router.post("/webhook", async (req, res) => {
@@ -113,26 +111,7 @@ router.post("/webhook", async (req, res) => {
     const pr = rows[0];
 
     if (action === "approve") {
-      const months = PLAN_MONTHS[pr.billing_cycle] || 1;
-
-      /* extend from existing expires_at if still active, else from now */
-      const { rows: subRows } = await query(
-        "select expires_at from subscriptions where user_id=$1", [pr.user_id]
-      );
-      const existing = subRows[0]?.expires_at;
-      const base = existing && new Date(existing) > new Date() ? new Date(existing) : new Date();
-      const expiresAt = new Date(base);
-      expiresAt.setMonth(expiresAt.getMonth() + months);
-
-      await query(
-        `insert into subscriptions (user_id, plan, expires_at)
-         values ($1,$2,$3)
-         on conflict (user_id) do update set plan=$2, expires_at=$3, updated_at=now()`,
-        [pr.user_id, pr.plan, expiresAt]
-      );
-      await query(
-        "update payment_requests set status='approved', approved_at=now() where id=$1", [id]
-      );
+      const { expiresAt, planName } = await approvePaymentRequest(pr);
 
       const { rows: uRows } = await query("select username, email from users where id=$1", [pr.user_id]);
       const u = uRows[0] || {};
@@ -140,7 +119,7 @@ router.post("/webhook", async (req, res) => {
       await editMessageCaption(cb.message,
         `✅ <b>APPROVED — Request #${id}</b>\n\n` +
         `👤 User: <b>${u.username || "-"}</b> (${u.email || "-"})\n` +
-        `📦 Plan: <b>${PLAN_NAMES[pr.plan]}</b> · ${pr.billing_cycle === "yearly" ? "รายปี" : "รายเดือน"}\n` +
+        `📦 Plan: <b>${planName}</b> · ${pr.billing_cycle === "yearly" ? "รายปี" : "รายเดือน"}\n` +
         `💰 ยอด: <b>${Number(pr.amount).toLocaleString()} บาท</b>\n` +
         `📅 หมดอายุ: <b>${expiresAt.toLocaleDateString("th-TH")}</b>\n` +
         `🕐 Approved: ${new Date().toLocaleString("th-TH")}\n\n` +

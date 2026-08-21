@@ -33,6 +33,15 @@ app.get("/health", async (_req, res) => {
 /* 404 */
 app.use((_req, res) => res.status(404).json({ error: "Not found" }));
 
+/* Sweep expired payment windows every 60s — belt-and-suspenders alongside
+   the lazy check in GET /payments/status/:id, so a request nobody polls
+   still flips to 'expired' instead of lingering forever. */
+setInterval(() => {
+  pool.query(
+    "update payment_requests set status='expired' where status='awaiting_transfer' and payment_window_expires_at < now()"
+  ).catch((err) => console.error("[expiry-sweep]", err));
+}, 60 * 1000);
+
 app.listen(PORT, () => {
   console.log(`\n🃏 Poker Tournament API running on port ${PORT}`);
   console.log(`   Health check: http://localhost:${PORT}/health\n`);

@@ -1,7 +1,7 @@
-import { useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import styled, { keyframes } from "styled-components";
-import { Upload, X, CheckCircle, Clock, AlertTriangle } from "lucide-react";
+import { Upload, X, CheckCircle, Clock, AlertTriangle, MessageCircle } from "lucide-react";
 import type { Plan } from "../auth";
 
 const overlayShow = keyframes`from{opacity:0}to{opacity:1}`;
@@ -107,6 +107,29 @@ const AccountInfo = styled.div`
   .ref{font-size:11px;color:#5a6278;}
 `;
 
+/* Countdown */
+const CountdownBox = styled.div`
+  text-align:center;font-size:13px;color:#8892a4;font-weight:600;
+  .digits{font-variant-numeric:tabular-nums;font-size:22px;font-weight:900;color:#e2e8f0;margin-top:2px;}
+`;
+
+/* Form fields (step 1 — sender bank/account) */
+const FieldGroup = styled.div`
+  display:flex;flex-direction:column;gap:6px;
+  label{font-size:12px;font-weight:700;color:#8892a4;letter-spacing:.04em;}
+`;
+const FieldInput = styled.input`
+  width:100%;padding:11px 12px;border-radius:10px;border:1px solid #2a3a2a;
+  background:#11181f;color:#e2e8f0;font-size:14px;font-family:inherit;
+  &:focus{outline:none;border-color:#22c55e;}
+  &::placeholder{color:#4a5568;}
+`;
+const FieldSelect = styled.select`
+  width:100%;padding:11px 12px;border-radius:10px;border:1px solid #2a3a2a;
+  background:#11181f;color:#e2e8f0;font-size:14px;font-family:inherit;cursor:pointer;
+  &:focus{outline:none;border-color:#22c55e;}
+`;
+
 /* Upload area */
 const UploadArea = styled.label<{$hasFile?:boolean;$done?:boolean}>`
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
@@ -135,13 +158,26 @@ const SubmitBtn = styled.button<{$loading?:boolean}>`
   &:hover:not(:disabled){opacity:.9;transform:translateY(-1px);}
   &:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 `;
+const SecondaryBtn = styled.button`
+  width:100%;padding:10px;border-radius:10px;border:1px solid #2a3a2a;
+  background:transparent;color:#8892a4;font-size:13px;font-weight:700;cursor:pointer;
+  font-family:inherit;transition:all .18s;
+  &:hover{border-color:#4a6a4a;color:#e2e8f0;}
+`;
+const LineBtn = styled.a`
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;padding:12px;border-radius:10px;border:none;text-decoration:none;
+  background:#06c755;color:#fff;font-size:14px;font-weight:800;cursor:pointer;
+  font-family:inherit;transition:all .18s;
+  &:hover{opacity:.9;}
+`;
 
-const StatusBox = styled.div<{$ok?:boolean}>`
+const StatusBox = styled.div<{$ok?:boolean;$warn?:boolean}>`
   display:flex;align-items:center;gap:10px;padding:12px 14px;
   border-radius:10px;font-size:13px;font-weight:600;
-  background:${p=>p.$ok?"rgba(34,197,94,.1)":"rgba(245,158,11,.1)"};
-  border:1px solid ${p=>p.$ok?"rgba(34,197,94,.3)":"rgba(245,158,11,.3)"};
-  color:${p=>p.$ok?"#22c55e":"#f59e0b"};
+  background:${p=>p.$ok?"rgba(34,197,94,.1)":p.$warn?"rgba(239,68,68,.1)":"rgba(245,158,11,.1)"};
+  border:1px solid ${p=>p.$ok?"rgba(34,197,94,.3)":p.$warn?"rgba(239,68,68,.3)":"rgba(245,158,11,.3)"};
+  color:${p=>p.$ok?"#22c55e":p.$warn?"#ef4444":"#f59e0b"};
 `;
 
 /* Plan config */
@@ -149,6 +185,27 @@ const PLAN_PRICES: Record<string, { monthly: number; yearly: number; name: strin
   cash_pro: { monthly: 49,  yearly: 299, name: "Cash Pro" },
   full_pro:  { monthly: 99,  yearly: 499, name: "Full Pro" },
 };
+
+/* Short bank codes — mirrors server/routes/payments.js's KNOWN_BANK_CODES,
+   which mirrors line-forwarder-app's parser_scb.py THAI_BANK_NAME_MAP /
+   parser_gsb.py BANK_CODES vocabulary (what actually lands in a detected
+   deposit's `from_bank` field). */
+const BANKS: { code: string; label: string }[] = [
+  { code: "SCB",   label: "ไทยพาณิชย์ (SCB)" },
+  { code: "KTB",   label: "กรุงไทย (KTB)" },
+  { code: "GSB",   label: "ออมสิน (GSB)" },
+  { code: "KBANK", label: "กสิกรไทย (KBANK)" },
+  { code: "BAY",   label: "กรุงศรีอยุธยา (BAY)" },
+  { code: "BBL",   label: "กรุงเทพ (BBL)" },
+  { code: "TTB",   label: "ทีทีบี (TTB)" },
+  { code: "UOB",   label: "ยูโอบี (UOB)" },
+  { code: "CIMB",  label: "ซีไอเอ็มบี (CIMB)" },
+];
+
+const API = import.meta.env.VITE_API_URL as string;
+const LINE_CONTACT_URL = import.meta.env.VITE_LINE_CONTACT_URL as string | undefined;
+
+type Step = "form" | "waiting" | "approved" | "expired_fallback";
 
 interface Props {
   plan: Plan;
@@ -158,16 +215,92 @@ interface Props {
   onSuccess: () => void;
 }
 
-export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess: _onSuccess }: Props) {
-  const [file,      setFile]      = useState<File | null>(null);
-  const [preview,   setPreview]   = useState<string | null>(null);
-  const [loading,   setLoading]   = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const isTH = lang === "TH";
+function authHeaders(extra: Record<string, string> = {}) {
+  return { Authorization: `Bearer ${localStorage.getItem("poker_token")}`, ...extra };
+}
 
+function formatCountdown(sec: number) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: Props) {
+  const isTH = lang === "TH";
   const planInfo = PLAN_PRICES[plan];
   const amount   = billingCycle === "yearly" ? planInfo?.yearly : planInfo?.monthly;
+
+  const [step, setStep] = useState<Step>("form");
+  const [fromBank, setFromBank] = useState("");
+  const [fromAccount, setFromAccount] = useState("");
+  const [initiating, setInitiating] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
+
+  const [requestId, setRequestId] = useState<number | null>(null);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [remainingSec, setRemainingSec] = useState(0);
+
+  /* Slip-upload fallback (reused for both the expired path and the
+     "แนบสลิปตอนนี้เลย" escape hatch during waiting) */
+  const [file,      setFile]      = useState<File | null>(null);
+  const [preview,   setPreview]   = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleInitiate = async () => {
+    if (!fromAccount.trim() || !fromBank) return;
+    setInitiating(true);
+    setInitError(null);
+    try {
+      const res = await fetch(`${API}/payments/initiate`, {
+        method: "POST",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          plan, billing_cycle: billingCycle,
+          expected_from_account_number: fromAccount.trim(),
+          expected_from_bank: fromBank,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setInitError(data?.error || (isTH ? "เกิดข้อผิดพลาด" : "Something went wrong")); return; }
+      setRequestId(data.id);
+      setExpiresAt(data.expires_at);
+      setStep("waiting");
+    } catch {
+      setInitError(isTH ? "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้" : "Could not reach the server");
+    } finally {
+      setInitiating(false);
+    }
+  };
+
+  /* Poll for auto-approval while waiting */
+  useEffect(() => {
+    if (step !== "waiting" || !requestId) return;
+    const poll = setInterval(async () => {
+      try {
+        const res = await fetch(`${API}/payments/status/${requestId}`, { headers: authHeaders() });
+        const data = await res.json();
+        if (data.status === "approved") { setStep("approved"); onSuccess(); }
+        else if (data.status === "expired") { setStep("expired_fallback"); }
+      } catch {
+        // transient network hiccup — next poll tick will retry
+      }
+    }, 3000);
+    return () => clearInterval(poll);
+  }, [step, requestId, onSuccess]);
+
+  /* Client-side countdown, driven by the server's expires_at */
+  useEffect(() => {
+    if (step !== "waiting" || !expiresAt) return;
+    const tick = () => {
+      const diff = Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
+      setRemainingSec(diff);
+      if (diff <= 0) setStep("expired_fallback");
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [step, expiresAt]);
 
   const handleFile = (f: File) => {
     setFile(f);
@@ -176,18 +309,16 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess: _on
     reader.readAsDataURL(f);
   };
 
-  const handleSubmit = async () => {
-    if (!file) return;
-    setLoading(true);
+  const handleSlipSubmit = async () => {
+    if (!file || !requestId) return;
+    setUploading(true);
     try {
       const form = new FormData();
       form.append("slip", file);
-      form.append("plan", plan);
-      form.append("billing_cycle", billingCycle);
-      form.append("amount", String(amount));
-      await fetch(`${import.meta.env.VITE_API_URL}/payments/slip`, {
+      form.append("payment_request_id", String(requestId));
+      await fetch(`${API}/payments/slip`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${localStorage.getItem("poker_token")}` },
+        headers: authHeaders(),
         body: form,
       });
       setSubmitted(true);
@@ -195,7 +326,7 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess: _on
       // silent — still show success UI so user knows we got it
       setSubmitted(true);
     }
-    setLoading(false);
+    setUploading(false);
   };
 
   return (
@@ -213,17 +344,6 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess: _on
           </Header>
 
           <Body>
-            <PPBadge>
-              <span style={{color:"#22c55e",fontWeight:900}}>พร้อมเพย์</span>
-              <span style={{color:"#60a5fa",fontWeight:900}}>PromptPay</span>
-            </PPBadge>
-
-            <QRWrap>
-              <QRInner>
-                <QRImg src="/promptpay-qr.jpg" alt="PromptPay QR" />
-              </QRInner>
-            </QRWrap>
-
             <AmountBox>
               <div className="label">{isTH ? "ยอดที่ต้องชำระ" : "Amount to Pay"}</div>
               <div>
@@ -232,99 +352,159 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess: _on
               </div>
             </AmountBox>
 
-            <AccountInfo>
-              <div className="title">สแกน QR เพื่อโอนเข้าบัญชี</div>
-              <div className="name">นาย ปัฐวี จันทร์สว่าง</div>
-              <div className="acc">บัญชี: xxx-x-x3766-x</div>
-              <div className="ref">เลขที่อ้างอิง: 004999009272732</div>
-            </AccountInfo>
+            {step === "form" && (
+              <>
+                <FieldGroup>
+                  <label>{isTH ? "ธนาคารที่จะโอนออก" : "Bank you'll pay from"}</label>
+                  <FieldSelect value={fromBank} onChange={e => setFromBank(e.target.value)}>
+                    <option value="">{isTH ? "เลือกธนาคาร" : "Select bank"}</option>
+                    {BANKS.map(b => <option key={b.code} value={b.code}>{b.label}</option>)}
+                  </FieldSelect>
+                </FieldGroup>
+                <FieldGroup>
+                  <label>{isTH ? "เลขบัญชีต้นทาง (ของคุณ)" : "Your account number"}</label>
+                  <FieldInput
+                    value={fromAccount}
+                    onChange={e => setFromAccount(e.target.value)}
+                    placeholder={isTH ? "เช่น 123-4-56789-0" : "e.g. 123-4-56789-0"}
+                  />
+                </FieldGroup>
 
-            <div style={{borderTop:"1px solid #1a2a1a",paddingTop:16}}>
-              <div style={{fontSize:13,fontWeight:700,color:"#4a8a4a",marginBottom:10}}>
-                {isTH ? "📎 แนบสลิปโอนเงิน" : "📎 Upload Payment Slip"}
-              </div>
+                {initError && (
+                  <StatusBox $warn><AlertTriangle size={16} style={{flexShrink:0}}/><div>{initError}</div></StatusBox>
+                )}
 
-              {!submitted ? (
-                <>
-                  {/* คำแนะนำก่อนอัปโหลด */}
-                  <StatusBox style={{marginBottom:10}}>
-                    <Clock size={16} style={{flexShrink:0}}/>
-                    <div style={{lineHeight:1.65,fontSize:12}}>
-                      {isTH
-                        ? <>
-                            กรุณาอัปโหลดสลิปการโอนเงิน หลังจากอัปโหลดแล้ว<br/>
-                            ทีมงานจะตรวจสอบและเปิดใช้งานภายใน <b>5–10 นาที</b><br/><br/>
-                            <span style={{color:"#f59e0b"}}><AlertTriangle size={13} style={{display:"inline",verticalAlign:"middle",marginRight:4}}/> ช่วงเวลา 23:00–02:00 น. ระบบธนาคารอาจล่าช้า</span><br/>
-                            ทำให้ตรวจสอบยอดเงินไม่ได้ตามปกติ
-                          </>
-                        : <>
-                            Please upload your payment slip. After uploading,<br/>
-                            our team will verify and activate within <b>5–10 minutes</b><br/><br/>
-                            <span style={{color:"#f59e0b"}}><AlertTriangle size={13} style={{display:"inline",verticalAlign:"middle",marginRight:4}}/> During 11 PM–2 AM banking systems may be slow</span><br/>
-                            and verification may take longer than usual.
-                          </>
-                      }
-                    </div>
-                  </StatusBox>
+                <StatusBox>
+                  <Clock size={16} style={{flexShrink:0}}/>
+                  <div style={{lineHeight:1.6,fontSize:12}}>
+                    {isTH
+                      ? "ระบบจะตรวจสอบยอดโอนอัตโนมัติจากบัญชีนี้ กรุณากรอกให้ตรงกับบัญชีที่จะใช้โอนจริง"
+                      : "We'll auto-match your transfer from this account — enter the exact account you'll pay from."}
+                  </div>
+                </StatusBox>
 
-                  {preview && <SlipPreview src={preview} alt="slip" style={{marginBottom:10}}/>}
-                  <UploadArea $hasFile={!!file} htmlFor="slip-upload">
+                <SubmitBtn
+                  disabled={!fromAccount.trim() || !fromBank || initiating}
+                  onClick={handleInitiate}
+                >
+                  {initiating
+                    ? (isTH ? "กำลังสร้างรายการ..." : "Creating...")
+                    : (isTH ? "สร้างรายการ / แสดง QR" : "Continue / Show QR")}
+                </SubmitBtn>
+              </>
+            )}
+
+            {step === "waiting" && (
+              <>
+                <PPBadge>
+                  <span style={{color:"#22c55e",fontWeight:900}}>พร้อมเพย์</span>
+                  <span style={{color:"#60a5fa",fontWeight:900}}>PromptPay</span>
+                </PPBadge>
+
+                <QRWrap>
+                  <QRInner>
+                    <QRImg src="/promptpay-qr.jpg" alt="PromptPay QR" />
+                  </QRInner>
+                </QRWrap>
+
+                <AccountInfo>
+                  <div className="title">สแกน QR เพื่อโอนเข้าบัญชี</div>
+                  <div className="name">นาย ปัฐวี จันทร์สว่าง</div>
+                  <div className="acc">บัญชี: xxx-x-x3766-x</div>
+                </AccountInfo>
+
+                <CountdownBox>
+                  {isTH ? "เหลือเวลา" : "Time remaining"}
+                  <div className="digits">{formatCountdown(remainingSec)}</div>
+                </CountdownBox>
+
+                <StatusBox>
+                  <Clock size={16} style={{flexShrink:0}}/>
+                  <div style={{lineHeight:1.6,fontSize:12}}>
+                    {isTH
+                      ? "กำลังรอตรวจสอบยอดโอนอัตโนมัติ... เมื่อโอนเสร็จระบบจะเปิดใช้งานให้ภายในไม่กี่วินาที"
+                      : "Waiting to auto-detect your transfer... it'll activate within seconds of paying."}
+                  </div>
+                </StatusBox>
+
+                {!file ? (
+                  <UploadArea htmlFor="slip-upload-early">
                     <HiddenInput
-                      id="slip-upload" ref={inputRef} type="file"
-                      accept="image/*" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}
+                      id="slip-upload-early" type="file" accept="image/*"
+                      onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}
                     />
-                    {file
-                      ? <><Upload size={20} className="icon"/><span className="text">{file.name}</span><span className="sub">{isTH?"กดเพื่อเปลี่ยนไฟล์":"Tap to change file"}</span></>
-                      : <><Upload size={20} className="icon"/><span className="text">{isTH?"อัพโหลดสลิป":"Upload Slip"}</span><span className="sub">JPG, PNG</span></>
-                    }
+                    <Upload size={16} className="icon"/>
+                    <span className="text" style={{fontSize:12}}>
+                      {isTH ? "หรือแนบสลิปตอนนี้เลย (ข้ามการรอตรวจสอบอัตโนมัติ)" : "Or upload the slip now (skip auto-detection)"}
+                    </span>
                   </UploadArea>
+                ) : (
+                  <SecondaryBtn disabled={uploading} onClick={handleSlipSubmit}>
+                    {uploading ? (isTH ? "กำลังส่ง..." : "Sending...") : (isTH ? `ส่งสลิป: ${file.name}` : `Send slip: ${file.name}`)}
+                  </SecondaryBtn>
+                )}
+              </>
+            )}
 
-                  <SubmitBtn
-                    style={{marginTop:12}}
-                    disabled={!file || loading}
-                    $loading={loading}
-                    onClick={handleSubmit}
-                  >
-                    {loading
-                      ? (isTH ? "กำลังส่ง..." : "Sending...")
-                      : (isTH ? "ส่งสลิปเพื่อยืนยัน" : "Submit Slip")}
-                  </SubmitBtn>
-                </>
-              ) : (
-                <>
-                  <StatusBox $ok>
-                    <CheckCircle size={18} style={{flexShrink:0}}/>
-                    <div style={{lineHeight:1.65,fontSize:12}}>
-                      {isTH
-                        ? <>
-                            <b>อัปโหลดสลิปเรียบร้อยแล้ว <CheckCircle size={14} style={{display:"inline",verticalAlign:"middle",marginLeft:4}}/></b><br/>
-                            กรุณารอทีมงานตรวจสอบและเปิดใช้งานภายใน <b>5–10 นาที</b>
-                          </>
-                        : <>
-                            <b>Slip uploaded successfully <CheckCircle size={14} style={{display:"inline",verticalAlign:"middle",marginLeft:4}}/></b><br/>
-                            Please wait for our team to verify and activate within <b>5–10 minutes</b>
-                          </>
-                      }
-                    </div>
-                  </StatusBox>
-                  <StatusBox style={{marginTop:8}}>
-                    <Clock size={16} style={{flexShrink:0}}/>
-                    <div style={{lineHeight:1.65,fontSize:12}}>
-                      {isTH
-                        ? <>
-                            <span style={{color:"#f59e0b"}}><AlertTriangle size={13} style={{display:"inline",verticalAlign:"middle",marginRight:4}}/> ช่วงเวลา 23:00–02:00 น. ระบบธนาคารอาจล่าช้า</span><br/>
-                            ทำให้การตรวจสอบใช้เวลานานกว่าปกติ
-                          </>
-                        : <>
-                            <span style={{color:"#f59e0b"}}><AlertTriangle size={13} style={{display:"inline",verticalAlign:"middle",marginRight:4}}/> During 11 PM–2 AM banking systems may be slow</span><br/>
-                            and verification may take longer than usual.
-                          </>
-                      }
-                    </div>
-                  </StatusBox>
-                </>
-              )}
-            </div>
+            {step === "approved" && (
+              <StatusBox $ok>
+                <CheckCircle size={18} style={{flexShrink:0}}/>
+                <div style={{lineHeight:1.65,fontSize:13}}>
+                  <b>{isTH ? "เปิดใช้งานเรียบร้อยแล้ว!" : "Activated!"}</b>
+                </div>
+              </StatusBox>
+            )}
+
+            {step === "expired_fallback" && !submitted && (
+              <>
+                <StatusBox $warn>
+                  <AlertTriangle size={18} style={{flexShrink:0}}/>
+                  <div style={{lineHeight:1.65,fontSize:12}}>
+                    {isTH
+                      ? "ไม่พบรายการโอนภายในเวลาที่กำหนด กรุณาติดต่อแอดมิน หรือแนบสลิปเพื่อให้ตรวจสอบด้วยตนเอง"
+                      : "No transfer detected within the time window. Contact the admin, or upload your slip for manual review."}
+                  </div>
+                </StatusBox>
+
+                {LINE_CONTACT_URL && (
+                  <LineBtn href={LINE_CONTACT_URL} target="_blank" rel="noreferrer">
+                    <MessageCircle size={16}/> {isTH ? "ติดต่อแอดมินผ่าน LINE" : "Contact admin on LINE"}
+                  </LineBtn>
+                )}
+
+                {preview && <SlipPreview src={preview} alt="slip" />}
+                <UploadArea $hasFile={!!file} htmlFor="slip-upload-fallback">
+                  <HiddenInput
+                    id="slip-upload-fallback" type="file" accept="image/*"
+                    onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}
+                  />
+                  {file
+                    ? <><Upload size={20} className="icon"/><span className="text">{file.name}</span><span className="sub">{isTH?"กดเพื่อเปลี่ยนไฟล์":"Tap to change file"}</span></>
+                    : <><Upload size={20} className="icon"/><span className="text">{isTH?"อัพโหลดสลิป":"Upload Slip"}</span><span className="sub">JPG, PNG</span></>
+                  }
+                </UploadArea>
+
+                <SubmitBtn disabled={!file || uploading} onClick={handleSlipSubmit}>
+                  {uploading
+                    ? (isTH ? "กำลังส่ง..." : "Sending...")
+                    : (isTH ? "ส่งสลิปเพื่อยืนยัน" : "Submit Slip")}
+                </SubmitBtn>
+              </>
+            )}
+
+            {step === "expired_fallback" && submitted && (
+              <>
+                <StatusBox $ok>
+                  <CheckCircle size={18} style={{flexShrink:0}}/>
+                  <div style={{lineHeight:1.65,fontSize:12}}>
+                    {isTH
+                      ? <><b>อัปโหลดสลิปเรียบร้อยแล้ว</b><br/>กรุณารอทีมงานตรวจสอบและเปิดใช้งานภายใน <b>5–10 นาที</b></>
+                      : <><b>Slip uploaded successfully</b><br/>Please wait for our team to verify within <b>5–10 minutes</b></>
+                    }
+                  </div>
+                </StatusBox>
+              </>
+            )}
           </Body>
         </Box>
       </Dialog.Portal>

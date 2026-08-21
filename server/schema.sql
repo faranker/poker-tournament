@@ -32,7 +32,7 @@ create table if not exists export_logs (
   exported_at timestamptz default now()
 );
 
--- Payment requests (slip upload)
+-- Payment requests (slip upload, and SCB auto-match)
 create table if not exists payment_requests (
   id           serial primary key,
   user_id      uuid not null references users(id) on delete cascade,
@@ -44,6 +44,18 @@ create table if not exists payment_requests (
   approved_at  timestamptz,
   created_at   timestamptz default now()
 );
+
+-- 2026-08-21 — SCB auto-match: a request starts as 'awaiting_transfer' with a
+-- payment window; the line-forwarder-app webhook auto-approves it on a match,
+-- or it becomes 'expired' and falls back to the existing slip-upload/admin flow.
+alter table payment_requests add column if not exists expected_from_account_number text;
+alter table payment_requests add column if not exists expected_from_bank text;
+alter table payment_requests add column if not exists payment_window_expires_at timestamptz;
+alter table payment_requests add column if not exists matched_transaction_key text unique;
+
+alter table payment_requests drop constraint if exists payment_requests_status_check;
+alter table payment_requests add constraint payment_requests_status_check
+  check (status in ('awaiting_transfer','pending','expired','approved','rejected'));
 
 -- Game sessions (persist game state per user)
 create table if not exists game_sessions (
