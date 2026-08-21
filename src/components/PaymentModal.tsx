@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import styled, { keyframes } from "styled-components";
-import { Upload, X, CheckCircle, Clock, AlertTriangle, MessageCircle } from "lucide-react";
+import { Upload, X, Check, CheckCircle, Clock, AlertTriangle, MessageCircle } from "lucide-react";
 import type { Plan } from "../auth";
 
 const overlayShow = keyframes`from{opacity:0}to{opacity:1}`;
@@ -172,6 +172,38 @@ const LineBtn = styled.a`
   &:hover{opacity:.9;}
 `;
 
+/* Cancel link + confirm alert (nested modal) */
+const CancelLink = styled.button`
+  background:none;border:none;color:#5a6278;font-size:12px;font-weight:600;
+  cursor:pointer;text-decoration:underline;text-underline-offset:2px;
+  align-self:center;font-family:inherit;
+  &:hover{color:#8892a4;}
+`;
+const ConfirmOverlay = styled.div`
+  position:absolute;inset:0;z-index:10;border-radius:16px;
+  background:rgba(0,0,0,.75);backdrop-filter:blur(2px);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+`;
+const ConfirmCard = styled.div`
+  background:#151b23;border:1px solid #2a3a2a;border-radius:14px;
+  padding:22px;width:min(300px,100%);text-align:center;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);
+  display:flex;flex-direction:column;gap:14px;
+  h3{font-size:15px;font-weight:800;color:#fff;}
+  p{font-size:13px;color:#8892a4;line-height:1.5;}
+`;
+const ConfirmActions = styled.div`display:flex;gap:8px;`;
+const DangerBtn = styled.button`
+  flex:1;padding:11px;border-radius:10px;border:none;cursor:pointer;
+  background:#ef4444;color:#fff;font-size:13px;font-weight:800;font-family:inherit;
+  &:hover{opacity:.9;}
+`;
+const GhostBtn = styled.button`
+  flex:1;padding:11px;border-radius:10px;border:1px solid #2a3a2a;cursor:pointer;
+  background:transparent;color:#e2e8f0;font-size:13px;font-weight:700;font-family:inherit;
+  &:hover{border-color:#4a6a4a;}
+`;
+
 const StatusBox = styled.div<{$ok?:boolean;$warn?:boolean}>`
   display:flex;align-items:center;gap:10px;padding:12px 14px;
   border-radius:10px;font-size:13px;font-weight:600;
@@ -246,6 +278,10 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: P
   const [preview,   setPreview]   = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const requestClose = () => setShowCancelConfirm(true);
+  const confirmCancel = () => { setShowCancelConfirm(false); onClose(); };
 
   const handleInitiate = async () => {
     if (!fromAccount.trim() || !fromBank) return;
@@ -330,17 +366,20 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: P
   };
 
   return (
-    <Dialog.Root open onOpenChange={open => { if (!open) onClose(); }}>
+    <Dialog.Root open onOpenChange={() => { /* only the explicit close/cancel actions below may close this */ }}>
       <Dialog.Portal>
         <Overlay />
-        <Box>
+        <Box
+          onPointerDownOutside={e => e.preventDefault()}
+          onInteractOutside={e => e.preventDefault()}
+        >
           <Header>
             <LogoBox>♣️</LogoBox>
             <HeaderText>
               <h2>THAI QR PAYMENT</h2>
               <p>GO POKER</p>
             </HeaderText>
-            <CloseBtn onClick={onClose}><X size={18}/></CloseBtn>
+            <CloseBtn onClick={requestClose}><X size={18}/></CloseBtn>
           </Header>
 
           <Body>
@@ -386,11 +425,14 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: P
                 <SubmitBtn
                   disabled={!fromAccount.trim() || !fromBank || initiating}
                   onClick={handleInitiate}
+                  style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}
                 >
                   {initiating
                     ? (isTH ? "กำลังสร้างรายการ..." : "Creating...")
-                    : (isTH ? "สร้างรายการ / แสดง QR" : "Continue / Show QR")}
+                    : <><Check size={16}/> {isTH ? "ยืนยันรายการ" : "Confirm"}</>}
                 </SubmitBtn>
+
+                <CancelLink onClick={requestClose}>{isTH ? "ยกเลิก" : "Cancel"}</CancelLink>
               </>
             )}
 
@@ -410,7 +452,7 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: P
                 <AccountInfo>
                   <div className="title">สแกน QR เพื่อโอนเข้าบัญชี</div>
                   <div className="name">นาย ปัฐวี จันทร์สว่าง</div>
-                  <div className="acc">บัญชี: xxx-x-x3766-x</div>
+                  <div className="acc">บัญชี: 096-153-6525</div>
                 </AccountInfo>
 
                 <CountdownBox>
@@ -443,6 +485,8 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: P
                     {uploading ? (isTH ? "กำลังส่ง..." : "Sending...") : (isTH ? `ส่งสลิป: ${file.name}` : `Send slip: ${file.name}`)}
                   </SecondaryBtn>
                 )}
+
+                <CancelLink onClick={requestClose}>{isTH ? "ยกเลิกรายการนี้" : "Cancel this payment"}</CancelLink>
               </>
             )}
 
@@ -506,6 +550,27 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: P
               </>
             )}
           </Body>
+
+          {showCancelConfirm && (
+            <ConfirmOverlay>
+              <ConfirmCard>
+                <h3>{isTH ? "ยกเลิกรายการนี้ใช่ไหม?" : "Cancel this payment?"}</h3>
+                <p>
+                  {isTH
+                    ? "ถ้ายังไม่ได้โอนเงิน ยกเลิกได้เลยไม่มีผลอะไร แต่ถ้าโอนไปแล้วอย่าเพิ่งปิด รอให้ระบบตรวจสอบก่อน"
+                    : "Safe to cancel if you haven't paid yet. If you already transferred, don't close this — wait for auto-detection first."}
+                </p>
+                <ConfirmActions>
+                  <GhostBtn onClick={() => setShowCancelConfirm(false)}>
+                    {isTH ? "กลับไปทำต่อ" : "Go back"}
+                  </GhostBtn>
+                  <DangerBtn onClick={confirmCancel}>
+                    {isTH ? "ยืนยันยกเลิก" : "Yes, cancel"}
+                  </DangerBtn>
+                </ConfirmActions>
+              </ConfirmCard>
+            </ConfirmOverlay>
+          )}
         </Box>
       </Dialog.Portal>
     </Dialog.Root>
