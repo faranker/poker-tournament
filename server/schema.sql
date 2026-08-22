@@ -16,6 +16,28 @@ create table if not exists users (
 );
 alter table users add column if not exists bg_image text;
 
+-- 2026-08-23 — role, for the bo-poker-tournament back office (user/vip/banned).
+-- 'banned' is enforced in routes/auth.js's /login (rejects with 403).
+alter table users add column if not exists role text not null default 'user';
+alter table users drop constraint if exists users_role_check;
+alter table users add constraint users_role_check check (role in ('user','vip','banned'));
+
+-- 2026-08-23 — donations table was created out-of-band directly on the DB
+-- (routes/donations.js has always queried it) and was never added here;
+-- documenting its real, live shape now that bo-poker-tournament needs it.
+create table if not exists donations (
+  id           serial primary key,
+  display_name text not null,
+  user_id      uuid references users(id) on delete set null,
+  amount       numeric not null,
+  slip_path    text,
+  status       text not null default 'pending' check (status in ('pending','pending_amount','approved','rejected')),
+  approved_at  timestamptz,
+  created_at   timestamptz default now(),
+  payer_name   text,
+  payer_bank   text
+);
+
 -- Subscriptions (plan management)
 create table if not exists subscriptions (
   user_id    uuid primary key references users(id) on delete cascade,

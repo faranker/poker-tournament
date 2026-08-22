@@ -1,4 +1,5 @@
 require("dotenv").config();
+const path    = require("path");
 const express = require("express");
 const cors    = require("cors");
 const { pool } = require("./db");
@@ -9,6 +10,15 @@ const PORT = process.env.PORT || 3001;
 /* Middleware */
 app.use(cors({ origin: process.env.CLIENT_URL || "*" }));
 app.use(express.json());
+
+/* Uploaded payment/donation slips — served so bo-poker-tournament (a
+   separate deploy, no shared filesystem) can display them for manual
+   review. Filenames are multer's random dest names, not guessable, and
+   these images already get sent to the admin Telegram chat at submission
+   time — this doesn't lower the app's existing exposure, it just makes a
+   slip re-viewable after the fact instead of only visible in that one
+   Telegram message. */
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 /* Routes */
 app.use("/auth",          require("./routes/auth"));

@@ -64,6 +64,8 @@ router.post("/login", async (req, res) => {
     if (!user) return res.status(401).json({ error: "ไม่พบบัญชีผู้ใช้นี้" });
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(401).json({ error: "รหัสผ่านไม่ถูกต้อง" });
+    if (user.role === "banned")
+      return res.status(403).json({ error: "บัญชีนี้ถูกระงับการใช้งาน" });
     const token = sign(user);
     const profile = await buildUser(user);
     res.json({ token, user: profile });
