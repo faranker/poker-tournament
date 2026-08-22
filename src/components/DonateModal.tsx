@@ -173,7 +173,6 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
 
   const [step, setStep] = useState<Step>("form");
   const [name, setName] = useState(defaultName);
-  const [amount, setAmountInput] = useState("");
   const [fromBank, setFromBank] = useState("");
   const [fromAccount, setFromAccount] = useState("");
   const [initiating, setInitiating] = useState(false);
@@ -182,6 +181,7 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
   const [donationId, setDonationId] = useState<number | null>(null);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [remainingSec, setRemainingSec] = useState(0);
+  const [receivedAmount, setReceivedAmount] = useState<number | null>(null);
 
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const requestClose = () => setShowCancelConfirm(true);
@@ -192,7 +192,7 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
     fetch(`${API}/donations/top`).then(r => r.json()).then(setTop5).catch(() => {});
   }, [step]);
 
-  const canSubmit = name.trim() && Number(amount) > 0 && fromBank && fromAccount.trim();
+  const canSubmit = name.trim() && fromBank && fromAccount.trim();
 
   const handleInitiate = async () => {
     if (!canSubmit) return;
@@ -204,7 +204,6 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           display_name: name.trim(),
-          amount: Number(amount),
           expected_from_bank: fromBank,
           expected_from_account_number: fromAccount.trim(),
           user_id: userId,
@@ -229,7 +228,7 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
       try {
         const res = await fetch(`${API}/donations/status/${donationId}`);
         const data = await res.json();
-        if (data.status === "approved") { setStep("approved"); }
+        if (data.status === "approved") { setReceivedAmount(data.amount ?? null); setStep("approved"); }
         else if (data.status === "expired") { setStep("expired_fallback"); }
       } catch {
         // transient network hiccup — next poll tick will retry
@@ -313,14 +312,6 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
                 </div>
 
                 <div>
-                  <FieldLabel>{isTH?"จำนวนเงิน (บาท)":"Amount (THB)"}</FieldLabel>
-                  <NameInput
-                    type="number" min={1} placeholder={isTH?"เช่น 99":"e.g. 99"}
-                    value={amount} onChange={e => setAmountInput(e.target.value)}
-                  />
-                </div>
-
-                <div>
                   <FieldLabel>{isTH?"ธนาคารที่จะโอนออก":"Bank you'll pay from"}</FieldLabel>
                   <FieldSelect value={fromBank} onChange={e => setFromBank(e.target.value)}>
                     <option value="">{isTH ? "เลือกธนาคาร" : "Select bank"}</option>
@@ -358,7 +349,7 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
                   <img src="/promptpay-qr.jpg" alt="PromptPay QR"
                     style={{width:160,height:160,objectFit:"contain",borderRadius:8}}/>
                   <div style={{fontSize:12,color:"var(--text-muted)",fontWeight:600}}>
-                    {isTH?"สแกน QR เพื่อโอนเงิน":"Scan QR to transfer"}
+                    {isTH?"สแกน QR เพื่อโอนเงิน — จะโอนเท่าไหร่ก็ได้":"Scan QR to transfer — any amount you like"}
                   </div>
                   <div style={{fontSize:11,color:"var(--text-dim)"}}>
                     นาย ปัฐวี จันทร์สว่าง · 096-153-6525
@@ -391,8 +382,8 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
                   </h3>
                   <p>
                     {isTH
-                      ? "การสนับสนุนของคุณได้รับการยืนยันแล้ว กดตกลงเพื่อรีเฟรชหน้าเว็บ"
-                      : "Your support has been confirmed. Click OK to refresh the page."}
+                      ? `การสนับสนุนของคุณ${receivedAmount ? ` ฿${Number(receivedAmount).toLocaleString()} ` : ""}ได้รับการยืนยันแล้ว กดตกลงเพื่อรีเฟรชหน้าเว็บ`
+                      : `Your support${receivedAmount ? ` of ฿${Number(receivedAmount).toLocaleString()}` : ""} has been confirmed. Click OK to refresh the page.`}
                   </p>
                   <SubmitBtn onClick={() => window.location.reload()}>
                     {isTH ? "ตกลง" : "OK"}

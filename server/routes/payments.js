@@ -137,14 +137,16 @@ router.post("/scb-deposit", async (req, res) => {
 
     // No payment_requests match — try donations before giving up (same
     // webhook call site serves both, so line-forwarder-app needs no changes).
+    // Donations have no declared amount to match against anymore — the
+    // donor doesn't type one, so this matches on bank + last-4 only, and
+    // the deposit's own amount becomes the donation's amount below.
     const { rows: donationMatches } = await query(
       `select * from donations
         where status='awaiting_transfer'
           and payment_window_expires_at > now()
           and right(regexp_replace(expected_from_account_number, '\\D', '', 'g'), 4) = $1
-          and expected_from_bank = $2
-          and amount = $3`,
-      [last4Digits(from_account_number), from_bank, amount]
+          and expected_from_bank = $2`,
+      [last4Digits(from_account_number), from_bank]
     );
 
     if (donationMatches.length > 1) {
@@ -159,8 +161,8 @@ router.post("/scb-deposit", async (req, res) => {
       const d = donationMatches[0];
       try {
         await query(
-          `update donations set status='approved', approved_at=now(), matched_transaction_key=$2 where id=$1`,
-          [d.id, transaction_key]
+          `update donations set status='approved', approved_at=now(), matched_transaction_key=$2, amount=$3 where id=$1`,
+          [d.id, transaction_key, amount]
         );
       } catch (err) {
         if (err.code === "23505") {
@@ -173,10 +175,10 @@ router.post("/scb-deposit", async (req, res) => {
       await sendTelegramMessage(
         `🩷 Auto-approved donation — #${d.id}\n` +
         `👤 ชื่อ: ${d.display_name}\n` +
-        `💰 ยอด: ${Number(d.amount).toLocaleString()} บาท\n` +
+        `💰 ยอด: ${Number(amount).toLocaleString()} บาท\n` +
         `🕐 เวลาโอน: ${transaction_time || "-"}`
       );
-      return res.json({ matched: true, donation_id: d.id });
+      return res.json({ matched: true, donation_id: d.id, amount });
     }
 
     console.log(`[scb-deposit] no pending match for ฿${amount} from ${from_bank} ${from_account_number}`);

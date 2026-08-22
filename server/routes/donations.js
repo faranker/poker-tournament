@@ -18,15 +18,13 @@ router.get("/top", async (_req, res) => {
   res.json(rows);
 });
 
-/* POST /donations/initiate — สร้างรายการรอโอนเงิน (ก่อนแสดง QR) */
+/* POST /donations/initiate — สร้างรายการรอโอนเงิน (ก่อนแสดง QR)
+   ไม่ต้องกรอกยอดเงิน — ยอดจริงจะถูกเติมจากข้อความ SCB ตอนตรวจพบเงินเข้า */
 router.post("/initiate", async (req, res) => {
-  const { display_name, amount, expected_from_bank, expected_from_account_number, user_id } = req.body;
+  const { display_name, expected_from_bank, expected_from_account_number, user_id } = req.body;
 
   if (!display_name || !String(display_name).trim())
     return res.status(400).json({ error: "กรุณาใส่ชื่อที่แสดง" });
-  const numAmount = Number(amount);
-  if (!numAmount || numAmount <= 0)
-    return res.status(400).json({ error: "กรุณาใส่จำนวนเงินให้ถูกต้อง" });
   if (!expected_from_account_number || !String(expected_from_account_number).trim())
     return res.status(400).json({ error: "กรุณากรอกเลขบัญชีต้นทาง" });
   if (!KNOWN_BANK_CODES.includes(expected_from_bank))
@@ -39,14 +37,14 @@ router.post("/initiate", async (req, res) => {
       `insert into donations
          (display_name, user_id, amount, status,
           expected_from_account_number, expected_from_bank, payment_window_expires_at)
-       values ($1, $2, $3, 'awaiting_transfer', $4, $5, $6)
+       values ($1, $2, null, 'awaiting_transfer', $3, $4, $5)
        returning id`,
       [
-        String(display_name).trim(), user_id || null, numAmount,
+        String(display_name).trim(), user_id || null,
         String(expected_from_account_number).trim(), expected_from_bank, expiresAt,
       ]
     );
-    res.json({ id: rows[0].id, amount: numAmount, expires_at: expiresAt });
+    res.json({ id: rows[0].id, expires_at: expiresAt });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "เกิดข้อผิดพลาด" });

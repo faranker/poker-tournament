@@ -48,6 +48,11 @@ alter table donations drop constraint if exists donations_status_check;
 alter table donations add constraint donations_status_check
   check (status in ('awaiting_transfer','pending','pending_amount','expired','approved','rejected'));
 
+-- 2026-08-22 — donor no longer declares an amount up front; the real
+-- amount is whatever the matched SCB deposit actually reports, set on
+-- approval. Column stays null while a donation is awaiting_transfer.
+alter table donations alter column amount drop not null;
+
 -- Subscriptions (plan management)
 create table if not exists subscriptions (
   user_id    uuid primary key references users(id) on delete cascade,
