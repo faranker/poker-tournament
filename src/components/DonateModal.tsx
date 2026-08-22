@@ -36,6 +36,11 @@ const NameInput = styled.input`
   color:var(--text);font-size:15px;font-family:inherit;
   &:focus{outline:none;border-color:#e879a0;box-shadow:0 0 0 3px #e879a022;}
   &::placeholder{color:var(--text-dim);}
+  /* Hide the native up/down spinner on type="number" (the amount field) —
+     harmless no-op on text inputs since these pseudo-elements/properties
+     only ever apply to number inputs. */
+  &::-webkit-inner-spin-button, &::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+  &[type="number"] { -moz-appearance:textfield; }
 `;
 const ReadOnlyName = styled.div`
   width:100%;padding:9px 11px;border-radius:var(--radius-sm);
@@ -43,9 +48,12 @@ const ReadOnlyName = styled.div`
   color:var(--text);font-size:15px;font-weight:700;
 `;
 const FieldSelect = styled.select`
-  width:100%;padding:9px 11px;border-radius:var(--radius-sm);
+  width:100%;padding:9px 32px 9px 11px;border-radius:var(--radius-sm);
   border:1px solid var(--border);background:var(--surface2);
   color:var(--text);font-size:15px;font-family:inherit;cursor:pointer;
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238892a4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 11px center;
   &:focus{outline:none;border-color:#e879a0;}
 `;
 
