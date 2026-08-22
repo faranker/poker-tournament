@@ -18,7 +18,7 @@ const Overlay = styled(Dialog.Overlay)`
 const Box = styled(Dialog.Content)`
   position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2001;
   background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);
-  padding:24px;width:min(400px,92vw);box-shadow:var(--shadow-lg);
+  padding:24px;width:min(440px,92vw);box-shadow:var(--shadow-lg);
   animation:${contentShow} .18s ease;max-height:92vh;overflow-y:auto;
   &:focus{outline:none;}
 `;
@@ -108,20 +108,26 @@ const ExpiryNumbers = styled.div`
   .unit{font-size:13px;color:var(--text-muted);margin-left:3px;}
 `;
 
+/* Fixed green regardless of theme accent (which is red in the Dark theme —
+   clashing with the also-red Logout button and reading as a warning
+   instead of an inviting upgrade CTA). Matches the same green used for
+   the primary "confirm" action elsewhere (PaymentModal.tsx's SubmitBtn). */
 const RenewFullBtn = styled.button`
   width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
-  padding:12px;border-radius:var(--radius-sm);border:1px solid var(--accent);
-  background:var(--accent-soft);color:var(--accent);
+  padding:12px;border-radius:var(--radius-sm);border:none;
+  background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;
   font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .18s;
-  &:hover{background:var(--accent);color:#fff;}
+  &:hover{opacity:.9;}
 `;
 
 const AccountActionsRow = styled.div`display:flex;gap:8px;margin-top:18px;`;
 /* Fixed red regardless of theme accent — logout reads as a boundary/
-   destructive-ish action, not the app's primary action color. */
+   destructive-ish action, not the app's primary action color. flex-shrink:0
+   + white-space:nowrap keep its label on one line instead of being squeezed
+   into a 3-line stack when the row's other buttons grow. */
 const LogoutBtn = styled.button`
-  display:flex;align-items:center;gap:6px;padding:9px 16px;border-radius:var(--radius-sm);
-  border:1px solid #ef4444;background:transparent;color:#ef4444;
+  display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:var(--radius-sm);
+  border:1px solid #ef4444;background:transparent;color:#ef4444;white-space:nowrap;flex-shrink:0;
   font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .18s;
   &:hover{background:rgba(239,68,68,.12);}
 `;
@@ -300,11 +306,11 @@ export function LoginModal({ user, reason, onLogin, onLogout, onClose, onUpgrade
 
             <AccountActionsRow>
               <LogoutBtn onClick={handleLogout}><LogOut size={15}/>{isTH?"ออกจากระบบ":"Logout"}</LogoutBtn>
-              <Btn $v="primary" $full onClick={()=>{onClose();onUpgrade();}}>
+              <Btn $v="primary" style={{flex:1}} onClick={()=>{onClose();onUpgrade();}}>
                 {isTH?"ดู Plans":"View Plans"}
               </Btn>
               <Dialog.Close asChild>
-                <Btn $v="secondary">{isTH?"ปิด":"Close"}</Btn>
+                <Btn $v="secondary" style={{flexShrink:0}}>{isTH?"ปิด":"Close"}</Btn>
               </Dialog.Close>
             </AccountActionsRow>
           </Box>
