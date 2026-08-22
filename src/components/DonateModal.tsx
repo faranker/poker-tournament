@@ -374,24 +374,6 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
               </>
             )}
 
-            {step === "approved" && (
-              <ConfirmOverlay>
-                <ConfirmCard>
-                  <h3 style={{color:"#e879a0",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                    <CheckCircle size={20}/> {isTH ? "ขอบคุณมากครับ 🩷" : "Thank you so much 🩷"}
-                  </h3>
-                  <p>
-                    {isTH
-                      ? `การสนับสนุนของคุณ${receivedAmount ? ` ฿${Number(receivedAmount).toLocaleString()} ` : ""}ได้รับการยืนยันแล้ว กดตกลงเพื่อรีเฟรชหน้าเว็บ`
-                      : `Your support${receivedAmount ? ` of ฿${Number(receivedAmount).toLocaleString()}` : ""} has been confirmed. Click OK to refresh the page.`}
-                  </p>
-                  <SubmitBtn onClick={() => window.location.reload()}>
-                    {isTH ? "ตกลง" : "OK"}
-                  </SubmitBtn>
-                </ConfirmCard>
-              </ConfirmOverlay>
-            )}
-
             {step === "expired_fallback" && (
               <>
                 <StatusBox $warn>
@@ -411,6 +393,24 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
               </>
             )}
           </Body>
+
+          {step === "approved" && (
+            <ConfirmOverlay>
+              <ConfirmCard>
+                <h3 style={{color:"#e879a0",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                  <CheckCircle size={20}/> {isTH ? "ขอบคุณมากครับ 🩷" : "Thank you so much 🩷"}
+                </h3>
+                <p>
+                  {isTH
+                    ? `การสนับสนุนของคุณ${receivedAmount ? ` ฿${Number(receivedAmount).toLocaleString()} ` : ""}ได้รับการยืนยันแล้ว กดตกลงเพื่อรีเฟรชหน้าเว็บ`
+                    : `Your support${receivedAmount ? ` of ฿${Number(receivedAmount).toLocaleString()}` : ""} has been confirmed. Click OK to refresh the page.`}
+                </p>
+                <SubmitBtn onClick={() => window.location.reload()}>
+                  {isTH ? "ตกลง" : "OK"}
+                </SubmitBtn>
+              </ConfirmCard>
+            </ConfirmOverlay>
+          )}
 
           {showCancelConfirm && (
             <ConfirmOverlay>

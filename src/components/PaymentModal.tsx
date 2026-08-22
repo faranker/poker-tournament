@@ -417,24 +417,6 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: P
               </>
             )}
 
-            {step === "approved" && (
-              <ConfirmOverlay>
-                <ConfirmCard>
-                  <h3 style={{color:"#22c55e",display:"flex",alignItems:"center",gap:8}}>
-                    <CheckCircle size={20}/> {isTH ? "เปิดใช้งานสำเร็จ!" : "Activated!"}
-                  </h3>
-                  <p>
-                    {isTH
-                      ? "แพ็กเกจของคุณอัปเดตเรียบร้อยแล้ว กดตกลงเพื่อรีเฟรชหน้าเว็บ"
-                      : "Your package has been updated. Click OK to refresh the page."}
-                  </p>
-                  <SubmitBtn onClick={() => { onSuccess(); window.location.reload(); }}>
-                    {isTH ? "ตกลง" : "OK"}
-                  </SubmitBtn>
-                </ConfirmCard>
-              </ConfirmOverlay>
-            )}
-
             {step === "expired_fallback" && (
               <>
                 <StatusBox $warn>
@@ -454,6 +436,24 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: P
               </>
             )}
           </Body>
+
+          {step === "approved" && (
+            <ConfirmOverlay>
+              <ConfirmCard>
+                <h3 style={{color:"#22c55e",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                  <CheckCircle size={20}/> {isTH ? "เปิดใช้งานสำเร็จ!" : "Activated!"}
+                </h3>
+                <p>
+                  {isTH
+                    ? "แพ็กเกจของคุณอัปเดตเรียบร้อยแล้ว กดตกลงเพื่อรีเฟรชหน้าเว็บ"
+                    : "Your package has been updated. Click OK to refresh the page."}
+                </p>
+                <SubmitBtn onClick={() => { onSuccess(); window.location.reload(); }}>
+                  {isTH ? "ตกลง" : "OK"}
+                </SubmitBtn>
+              </ConfirmCard>
+            </ConfirmOverlay>
+          )}
 
           {showCancelConfirm && (
             <ConfirmOverlay>
