@@ -23,6 +23,18 @@ const KNOWN_BANK_CODES = ["SCB", "KTB", "GSB", "KBANK", "BAY", "BBL", "TTB", "UO
 
 const PAYMENT_WINDOW_MINUTES = parseInt(process.env.PAYMENT_WINDOW_MINUTES || "10", 10);
 
+/* SCB's own LINE notification always masks the sender's account number to
+   the last 4 digits (e.g. "X-7667") — confirmed against a real deposit
+   message, 2026-08-23. The payer still types their FULL account number
+   into the payment form (expected_from_account_number), so an exact-match
+   comparison against SCB's masked value could never succeed — match on
+   the last 4 digits instead, which works whether either side happens to
+   be a full number or already masked. */
+function last4Digits(accountNumber) {
+  const digitsOnly = String(accountNumber || "").replace(/\D/g, "");
+  return digitsOnly.slice(-4);
+}
+
 /* ── Simple file upload parser (no multer needed) ── */
 const multer = require("multer");
 const upload = multer({
@@ -101,10 +113,10 @@ router.post("/scb-deposit", async (req, res) => {
       `select * from payment_requests
         where status='awaiting_transfer'
           and payment_window_expires_at > now()
-          and expected_from_account_number = $1
+          and right(regexp_replace(expected_from_account_number, '\\D', '', 'g'), 4) = $1
           and expected_from_bank = $2
           and amount = $3`,
-      [String(from_account_number).trim(), from_bank, amount]
+      [last4Digits(from_account_number), from_bank, amount]
     );
 
     if (matches.length === 0) {
