@@ -66,8 +66,11 @@ const Footer = styled.div`
   padding:12px 20px;border-top:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;
 `;
 const PageSizeSelect = styled.select`
-  padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);
+  padding:6px 28px 6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);
   background:var(--surface2);color:var(--text);font-size:13px;font-family:inherit;cursor:pointer;
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238892a4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 9px center;
 `;
 const PageControls = styled.div`display:flex;align-items:center;gap:10px;`;
 const PageBtn = styled.button`

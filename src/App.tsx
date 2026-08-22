@@ -162,7 +162,13 @@ const GlobalStyle = createGlobalStyle<{ $t: ThemeKey }>`
   :root{ ${p => themeVars[p.$t]} }
   body{background:var(--bg);color:var(--text);font-family:'Noto Sans Thai',system-ui,sans-serif;
        -webkit-font-smoothing:antialiased;font-size:17px;}
-  input[type=number]::-webkit-inner-spin-button{opacity:1}
+  /* Hide the native up/down spinner on every number input project-wide —
+     single source of truth instead of repeating this per styled-component
+     (this replaces an old rule that did the opposite: opacity:1 forced it
+     visible). */
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+  input[type=number]{-moz-appearance:textfield}
   ::-webkit-scrollbar{width:5px;height:5px}
   ::-webkit-scrollbar-track{background:var(--surface2)}
   ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}

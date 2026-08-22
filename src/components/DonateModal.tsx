@@ -36,11 +36,6 @@ const NameInput = styled.input`
   color:var(--text);font-size:15px;font-family:inherit;
   &:focus{outline:none;border-color:#e879a0;box-shadow:0 0 0 3px #e879a022;}
   &::placeholder{color:var(--text-dim);}
-  /* Hide the native up/down spinner on type="number" (the amount field) —
-     harmless no-op on text inputs since these pseudo-elements/properties
-     only ever apply to number inputs. */
-  &::-webkit-inner-spin-button, &::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
-  &[type="number"] { -moz-appearance:textfield; }
 `;
 const ReadOnlyName = styled.div`
   width:100%;padding:9px 11px;border-radius:var(--radius-sm);
