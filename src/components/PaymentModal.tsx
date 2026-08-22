@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import styled, { keyframes } from "styled-components";
-import { Upload, X, Check, CheckCircle, Clock, AlertTriangle, MessageCircle } from "lucide-react";
+import { X, Check, CheckCircle, Clock, AlertTriangle, MessageCircle } from "lucide-react";
 import type { Plan } from "../auth";
 
 const overlayShow = keyframes`from{opacity:0}to{opacity:1}`;
@@ -130,25 +130,6 @@ const FieldSelect = styled.select`
   &:focus{outline:none;border-color:#22c55e;}
 `;
 
-/* Upload area */
-const UploadArea = styled.label<{$hasFile?:boolean;$done?:boolean}>`
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
-  border:2px dashed ${p=>p.$done?"#22c55e":p.$hasFile?"#3b82f6":"#2a3a2a"};
-  border-radius:12px;padding:20px;cursor:pointer;transition:all .18s;
-  background:${p=>p.$done?"rgba(34,197,94,.06)":p.$hasFile?"rgba(59,130,246,.06)":"rgba(34,197,94,.03)"};
-  &:hover{border-color:${p=>p.$done?"#22c55e":"#22c55e"};background:rgba(34,197,94,.06);}
-  .icon{color:${p=>p.$done?"#22c55e":p.$hasFile?"#3b82f6":"#4a6a4a"};}
-  .text{font-size:13px;font-weight:600;color:${p=>p.$done?"#22c55e":p.$hasFile?"#3b82f6":"#4a8a4a"};}
-  .sub{font-size:11px;color:#4a6a4a;}
-`;
-const HiddenInput = styled.input`display:none;`;
-
-/* Preview */
-const SlipPreview = styled.img`
-  width:100%;max-height:200px;object-fit:contain;
-  border-radius:8px;border:1px solid #2a3a2a;
-`;
-
 /* Submit btn */
 const SubmitBtn = styled.button<{$loading?:boolean}>`
   width:100%;padding:13px;border-radius:10px;border:none;
@@ -157,12 +138,6 @@ const SubmitBtn = styled.button<{$loading?:boolean}>`
   font-family:inherit;transition:all .18s;letter-spacing:.02em;
   &:hover:not(:disabled){opacity:.9;transform:translateY(-1px);}
   &:disabled{opacity:.5;cursor:not-allowed;transform:none;}
-`;
-const SecondaryBtn = styled.button`
-  width:100%;padding:10px;border-radius:10px;border:1px solid #2a3a2a;
-  background:transparent;color:#8892a4;font-size:13px;font-weight:700;cursor:pointer;
-  font-family:inherit;transition:all .18s;
-  &:hover{border-color:#4a6a4a;color:#e2e8f0;}
 `;
 const LineBtn = styled.a`
   display:flex;align-items:center;justify-content:center;gap:8px;
@@ -272,13 +247,6 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: P
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [remainingSec, setRemainingSec] = useState(0);
 
-  /* Slip-upload fallback (reused for both the expired path and the
-     "แนบสลิปตอนนี้เลย" escape hatch during waiting) */
-  const [file,      setFile]      = useState<File | null>(null);
-  const [preview,   setPreview]   = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const requestClose = () => setShowCancelConfirm(true);
   const confirmCancel = () => { setShowCancelConfirm(false); onClose(); };
@@ -338,33 +306,6 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: P
     return () => clearInterval(id);
   }, [step, expiresAt]);
 
-  const handleFile = (f: File) => {
-    setFile(f);
-    const reader = new FileReader();
-    reader.onload = e => setPreview(e.target?.result as string);
-    reader.readAsDataURL(f);
-  };
-
-  const handleSlipSubmit = async () => {
-    if (!file || !requestId) return;
-    setUploading(true);
-    try {
-      const form = new FormData();
-      form.append("slip", file);
-      form.append("payment_request_id", String(requestId));
-      await fetch(`${API}/payments/slip`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: form,
-      });
-      setSubmitted(true);
-    } catch {
-      // silent — still show success UI so user knows we got it
-      setSubmitted(true);
-    }
-    setUploading(false);
-  };
-
   return (
     <Dialog.Root open onOpenChange={() => { /* only the explicit close/cancel actions below may close this */ }}>
       <Dialog.Portal>
@@ -401,11 +342,11 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: P
                   </FieldSelect>
                 </FieldGroup>
                 <FieldGroup>
-                  <label>{isTH ? "เลขบัญชีต้นทาง (ของคุณ)" : "Your account number"}</label>
+                  <label>{isTH ? "เลขบัญชี" : "Your account number"}</label>
                   <FieldInput
                     value={fromAccount}
                     onChange={e => setFromAccount(e.target.value)}
-                    placeholder={isTH ? "เช่น 123-4-56789-0" : "e.g. 123-4-56789-0"}
+                    placeholder={isTH ? "เช่น 1234567890" : "e.g. 1234567890"}
                   />
                 </FieldGroup>
 
@@ -452,7 +393,7 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: P
                 <AccountInfo>
                   <div className="title">สแกน QR เพื่อโอนเข้าบัญชี</div>
                   <div className="name">นาย ปัฐวี จันทร์สว่าง</div>
-                  <div className="acc">บัญชี: 096-153-6525</div>
+                  <div className="acc">พร้อมเพย์: 096-153-6525</div>
                 </AccountInfo>
 
                 <CountdownBox>
@@ -468,23 +409,6 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: P
                       : "Waiting to auto-detect your transfer... it'll activate within seconds of paying."}
                   </div>
                 </StatusBox>
-
-                {!file ? (
-                  <UploadArea htmlFor="slip-upload-early">
-                    <HiddenInput
-                      id="slip-upload-early" type="file" accept="image/*"
-                      onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}
-                    />
-                    <Upload size={16} className="icon"/>
-                    <span className="text" style={{fontSize:12}}>
-                      {isTH ? "หรือแนบสลิปตอนนี้เลย (ข้ามการรอตรวจสอบอัตโนมัติ)" : "Or upload the slip now (skip auto-detection)"}
-                    </span>
-                  </UploadArea>
-                ) : (
-                  <SecondaryBtn disabled={uploading} onClick={handleSlipSubmit}>
-                    {uploading ? (isTH ? "กำลังส่ง..." : "Sending...") : (isTH ? `ส่งสลิป: ${file.name}` : `Send slip: ${file.name}`)}
-                  </SecondaryBtn>
-                )}
 
                 <CancelLink onClick={requestClose}>{isTH ? "ยกเลิกรายการนี้" : "Cancel this payment"}</CancelLink>
               </>
@@ -508,14 +432,14 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: P
               </ConfirmOverlay>
             )}
 
-            {step === "expired_fallback" && !submitted && (
+            {step === "expired_fallback" && (
               <>
                 <StatusBox $warn>
                   <AlertTriangle size={18} style={{flexShrink:0}}/>
                   <div style={{lineHeight:1.65,fontSize:12}}>
                     {isTH
-                      ? "ไม่พบรายการโอนภายในเวลาที่กำหนด กรุณาติดต่อแอดมิน หรือแนบสลิปเพื่อให้ตรวจสอบด้วยตนเอง"
-                      : "No transfer detected within the time window. Contact the admin, or upload your slip for manual review."}
+                      ? "ไม่พบรายการโอนภายในเวลาที่กำหนด กรุณาติดต่อแอดมินเพื่อตรวจสอบ"
+                      : "No transfer detected within the time window. Please contact the admin for manual review."}
                   </div>
                 </StatusBox>
 
@@ -524,38 +448,6 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: P
                     <MessageCircle size={16}/> {isTH ? "ติดต่อแอดมินผ่าน LINE" : "Contact admin on LINE"}
                   </LineBtn>
                 )}
-
-                {preview && <SlipPreview src={preview} alt="slip" />}
-                <UploadArea $hasFile={!!file} htmlFor="slip-upload-fallback">
-                  <HiddenInput
-                    id="slip-upload-fallback" type="file" accept="image/*"
-                    onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}
-                  />
-                  {file
-                    ? <><Upload size={20} className="icon"/><span className="text">{file.name}</span><span className="sub">{isTH?"กดเพื่อเปลี่ยนไฟล์":"Tap to change file"}</span></>
-                    : <><Upload size={20} className="icon"/><span className="text">{isTH?"อัพโหลดสลิป":"Upload Slip"}</span><span className="sub">JPG, PNG</span></>
-                  }
-                </UploadArea>
-
-                <SubmitBtn disabled={!file || uploading} onClick={handleSlipSubmit}>
-                  {uploading
-                    ? (isTH ? "กำลังส่ง..." : "Sending...")
-                    : (isTH ? "ส่งสลิปเพื่อยืนยัน" : "Submit Slip")}
-                </SubmitBtn>
-              </>
-            )}
-
-            {step === "expired_fallback" && submitted && (
-              <>
-                <StatusBox $ok>
-                  <CheckCircle size={18} style={{flexShrink:0}}/>
-                  <div style={{lineHeight:1.65,fontSize:12}}>
-                    {isTH
-                      ? <><b>อัปโหลดสลิปเรียบร้อยแล้ว</b><br/>กรุณารอทีมงานตรวจสอบและเปิดใช้งานภายใน <b>5–10 นาที</b></>
-                      : <><b>Slip uploaded successfully</b><br/>Please wait for our team to verify within <b>5–10 minutes</b></>
-                    }
-                  </div>
-                </StatusBox>
               </>
             )}
           </Body>

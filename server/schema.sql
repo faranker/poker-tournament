@@ -38,6 +38,16 @@ create table if not exists donations (
   payer_bank   text
 );
 
+-- 2026-08-23 — SCB auto-match for donations, mirrors payment_requests.
+alter table donations add column if not exists expected_from_account_number text;
+alter table donations add column if not exists expected_from_bank text;
+alter table donations add column if not exists payment_window_expires_at timestamptz;
+alter table donations add column if not exists matched_transaction_key text unique;
+
+alter table donations drop constraint if exists donations_status_check;
+alter table donations add constraint donations_status_check
+  check (status in ('awaiting_transfer','pending','pending_amount','expired','approved','rejected'));
+
 -- Subscriptions (plan management)
 create table if not exists subscriptions (
   user_id    uuid primary key references users(id) on delete cascade,

@@ -1,11 +1,7 @@
 const router     = require("express").Router();
 const requireAuth = require("../middleware/auth");
 const { query }  = require("../db");
-const fs         = require("fs");
-const path       = require("path");
-const https      = require("https");
-const FormData   = require("form-data");
-const { approvePaymentRequest, PLAN_NAMES } = require("../services/paymentApproval");
+const { approvePaymentRequest } = require("../services/paymentApproval");
 
 /* Server-side plan pricing — mirrors src/components/PaymentModal.tsx's
    PLAN_PRICES. Amount for /payments/initiate is always computed from here,
@@ -34,17 +30,6 @@ function last4Digits(accountNumber) {
   const digitsOnly = String(accountNumber || "").replace(/\D/g, "");
   return digitsOnly.slice(-4);
 }
-
-/* ── Simple file upload parser (no multer needed) ── */
-const multer = require("multer");
-const upload = multer({
-  dest: path.join(__dirname, "../uploads/"),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-  fileFilter: (_req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) cb(null, true);
-    else cb(new Error("Only images allowed"));
-  },
-});
 
 /* POST /payments/initiate — สร้างรายการรอโอนเงิน (ก่อนแสดง QR) */
 router.post("/initiate", requireAuth, async (req, res) => {
@@ -119,10 +104,6 @@ router.post("/scb-deposit", async (req, res) => {
       [last4Digits(from_account_number), from_bank, amount]
     );
 
-    if (matches.length === 0) {
-      console.log(`[scb-deposit] no pending match for ฿${amount} from ${from_bank} ${from_account_number}`);
-      return res.json({ matched: false });
-    }
     if (matches.length > 1) {
       console.warn(`[scb-deposit] ambiguous — ${matches.length} pending requests match ฿${amount} from ${from_bank} ${from_account_number}`);
       await sendTelegramMessage(
@@ -131,79 +112,77 @@ router.post("/scb-deposit", async (req, res) => {
       return res.json({ matched: false, ambiguous: true });
     }
 
-    const pr = matches[0];
-    let result;
-    try {
-      result = await approvePaymentRequest(pr, { matchedTransactionKey: transaction_key });
-    } catch (err) {
-      if (err.code === "23505") {
-        // matched_transaction_key unique conflict — this deposit was already processed
-        console.log(`[scb-deposit] duplicate delivery for transaction_key=${transaction_key}`);
-        return res.json({ matched: false, duplicate: true });
+    if (matches.length === 1) {
+      const pr = matches[0];
+      let result;
+      try {
+        result = await approvePaymentRequest(pr, { matchedTransactionKey: transaction_key });
+      } catch (err) {
+        if (err.code === "23505") {
+          // matched_transaction_key unique conflict — this deposit was already processed
+          console.log(`[scb-deposit] duplicate delivery for transaction_key=${transaction_key}`);
+          return res.json({ matched: false, duplicate: true });
+        }
+        throw err;
       }
-      throw err;
+
+      await sendTelegramMessage(
+        `✅ Auto-approved via SCB deposit — request #${pr.id}\n` +
+        `📦 Plan: ${result.planName}\n` +
+        `💰 ยอด: ${Number(pr.amount).toLocaleString()} บาท\n` +
+        `🕐 เวลาโอน: ${transaction_time || "-"}`
+      );
+      return res.json({ matched: true, payment_request_id: pr.id });
     }
 
-    await sendTelegramMessage(
-      `✅ Auto-approved via SCB deposit — request #${pr.id}\n` +
-      `📦 Plan: ${result.planName}\n` +
-      `💰 ยอด: ${Number(pr.amount).toLocaleString()} บาท\n` +
-      `🕐 เวลาโอน: ${transaction_time || "-"}`
+    // No payment_requests match — try donations before giving up (same
+    // webhook call site serves both, so line-forwarder-app needs no changes).
+    const { rows: donationMatches } = await query(
+      `select * from donations
+        where status='awaiting_transfer'
+          and payment_window_expires_at > now()
+          and right(regexp_replace(expected_from_account_number, '\\D', '', 'g'), 4) = $1
+          and expected_from_bank = $2
+          and amount = $3`,
+      [last4Digits(from_account_number), from_bank, amount]
     );
-    res.json({ matched: true, payment_request_id: pr.id });
+
+    if (donationMatches.length > 1) {
+      console.warn(`[scb-deposit] ambiguous donation match — ${donationMatches.length} rows for ฿${amount} from ${from_bank} ${from_account_number}`);
+      await sendTelegramMessage(
+        `⚠️ พบเงินเข้า SCB ฿${amount} จาก ${from_bank} ${from_account_number} ตรงกับ donation หลายรายการ — กรุณาตรวจสอบด้วยตนเอง`
+      );
+      return res.json({ matched: false, ambiguous: true });
+    }
+
+    if (donationMatches.length === 1) {
+      const d = donationMatches[0];
+      try {
+        await query(
+          `update donations set status='approved', approved_at=now(), matched_transaction_key=$2 where id=$1`,
+          [d.id, transaction_key]
+        );
+      } catch (err) {
+        if (err.code === "23505") {
+          console.log(`[scb-deposit] duplicate donation delivery for transaction_key=${transaction_key}`);
+          return res.json({ matched: false, duplicate: true });
+        }
+        throw err;
+      }
+
+      await sendTelegramMessage(
+        `🩷 Auto-approved donation — #${d.id}\n` +
+        `👤 ชื่อ: ${d.display_name}\n` +
+        `💰 ยอด: ${Number(d.amount).toLocaleString()} บาท\n` +
+        `🕐 เวลาโอน: ${transaction_time || "-"}`
+      );
+      return res.json({ matched: true, donation_id: d.id });
+    }
+
+    console.log(`[scb-deposit] no pending match for ฿${amount} from ${from_bank} ${from_account_number}`);
+    res.json({ matched: false });
   } catch (err) {
     console.error("[scb-deposit]", err);
-    res.status(500).json({ error: "เกิดข้อผิดพลาด" });
-  }
-});
-
-/* POST /payments/slip — แนบสลิป (fallback หมดเวลา/manual) + ส่ง Telegram */
-router.post("/slip", requireAuth, upload.single("slip"), async (req, res) => {
-  const { payment_request_id } = req.body;
-  const file = req.file;
-
-  if (!file) return res.status(400).json({ error: "กรุณาแนบสลิป" });
-  if (!payment_request_id) return res.status(400).json({ error: "ข้อมูลไม่ครบ" });
-
-  try {
-    const { rows: prRows } = await query(
-      "select * from payment_requests where id=$1 and user_id=$2 and status in ('awaiting_transfer','expired')",
-      [payment_request_id, req.user.id]
-    );
-    const existing = prRows[0];
-    if (!existing) return res.status(404).json({ error: "ไม่พบรายการ หรือดำเนินการแล้ว" });
-
-    await query(
-      "update payment_requests set slip_path=$1, status='pending' where id=$2",
-      [file.path, existing.id]
-    );
-    const requestId = existing.id;
-    const plan = existing.plan;
-    const billing_cycle = existing.billing_cycle;
-    const amount = existing.amount;
-
-    /* ดึงข้อมูล user */
-    const { rows: users } = await query(
-      "select email, username from users where id = $1",
-      [req.user.id]
-    );
-    const user = users[0];
-
-    /* ส่งไป Telegram */
-    await sendSlipToTelegram({
-      requestId,
-      userId: req.user.id,
-      username: user?.username || "-",
-      email: user?.email || "-",
-      plan: PLAN_NAMES[plan] || plan,
-      billingCycle: billing_cycle === "yearly" ? "รายปี" : "รายเดือน",
-      amount,
-      filePath: file.path,
-    });
-
-    res.json({ success: true, requestId });
-  } catch (err) {
-    console.error(err);
     res.status(500).json({ error: "เกิดข้อผิดพลาด" });
   }
 });
@@ -216,8 +195,12 @@ router.post("/approve/:id", async (req, res) => {
 
   const { id } = req.params;
   try {
+    // Slip upload is retired, so nothing reaches 'pending' via the user
+    // anymore — manual approval now acts directly on 'awaiting_transfer'
+    // or a timed-out 'expired' row. 'pending' stays accepted too, for any
+    // pre-existing historic rows.
     const { rows } = await query(
-      "select * from payment_requests where id = $1 and status = 'pending'",
+      "select * from payment_requests where id = $1 and status in ('awaiting_transfer','pending','expired')",
       [id]
     );
     if (!rows[0]) return res.status(404).json({ error: "ไม่พบ request นี้" });
@@ -244,7 +227,7 @@ router.post("/reject/:id", async (req, res) => {
   const { id } = req.params;
   try {
     await query(
-      "update payment_requests set status='rejected' where id=$1 and status='pending'",
+      "update payment_requests set status='rejected' where id=$1 and status in ('awaiting_transfer','pending','expired')",
       [id]
     );
     await sendTelegramMessage(`❌ Rejected #${id}`);
@@ -264,47 +247,6 @@ async function sendTelegramMessage(text) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
-  });
-}
-
-async function sendSlipToTelegram({ requestId, username, email, plan, billingCycle, amount, filePath }) {
-  const token  = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
-
-  const caption =
-    `💳 Payment Request #${requestId}\n` +
-    `👤 User: ${username} (${email})\n` +
-    `📦 Plan: ${plan} · ${billingCycle}\n` +
-    `💰 ยอด: ${Number(amount).toLocaleString()} บาท\n` +
-    `🕐 เวลา: ${new Date().toLocaleString("th-TH")}`;
-
-  const replyMarkup = JSON.stringify({
-    inline_keyboard: [[
-      { text: "✅ Approve", callback_data: `approve_${requestId}` },
-      { text: "❌ Reject",  callback_data: `reject_${requestId}`  },
-    ]],
-  });
-
-  const form = new FormData();
-  form.append("chat_id", chatId);
-  form.append("caption", caption);
-  form.append("reply_markup", replyMarkup);
-  form.append("photo", fs.createReadStream(filePath));
-
-  return new Promise((resolve, reject) => {
-    const options = {
-      hostname: "api.telegram.org",
-      path: `/bot${token}/sendPhoto`,
-      method: "POST",
-      headers: form.getHeaders(),
-    };
-    const req = https.request(options, (res) => {
-      let data = "";
-      res.on("data", (chunk) => { data += chunk; });
-      res.on("end", () => { console.log("[Telegram sendPhoto]", data); resolve(data); });
-    });
-    req.on("error", (e) => { console.error("[Telegram error]", e); reject(e); });
-    form.pipe(req);
   });
 }
 
