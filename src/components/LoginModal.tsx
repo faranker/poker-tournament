@@ -1,7 +1,7 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import styled, { css, keyframes } from "styled-components";
-import { User, AlertTriangle } from "lucide-react";
+import { User, AlertTriangle, Crown, RefreshCw, Calendar, LogOut } from "lucide-react";
 import {
   signIn, signUp, signOut, resetPassword, checkUsername,
   type AuthUser, type Plan,
@@ -81,7 +81,50 @@ const PlanSection = styled.div`
   background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);
   padding:14px;margin-bottom:14px;
 `;
-const PlanRow = styled.div`display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;`;
+/* ── Account card (logged-in view) ── */
+const AccountUsername = styled.div`font-size:20px;font-weight:900;color:var(--text);margin-bottom:2px;`;
+const AccountEmail = styled.div`font-size:14px;color:var(--text-muted);margin-bottom:16px;`;
+const AccountDivider = styled.div`height:1px;background:var(--border);margin-bottom:18px;`;
+const AccountInfoRow = styled.div`display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap;`;
+
+const PlanPill = styled.span<{$plan:Plan}>`
+  display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;
+  font-size:17px;font-weight:800;background:var(--surface3);
+  color:${p=>PLAN_COLORS[p.$plan]};border:1px solid ${p=>PLAN_COLORS[p.$plan]}66;
+`;
+const PlanExpiresOn = styled.div`font-size:12px;color:var(--text-muted);margin-top:6px;
+  b{color:var(--text);font-weight:700;}
+`;
+
+const ExpiryStat = styled.div`display:flex;align-items:center;gap:12px;`;
+const ExpiryIconCircle = styled.div`
+  width:52px;height:52px;border-radius:50%;flex-shrink:0;
+  border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;
+  color:var(--accent);
+`;
+const ExpiryNumbers = styled.div`
+  .label{font-size:12px;color:var(--text-muted);}
+  .value{font-size:26px;font-weight:900;color:var(--text);font-variant-numeric:tabular-nums;}
+  .unit{font-size:13px;color:var(--text-muted);margin-left:3px;}
+`;
+
+const RenewFullBtn = styled.button`
+  width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px;border-radius:var(--radius-sm);border:1px solid var(--accent);
+  background:var(--accent-soft);color:var(--accent);
+  font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .18s;
+  &:hover{background:var(--accent);color:#fff;}
+`;
+
+const AccountActionsRow = styled.div`display:flex;gap:8px;margin-top:18px;`;
+/* Fixed red regardless of theme accent — logout reads as a boundary/
+   destructive-ish action, not the app's primary action color. */
+const LogoutBtn = styled.button`
+  display:flex;align-items:center;gap:6px;padding:9px 16px;border-radius:var(--radius-sm);
+  border:1px solid #ef4444;background:transparent;color:#ef4444;
+  font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .18s;
+  &:hover{background:rgba(239,68,68,.12);}
+`;
 
 
 
@@ -196,80 +239,74 @@ export function LoginModal({ user, reason, onLogin, onLogout, onClose, onUpgrade
         <Dialog.Portal>
           <Overlay />
           <Box>
-            <Title><User size={16}/>{isTH?"บัญชีของคุณ":"Your Account"}</Title>
+            <Title style={{justifyContent:"space-between"}}>
+              <span style={{display:"flex",alignItems:"center",gap:8}}>
+                <User size={16}/>{isTH?"บัญชีของคุณ":"Your Account"}
+              </span>
+              <Dialog.Close asChild>
+                <button aria-label={isTH?"ปิด":"Close"} style={{background:"none",border:"none",color:"var(--text-muted)",cursor:"pointer",padding:4,display:"flex"}}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+              </Dialog.Close>
+            </Title>
             <PlanSection>
-              <PlanRow>
-                <div>
-                  {user.username && (
-                    <div style={{fontSize:15,fontWeight:800,marginBottom:4}}>@{user.username}</div>
-                  )}
-                  <div style={{fontSize:12,color:"var(--text-muted)",marginBottom:8}}>{user.email}</div>
-                  <PlanBadge $plan={user.plan}>{PLAN_NAMES[user.plan]}</PlanBadge>
-                </div>
-                <Btn $v={user.plan==="full_pro"?"secondary":"warn"} $sm onClick={()=>{onClose();onUpgrade();}}>
-                  {user.plan==="full_pro"
-                    ? (isTH?"🔄 ต่ออายุ":"🔄 Renew")
-                    : (isTH?"⬆ อัพเกรด":"⬆ Upgrade")}
-                </Btn>
-              </PlanRow>
+              {user.username && <AccountUsername>@{user.username}</AccountUsername>}
+              <AccountEmail>{user.email}</AccountEmail>
+              <AccountDivider />
 
-              {/* Expiry countdown */}
-              <div style={{marginTop:14,padding:"10px 12px",borderRadius:"var(--radius-sm)",
-                background:"var(--surface3)",border:"1px solid var(--border)"}}>
+              <AccountInfoRow>
+                <div>
+                  <PlanPill $plan={user.plan}>
+                    {user.plan==="full_pro" && <Crown size={16}/>}
+                    {PLAN_NAMES[user.plan]}
+                  </PlanPill>
+                  {user.expiresAt && (
+                    <PlanExpiresOn>
+                      {isTH?"หมดอายุ":"Expires"} <b>{new Date(user.expiresAt).toLocaleDateString(isTH?"th-TH":"en-GB",{day:"2-digit",month:"short",year:"numeric"})}</b>
+                    </PlanExpiresOn>
+                  )}
+                </div>
+
                 {countdown === null ? (
-                  <div style={{fontSize:12,color:"var(--text-muted)"}}>
-                    {isTH?"ไม่มีวันหมดอายุ":"No expiry date"}
-                  </div>
+                  <div style={{fontSize:12,color:"var(--text-muted)"}}>{isTH?"ไม่มีวันหมดอายุ":"No expiry date"}</div>
                 ) : countdown.expired ? (
-                  <div style={{fontSize:12,color:"var(--accent)",fontWeight:700}}>
-                    {isTH?"แพลนหมดอายุแล้ว":"Plan has expired"}
-                  </div>
+                  <div style={{fontSize:13,color:"var(--accent)",fontWeight:700}}>{isTH?"แพลนหมดอายุแล้ว":"Plan has expired"}</div>
                 ) : (
-                  <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
-                    <div style={{fontSize:11,color:"var(--text-muted)"}}>
-                      {isTH?"หมดอายุใน":"Expires in"}
-                    </div>
-                    <div style={{display:"flex",gap:10,alignItems:"baseline"}}>
-                      <span>
-                        <span style={{fontSize:22,fontWeight:800,color:countdown.days<=7?"var(--gold)":"var(--text)",fontVariantNumeric:"tabular-nums"}}>
-                          {countdown.days}
-                        </span>
-                        <span style={{fontSize:11,color:"var(--text-muted)",marginLeft:3}}>
-                          {isTH?"วัน":"d"}
-                        </span>
-                      </span>
-                      <span>
-                        <span style={{fontSize:22,fontWeight:800,color:countdown.days<=7?"var(--gold)":"var(--text)",fontVariantNumeric:"tabular-nums"}}>
-                          {countdown.hours}
-                        </span>
-                        <span style={{fontSize:11,color:"var(--text-muted)",marginLeft:3}}>
-                          {isTH?"ชั่วโมง":"h"}
-                        </span>
-                      </span>
-                    </div>
-                    {countdown.days <= 7 && (
-                      <div style={{fontSize:11,color:"var(--gold)",fontWeight:600}}>  <AlertTriangle size={12} style={{display:"inline",verticalAlign:"middle",marginRight:3}}/>{isTH?"ใกล้หมดอายุ":"Expiring soon"}</div>
-                    )}
-                  </div>
+                  <ExpiryStat>
+                    <ExpiryIconCircle><Calendar size={22}/></ExpiryIconCircle>
+                    <ExpiryNumbers>
+                      <div className="label">{isTH?"หมดอายุใน":"Expires in"}</div>
+                      <div>
+                        <span className="value">{countdown.days}</span>
+                        <span className="unit">{isTH?"วัน":"d"}</span>
+                      </div>
+                    </ExpiryNumbers>
+                  </ExpiryStat>
                 )}
-                {user.expiresAt && !countdown?.expired && (
-                  <div style={{fontSize:10,color:"var(--text-dim)",marginTop:4}}>
-                    {new Date(user.expiresAt).toLocaleDateString(isTH?"th-TH":"en-GB",{day:"2-digit",month:"short",year:"numeric"})}
-                  </div>
-                )}
-              </div>
+              </AccountInfoRow>
+              {countdown && !countdown.expired && countdown.days <= 7 && (
+                <div style={{fontSize:11,color:"var(--gold)",fontWeight:600,marginBottom:14}}>
+                  <AlertTriangle size={12} style={{display:"inline",verticalAlign:"middle",marginRight:3}}/>{isTH?"ใกล้หมดอายุ":"Expiring soon"}
+                </div>
+              )}
+
+              <RenewFullBtn onClick={()=>{onClose();onUpgrade();}}>
+                <RefreshCw size={15}/>
+                {user.plan==="full_pro"
+                  ? (isTH?"ต่ออายุแพ็กเกจ":"Renew Package")
+                  : (isTH?"อัพเกรดแพ็กเกจ":"Upgrade Package")}
+              </RenewFullBtn>
             </PlanSection>
-            <BtnRow style={{justifyContent:"space-between"}}>
-              <Btn $v="ghost" onClick={handleLogout}>{isTH?"ออกจากระบบ":"Logout"}</Btn>
-              <div style={{display:"flex",gap:8}}>
-                <Btn $v="secondary" onClick={()=>{onClose();onUpgrade();}}>
-                  {isTH?"ดู Plans":"View Plans"}
-                </Btn>
-                <Dialog.Close asChild>
-                  <Btn $v="primary">{isTH?"ปิด":"Close"}</Btn>
-                </Dialog.Close>
-              </div>
-            </BtnRow>
+
+            <AccountActionsRow>
+              <LogoutBtn onClick={handleLogout}><LogOut size={15}/>{isTH?"ออกจากระบบ":"Logout"}</LogoutBtn>
+              <Btn $v="primary" $full onClick={()=>{onClose();onUpgrade();}}>
+                {isTH?"ดู Plans":"View Plans"}
+              </Btn>
+              <Dialog.Close asChild>
+                <Btn $v="secondary">{isTH?"ปิด":"Close"}</Btn>
+              </Dialog.Close>
+            </AccountActionsRow>
           </Box>
         </Dialog.Portal>
       </Dialog.Root>
