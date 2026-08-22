@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import styled, { keyframes } from "styled-components";
-import { X, History, TrendingUp, TrendingDown, Trophy, Coins } from "lucide-react";
+import { X, History, TrendingUp, TrendingDown, Trophy, Coins, ChevronLeft, ChevronRight } from "lucide-react";
 
 const overlayShow = keyframes`from{opacity:0}to{opacity:1}`;
 const contentShow = keyframes`from{opacity:0;transform:translate(-50%,-48%) scale(.97)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}`;
@@ -30,7 +30,7 @@ const Body = styled.div`flex:1;overflow-y:auto;padding:16px 20px;display:flex;fl
 
 const SessionCard = styled.div<{$open?:boolean}>`
   border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;
-  cursor:pointer;transition:border-color .15s;
+  cursor:pointer;transition:border-color .15s;flex-shrink:0;
   &:hover{border-color:var(--border2);}
 `;
 const SessionHead = styled.div`
@@ -61,6 +61,26 @@ const Empty = styled.div`
   text-align:center;padding:40px 20px;color:var(--text-muted);font-size:14px;
 `;
 
+const Footer = styled.div`
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 20px;border-top:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;
+`;
+const PageSizeSelect = styled.select`
+  padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);
+  background:var(--surface2);color:var(--text);font-size:13px;font-family:inherit;cursor:pointer;
+`;
+const PageControls = styled.div`display:flex;align-items:center;gap:10px;`;
+const PageBtn = styled.button`
+  display:flex;align-items:center;justify-content:center;
+  width:28px;height:28px;border-radius:var(--radius-sm);border:1px solid var(--border);
+  background:var(--surface2);color:var(--text);cursor:pointer;
+  &:disabled{opacity:.4;cursor:not-allowed;}
+  &:hover:not(:disabled){border-color:var(--border2);}
+`;
+const PageLabel = styled.div`font-size:13px;color:var(--text-muted);white-space:nowrap;`;
+
+const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100];
+
 const API = import.meta.env.VITE_API_URL as string;
 
 type Player = { name:string; buyInTotal:number; cashout?:number };
@@ -85,12 +105,21 @@ export function HistoryModal({ lang, token, onClose }: Props) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [openId,   setOpenId]   = useState<number|null>(null);
+  const [pageSize, setPageSize] = useState(20);
+  const [page,     setPage]     = useState(0);
 
   useEffect(()=>{
     fetch(`${API}/history`, { headers:{ Authorization:`Bearer ${token}` } })
       .then(r=>r.ok ? r.json() : []).then(data=>setSessions(Array.isArray(data)?data:[]))
       .catch(()=>{}).finally(()=>setLoading(false));
   },[token]);
+
+  const pageCount = Math.max(1, Math.ceil(sessions.length / pageSize));
+  const currentPage = Math.min(page, pageCount - 1);
+  const pageSessions = sessions.slice(currentPage * pageSize, currentPage * pageSize + pageSize);
+
+  const changePageSize = (size: number) => { setPageSize(size); setPage(0); setOpenId(null); };
+  const changePage = (p: number) => { setPage(Math.max(0, Math.min(p, pageCount - 1))); setOpenId(null); };
 
   return (
     <Dialog.Root open onOpenChange={open=>{ if(!open) onClose(); }}>
@@ -112,7 +141,7 @@ export function HistoryModal({ lang, token, onClose }: Props) {
                 </div>
               </Empty>
             )}
-            {sessions.map(s=>{
+            {pageSessions.map(s=>{
               const isCash = s.mode==="CASH";
               const isOpen = openId===s.id;
               return (
@@ -181,6 +210,29 @@ export function HistoryModal({ lang, token, onClose }: Props) {
               );
             })}
           </Body>
+          {!loading && sessions.length > 0 && (
+            <Footer>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <PageLabel>{isTH?"แสดงต่อหน้า":"Per page"}</PageLabel>
+                <PageSizeSelect value={pageSize} onChange={e=>changePageSize(Number(e.target.value))}>
+                  {PAGE_SIZE_OPTIONS.map(n=><option key={n} value={n}>{n}</option>)}
+                </PageSizeSelect>
+              </div>
+              <PageControls>
+                <PageLabel>
+                  {isTH
+                    ? `หน้า ${currentPage+1} จาก ${pageCount} (${sessions.length} รายการ)`
+                    : `Page ${currentPage+1} of ${pageCount} (${sessions.length} items)`}
+                </PageLabel>
+                <PageBtn disabled={currentPage===0} onClick={()=>changePage(currentPage-1)}>
+                  <ChevronLeft size={15}/>
+                </PageBtn>
+                <PageBtn disabled={currentPage>=pageCount-1} onClick={()=>changePage(currentPage+1)}>
+                  <ChevronRight size={15}/>
+                </PageBtn>
+              </PageControls>
+            </Footer>
+          )}
         </Box>
       </Dialog.Portal>
     </Dialog.Root>

@@ -316,7 +316,7 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: P
       try {
         const res = await fetch(`${API}/payments/status/${requestId}`, { headers: authHeaders() });
         const data = await res.json();
-        if (data.status === "approved") { setStep("approved"); onSuccess(); }
+        if (data.status === "approved") { setStep("approved"); }
         else if (data.status === "expired") { setStep("expired_fallback"); }
       } catch {
         // transient network hiccup — next poll tick will retry
@@ -491,12 +491,21 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: P
             )}
 
             {step === "approved" && (
-              <StatusBox $ok>
-                <CheckCircle size={18} style={{flexShrink:0}}/>
-                <div style={{lineHeight:1.65,fontSize:13}}>
-                  <b>{isTH ? "เปิดใช้งานเรียบร้อยแล้ว!" : "Activated!"}</b>
-                </div>
-              </StatusBox>
+              <ConfirmOverlay>
+                <ConfirmCard>
+                  <h3 style={{color:"#22c55e",display:"flex",alignItems:"center",gap:8}}>
+                    <CheckCircle size={20}/> {isTH ? "เปิดใช้งานสำเร็จ!" : "Activated!"}
+                  </h3>
+                  <p>
+                    {isTH
+                      ? "แพ็กเกจของคุณอัปเดตเรียบร้อยแล้ว กดตกลงเพื่อรีเฟรชหน้าเว็บ"
+                      : "Your package has been updated. Click OK to refresh the page."}
+                  </p>
+                  <SubmitBtn onClick={() => { onSuccess(); window.location.reload(); }}>
+                    {isTH ? "ตกลง" : "OK"}
+                  </SubmitBtn>
+                </ConfirmCard>
+              </ConfirmOverlay>
             )}
 
             {step === "expired_fallback" && !submitted && (

@@ -86,6 +86,19 @@ create table if not exists game_sessions (
   updated_at timestamptz default now()
 );
 
+-- 2026-08-23 — session_history was created out-of-band directly on the DB
+-- (routes/history.js has always queried it) and was never added here;
+-- documenting its shape now, inferred from that route's own insert/select.
+create table if not exists session_history (
+  id         serial primary key,
+  user_id    uuid not null references users(id) on delete cascade,
+  mode       text not null,
+  game_name  text,
+  players    jsonb not null,
+  summary    jsonb not null default '{}',
+  played_at  timestamptz not null default now()
+);
+
 -- Auto-insert trial plan when user registers (1 day trial)
 create or replace function handle_new_user()
 returns trigger language plpgsql as $$

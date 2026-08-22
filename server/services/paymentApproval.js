@@ -10,15 +10,24 @@ const PLAN_MONTHS = { monthly: 1, yearly: 12 };
  * handler, and the SCB-deposit auto-approve webhook — which previously had
  * two independently written (and already diverged) copies of this logic.
  *
- * Canonicalizes on `/payments/approve/:id`'s existing semantics: expiry is
- * always computed from `now()`, not extended from any existing
- * `subscriptions.expires_at`. The Telegram handler's inline copy used to
- * extend from the existing expiry if still active — that behavior is
- * dropped here in favor of one consistent rule across all three paths.
+ * 2026-08-23 fix: this used to always compute expiry from `now()`,
+ * discarding any remaining time on the current subscription — a real user
+ * with ~800 days left renewed for 30 more and ended up with only 30,
+ * instead of ~830. Renewal must EXTEND from the existing `expires_at` when
+ * it's still in the future (this is what telegram-webhook.js's original
+ * inline copy did, before the two copies were consolidated here — that
+ * consolidation picked the wrong one of the two diverged behaviors).
  */
 async function approvePaymentRequest(pr, { matchedTransactionKey = null } = {}) {
   const months = PLAN_MONTHS[pr.billing_cycle] || 1;
-  const expiresAt = new Date();
+
+  const { rows: subRows } = await query(
+    "select expires_at from subscriptions where user_id=$1",
+    [pr.user_id]
+  );
+  const existing = subRows[0]?.expires_at;
+  const base = existing && new Date(existing) > new Date() ? new Date(existing) : new Date();
+  const expiresAt = new Date(base);
   expiresAt.setMonth(expiresAt.getMonth() + months);
 
   await query(
