@@ -44,7 +44,7 @@ const MobileClose = styled.div`
 const AccountCard = styled.div`display:flex;flex-direction:column;gap:6px;`;
 const Avatar = styled.div<{$color:string}>`
   width:52px;height:52px;border-radius:50%;
-  background:${p=>p.$color}22;border:2px solid ${p=>p.$color};
+  background:color-mix(in srgb,${p=>p.$color} 13%,transparent);border:2px solid ${p=>p.$color};
   color:${p=>p.$color};font-size:20px;font-weight:900;
   display:flex;align-items:center;justify-content:center;margin-bottom:4px;
 `;
@@ -56,7 +56,7 @@ const InfoRow = styled.div`
   padding:10px 12px;border-radius:var(--radius-sm);
   background:var(--surface);border:1px solid var(--border);
 `;
-const InfoLabel = styled.div`font-size:11px;color:var(--text-muted);font-weight:600;margin-bottom:2px;`;
+const InfoLabel = styled.div`font-size:12px;color:var(--text-muted);font-weight:600;margin-bottom:2px;`;
 const InfoValue  = styled.div<{$color?:string}>`font-size:13px;font-weight:800;color:${p=>p.$color??"var(--text)"};`;
 
 const Grid = styled.div`
@@ -67,14 +67,14 @@ const Grid = styled.div`
 const PlanCard = styled.div<{$plan:Plan;$current?:boolean}>`
   border-radius:var(--radius);border:2px solid ${p=>p.$current?PLAN_COLORS[p.$plan]:"var(--border)"};
   padding:20px 16px 18px;display:flex;flex-direction:column;gap:0;position:relative;
-  background:${p=>p.$current?`${PLAN_COLORS[p.$plan]}10`:"var(--surface2)"};
+  background:${p=>p.$current?`color-mix(in srgb,${PLAN_COLORS[p.$plan]} 6%,transparent)`:"var(--surface2)"};
   transition:border-color .18s;
   &:hover{border-color:${p=>PLAN_COLORS[p.$plan]};}
 `;
 
 const CurrentBadge = styled.div<{$plan:Plan}>`
   position:absolute;top:-11px;left:50%;transform:translateX(-50%);
-  background:${p=>PLAN_COLORS[p.$plan]};color:#fff;font-size:12px;font-weight:800;
+  background:${p=>PLAN_COLORS[p.$plan]};color:var(--on-plan);font-size:12px;font-weight:800;
   padding:3px 12px;border-radius:10px;white-space:nowrap;
 `;
 
@@ -103,7 +103,7 @@ const Btn = styled.button<{$v?:BtnV;$full?:boolean;$plan?:Plan}>`
   &:disabled{opacity:.45;cursor:default;}
   ${p=>{
     if(p.$plan) return css`
-      background:${PLAN_COLORS[p.$plan]};color:#fff;
+      background:${PLAN_COLORS[p.$plan]};color:var(--on-plan);
       &:hover:not(:disabled){opacity:.88;transform:translateY(-1px);}
     `;
     switch(p.$v){
@@ -125,11 +125,11 @@ const ToggleBtn = styled.button<{$active?:boolean}>`
   padding:7px 20px;border-radius:7px;border:none;cursor:pointer;
   font-size:13px;font-weight:700;font-family:inherit;transition:all .18s;
   ${p=>p.$active
-    ? "background:var(--accent);color:#fff;box-shadow:0 2px 8px var(--accent-glow);"
+    ? "background:var(--accent);color:var(--on-accent);box-shadow:0 1px 2px rgba(0,0,0,.25);"
     : "background:transparent;color:var(--text-muted);&:hover{color:var(--text);}"}
 `;
 const SaveBadge = styled.span`
-  font-size:10px;font-weight:800;background:#16a34a22;color:var(--success);
+  font-size:12px;font-weight:800;background:#16a34a22;color:var(--success-ink);
   border:1px solid #16a34a44;border-radius:10px;padding:1px 7px;margin-left:6px;
 `;
 
@@ -224,7 +224,7 @@ export function PricingModal({ currentPlan, lang, user, onClose, onUpgrade }: Pr
           {/* ── Left: Account info (desktop only) ── */}
           <LeftPanel>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-              <Spade size={15} style={{color:"var(--accent)"}}/>
+              <Spade size={15} style={{color:"var(--accent-ink)"}}/>
               <span style={{fontSize:12,fontWeight:800,letterSpacing:".08em",color:"var(--text-muted)",textTransform:"uppercase"}}>
                 {isTH?"บัญชีของคุณ":"Your Account"}
               </span>
@@ -259,7 +259,7 @@ export function PricingModal({ currentPlan, lang, user, onClose, onUpgrade }: Pr
                     <InfoLabel>{isTH?"หมดอายุ":"Expires"}</InfoLabel>
                     <InfoValue>{expiresAt.toLocaleDateString(isTH?"th-TH":"en-GB")}</InfoValue>
                     {daysLeft !== null && (
-                      <div style={{fontSize:11,color:daysLeft<=3?"#f59e0b":"var(--success)",marginTop:1,fontWeight:700}}>
+                      <div style={{fontSize:12,color:daysLeft<=3?"#f59e0b":"var(--success-ink)",marginTop:1,fontWeight:700}}>
                         {daysLeft===0
                           ? (isTH?"หมดอายุวันนี้":"Expires today")
                           : isTH?`อีก ${daysLeft} วัน`:`${daysLeft} days left`}
@@ -273,7 +273,7 @@ export function PricingModal({ currentPlan, lang, user, onClose, onUpgrade }: Pr
             <div style={{marginTop:"auto",paddingTop:12,borderTop:"1px solid var(--border)"}}>
               <Note style={{margin:0,fontSize:12}}>
                 <CreditCard size={13} style={{display:"inline",verticalAlign:"middle",marginRight:5}}/> PromptPay QR<br/>
-                <span style={{color:"var(--success)",fontWeight:700}}>
+                <span style={{color:"var(--success-ink)",fontWeight:700}}>
                   {isTH?"พร้อมให้บริการแล้ว":"Now available"}
                 </span>
               </Note>
@@ -332,7 +332,7 @@ export function PricingModal({ currentPlan, lang, user, onClose, onUpgrade }: Pr
                         <Feature key={i} $ok={f.ok}>
                           {f.ok===false
                             ? <X size={12} style={{color:"var(--text-dim)"}}/>
-                            : <Check size={12} style={{color:"var(--success)"}}/>}
+                            : <Check size={12} style={{color:"var(--success-ink)"}}/>}
                           {f.text}
                         </Feature>
                       ))}

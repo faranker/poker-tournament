@@ -24,7 +24,7 @@ const Header = styled.div`
 const Title = styled.h2`
   font-size:17px;font-weight:900;display:flex;align-items:center;gap:8px;
 `;
-const CloseBtn = styled.button`
+const CloseBtn = styled.button`@media(pointer:coarse){min-width:44px;min-height:44px;align-items:center;justify-content:center;}
   background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px;
   border-radius:6px;display:flex;&:hover{color:var(--text);background:var(--surface2);}
 `;
@@ -34,7 +34,7 @@ const NameInput = styled.input`
   width:100%;padding:9px 11px;border-radius:var(--radius-sm);
   border:1px solid var(--border);background:var(--surface2);
   color:var(--text);font-size:15px;font-family:inherit;
-  &:focus{outline:none;border-color:#e879a0;box-shadow:0 0 0 3px #e879a022;}
+  &:focus{outline:none;border-color:var(--donate-ink);box-shadow:0 0 0 3px color-mix(in srgb,var(--donate-ink) 13%,transparent);}
   &::placeholder{color:var(--text-dim);}
 `;
 const ReadOnlyName = styled.div`
@@ -49,13 +49,13 @@ const FieldSelect = styled.select`
   appearance:none;-webkit-appearance:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238892a4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 11px center;
-  &:focus{outline:none;border-color:#e879a0;}
+  &:focus{outline:none;border-color:var(--donate-ink);}
 `;
 
 const SubmitBtn = styled.button`
   width:100%;padding:12px;border-radius:var(--radius-sm);border:none;
-  background:linear-gradient(135deg,#be185d,#e879a0);
-  color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;
+  background:var(--donate);
+  color:var(--on-donate);font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;
   transition:all .18s;display:flex;align-items:center;justify-content:center;gap:8px;
   &:hover:not(:disabled){opacity:.9;transform:translateY(-1px);}
   &:disabled{opacity:.45;cursor:not-allowed;transform:none;}
@@ -89,7 +89,7 @@ const ConfirmCard = styled.div`
 const ConfirmActions = styled.div`display:flex;gap:8px;`;
 const DangerBtn = styled.button`
   flex:1;padding:11px;border-radius:var(--radius-sm);border:none;cursor:pointer;
-  background:#ef4444;color:#fff;font-size:13px;font-weight:800;font-family:inherit;
+  background:#dc2626;color:#fff;font-size:13px;font-weight:800;font-family:inherit;
   &:hover{opacity:.9;}
 `;
 const GhostBtn = styled.button`
@@ -105,25 +105,25 @@ const Top5Wrap = styled.div`display:flex;flex-direction:column;gap:8px;`;
 const Top5Row  = styled.div<{$rank:number}>`
   display:flex;align-items:center;gap:10px;
   padding:9px 12px;border-radius:var(--radius-sm);
-  background:${p=>p.$rank===1?"#e879a011":p.$rank===2?"rgba(192,192,192,.1)":p.$rank===3?"rgba(205,127,50,.1)":"var(--surface2)"};
-  border:1px solid ${p=>p.$rank===1?"#e879a044":p.$rank===2?"rgba(192,192,192,.3)":p.$rank===3?"rgba(205,127,50,.3)":"var(--border)"};
+  background:${p=>p.$rank===1?"color-mix(in srgb,var(--donate-ink) 7%,transparent)":p.$rank===2?"rgba(192,192,192,.1)":p.$rank===3?"rgba(205,127,50,.1)":"var(--surface2)"};
+  border:1px solid ${p=>p.$rank===1?"color-mix(in srgb,var(--donate-ink) 27%,transparent)":p.$rank===2?"rgba(192,192,192,.3)":p.$rank===3?"rgba(205,127,50,.3)":"var(--border)"};
 `;
 const RankBadge = styled.div<{$rank:number}>`
   width:24px;height:24px;border-radius:50%;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
-  font-size:11px;font-weight:900;
-  background:${p=>p.$rank===1?"#e879a0":p.$rank===2?"#9ca3af":p.$rank===3?"#b45309":"var(--surface3)"};
-  color:${p=>p.$rank<=3?"#fff":"var(--text-muted)"};
+  font-size:12px;font-weight:900;
+  background:${p=>p.$rank===1?"var(--donate)":p.$rank===2?"#9ca3af":p.$rank===3?"#b45309":"var(--surface3)"};
+  color:${p=>p.$rank===2?"#1a1206":p.$rank<=3?"#fff":"var(--text-muted)"};
 `;
 const Top5Name   = styled.div`flex:1;font-size:14px;font-weight:700;color:var(--text);`;
-const Top5Amount = styled.div`font-size:13px;font-weight:800;color:#e879a0;`;
+const Top5Amount = styled.div`font-size:13px;font-weight:800;color:var(--donate-ink);`;
 
 const StatusBox = styled.div<{$ok?:boolean;$warn?:boolean}>`
   display:flex;align-items:center;gap:10px;padding:12px 14px;
   border-radius:var(--radius-sm);font-size:13px;font-weight:600;
-  background:${p=>p.$ok?"#e879a011":p.$warn?"rgba(239,68,68,.1)":"rgba(245,158,11,.1)"};
-  border:1px solid ${p=>p.$ok?"#e879a044":p.$warn?"rgba(239,68,68,.3)":"rgba(245,158,11,.3)"};
-  color:${p=>p.$ok?"#e879a0":p.$warn?"#ef4444":"#f59e0b"};
+  background:${p=>p.$ok?"color-mix(in srgb,var(--donate-ink) 7%,transparent)":p.$warn?"rgba(239,68,68,.1)":"rgba(245,158,11,.1)"};
+  border:1px solid ${p=>p.$ok?"color-mix(in srgb,var(--donate-ink) 27%,transparent)":p.$warn?"rgba(239,68,68,.3)":"rgba(245,158,11,.3)"};
+  color:${p=>p.$ok?"var(--donate-ink)":p.$warn?"var(--danger-ink)":"var(--warn-ink)"};
 `;
 
 const CountdownBox = styled.div`
@@ -131,7 +131,7 @@ const CountdownBox = styled.div`
   .digits{font-variant-numeric:tabular-nums;font-size:22px;font-weight:900;color:var(--text);margin-top:2px;}
 `;
 
-const FieldLabel = styled.div`font-size:11px;font-weight:700;text-transform:uppercase;
+const FieldLabel = styled.div`font-size:12px;font-weight:700;text-transform:uppercase;
   letter-spacing:.07em;color:var(--text-muted);margin-bottom:5px;`;
 
 /* Short bank codes — same vocabulary as PaymentModal.tsx's BANKS / server's
@@ -260,17 +260,17 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
         >
           <Header>
             <Title>
-              <Heart size={17} style={{color:"#e879a0"}} fill="#e879a0"/>
+              <Heart size={17} style={{color:"var(--donate-ink)"}} fill="var(--donate-ink)"/>
               {isTH ? "Support ค่าหมูกระทะ" : "Support Developer"}
             </Title>
-            <CloseBtn onClick={requestClose}><X size={18}/></CloseBtn>
+            <CloseBtn aria-label="Close" onClick={requestClose}><X size={18}/></CloseBtn>
           </Header>
 
           <Body>
             {/* Top 5 */}
             <div>
               <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}>
-                <Trophy size={14} style={{color:"#e879a0"}}/>
+                <Trophy size={14} style={{color:"var(--donate-ink)"}}/>
                 <span style={{fontSize:12,fontWeight:800,letterSpacing:".06em",
                   textTransform:"uppercase",color:"var(--text-muted)"}}>
                   Top Supporters
@@ -351,7 +351,7 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
                   <div style={{fontSize:12,color:"var(--text-muted)",fontWeight:600}}>
                     {isTH?"สแกน QR เพื่อโอนเงิน — จะโอนเท่าไหร่ก็ได้":"Scan QR to transfer — any amount you like"}
                   </div>
-                  <div style={{fontSize:11,color:"var(--text-dim)"}}>
+                  <div style={{fontSize:12,color:"var(--text-dim)"}}>
                     นาย ปัฐวี จันทร์สว่าง · 096-153-6525
                   </div>
                 </div>
@@ -397,7 +397,7 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
           {step === "approved" && (
             <ConfirmOverlay>
               <ConfirmCard>
-                <h3 style={{color:"#e879a0",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                <h3 style={{color:"var(--donate-ink)",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
                   <CheckCircle size={20}/> {isTH ? "ขอบคุณมากครับ 🩷" : "Thank you so much 🩷"}
                 </h3>
                 <p>

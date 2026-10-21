@@ -35,10 +35,10 @@ const LogoBox = styled.div`
 `;
 const HeaderText = styled.div`
   h2{font-size:15px;font-weight:800;letter-spacing:.05em;color:#fff;}
-  p{font-size:12px;color:#4a8a4a;font-weight:600;letter-spacing:.12em;margin-top:1px;}
+  p{font-size:12px;color:#6aa86a;font-weight:600;letter-spacing:.12em;margin-top:1px;}
 `;
-const CloseBtn = styled.button`
-  margin-left:auto;background:none;border:none;color:#4a6a4a;cursor:pointer;
+const CloseBtn = styled.button`@media(pointer:coarse){min-width:44px;min-height:44px;align-items:center;justify-content:center;}
+  margin-left:auto;background:none;border:none;color:#6aa86a;cursor:pointer;
   padding:4px;border-radius:6px;display:flex;
   &:hover{color:#fff;background:rgba(255,255,255,.1);}
 `;
@@ -93,9 +93,9 @@ const QRImg = styled.img`
 const AmountBox = styled.div`
   background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);
   border-radius:12px;padding:14px;text-align:center;
-  .label{font-size:12px;color:#4a8a4a;font-weight:600;letter-spacing:.08em;margin-bottom:4px;}
+  .label{font-size:12px;color:#6aa86a;font-weight:600;letter-spacing:.08em;margin-bottom:4px;}
   .amount{font-size:36px;font-weight:900;color:#22c55e;letter-spacing:-.5px;}
-  .unit{font-size:16px;font-weight:600;color:#4a8a4a;margin-left:4px;}
+  .unit{font-size:16px;font-weight:600;color:#6aa86a;margin-left:4px;}
 `;
 
 /* Account info */
@@ -104,7 +104,7 @@ const AccountInfo = styled.div`
   .title{font-size:13px;font-weight:700;color:#22c55e;margin-bottom:6px;}
   .name{font-size:14px;font-weight:700;color:#e2e8f0;margin-bottom:2px;}
   .acc{font-size:13px;color:#8892a4;margin-bottom:2px;}
-  .ref{font-size:11px;color:#5a6278;}
+  .ref{font-size:12px;color:#8892a4;}
 `;
 
 /* Countdown */
@@ -122,7 +122,7 @@ const FieldInput = styled.input`
   width:100%;padding:11px 12px;border-radius:10px;border:1px solid #2a3a2a;
   background:#11181f;color:#e2e8f0;font-size:14px;font-family:inherit;
   &:focus{outline:none;border-color:#22c55e;}
-  &::placeholder{color:#4a5568;}
+  &::placeholder{color:#7a8296;}
 `;
 const FieldSelect = styled.select`
   width:100%;padding:11px 34px 11px 12px;border-radius:10px;border:1px solid #2a3a2a;
@@ -152,7 +152,7 @@ const LineBtn = styled.a`
 
 /* Cancel link + confirm alert (nested modal) */
 const CancelLink = styled.button`
-  background:none;border:none;color:#5a6278;font-size:12px;font-weight:600;
+  background:none;border:none;color:#8892a4;font-size:12px;font-weight:600;
   cursor:pointer;text-decoration:underline;text-underline-offset:2px;
   align-self:center;font-family:inherit;
   &:hover{color:#8892a4;}
@@ -173,13 +173,13 @@ const ConfirmCard = styled.div`
 const ConfirmActions = styled.div`display:flex;gap:8px;`;
 const DangerBtn = styled.button`
   flex:1;padding:11px;border-radius:10px;border:none;cursor:pointer;
-  background:#ef4444;color:#fff;font-size:13px;font-weight:800;font-family:inherit;
+  background:#dc2626;color:#fff;font-size:13px;font-weight:800;font-family:inherit;
   &:hover{opacity:.9;}
 `;
 const GhostBtn = styled.button`
   flex:1;padding:11px;border-radius:10px;border:1px solid #2a3a2a;cursor:pointer;
   background:transparent;color:#e2e8f0;font-size:13px;font-weight:700;font-family:inherit;
-  &:hover{border-color:#4a6a4a;}
+  &:hover{border-color:#6aa86a;}
 `;
 
 const StatusBox = styled.div<{$ok?:boolean;$warn?:boolean}>`
@@ -323,7 +323,7 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: P
               <h2>THAI QR PAYMENT</h2>
               <p>GO POKER</p>
             </HeaderText>
-            <CloseBtn onClick={requestClose}><X size={18}/></CloseBtn>
+            <CloseBtn aria-label="Close" onClick={requestClose}><X size={18}/></CloseBtn>
           </Header>
 
           <Body>

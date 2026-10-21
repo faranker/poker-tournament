@@ -23,7 +23,7 @@ const Header = styled.div`
   padding:18px 20px;border-bottom:1px solid var(--border);flex-shrink:0;
 `;
 const Title = styled.h2`font-size:16px;font-weight:900;display:flex;align-items:center;gap:8px;color:var(--text);`;
-const CloseBtn = styled.button`
+const CloseBtn = styled.button`@media(pointer:coarse){min-width:44px;min-height:44px;align-items:center;justify-content:center;}
   background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px;
   border-radius:6px;display:flex;&:hover{color:var(--text);background:var(--surface2);}
 `;
@@ -49,8 +49,9 @@ const TextBox = styled.pre`
 const CopyBtn = styled.button<{$copied?:boolean}>`
   display:flex;align-items:center;justify-content:center;gap:8px;
   width:100%;padding:12px;border-radius:var(--radius-sm);border:none;
-  font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .18s;
-  background:${p=>p.$copied?"var(--success)":"var(--accent)"};color:#fff;
+  font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .18s,opacity .18s;
+  background:${p=>p.$copied?"var(--success)":"var(--accent)"};
+  color:${p=>p.$copied?"var(--on-success)":"var(--on-accent)"};
   &:hover:not(:disabled){opacity:.88;}
 `;
 
@@ -61,7 +62,7 @@ const ThemeCard = styled.button<{$active?:boolean}>`
   font-family:inherit;transition:all .18s;
   border-color:${p=>p.$active?"var(--accent)":"var(--border)"};
   background:${p=>p.$active?"var(--accent-soft)":"var(--surface2)"};
-  color:${p=>p.$active?"var(--accent)":"var(--text-muted)"};
+  color:${p=>p.$active?"var(--accent-ink)":"var(--text-muted)"};
   &:hover{border-color:var(--accent);color:var(--text);}
 `;
 const ThemePreview = styled.div<{$theme:"dark"|"light"|"custom";$bg?:string}>`
@@ -71,7 +72,7 @@ const ThemePreview = styled.div<{$theme:"dark"|"light"|"custom";$bg?:string}>`
     p.$theme==="light"?"#f8f6f0":
     p.$bg?`url(${p.$bg}) center/cover`:"#334155"};
   border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
-  font-size:11px;font-weight:700;
+  font-size:12px;font-weight:700;
   color:${p=>p.$theme==="light"?"#0f172a":"#fff"};
   opacity:${p=>p.$theme==="custom"&&!p.$bg?0.5:1};
 `;
@@ -79,7 +80,7 @@ const DownloadBtn = styled.button`
   display:flex;align-items:center;justify-content:center;gap:8px;
   width:100%;padding:12px;border-radius:var(--radius-sm);border:none;
   font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .18s;
-  background:var(--accent);color:#fff;
+  background:var(--accent);color:var(--on-accent);
   &:hover:not(:disabled){opacity:.88;}
   &:disabled{opacity:.5;cursor:not-allowed;}
 `;
@@ -232,7 +233,7 @@ export function ShareModal({ lang, mode, players, tournament, prizeWinners, sumB
               </svg>
               {isTH?"แชร์ผลลัพธ์":"Share Results"}
             </Title>
-            <CloseBtn onClick={onClose}><X size={18}/></CloseBtn>
+            <CloseBtn aria-label="Close" onClick={onClose}><X size={18}/></CloseBtn>
           </Header>
 
           <TabRow>

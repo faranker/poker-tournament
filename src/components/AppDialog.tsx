@@ -23,10 +23,10 @@ const IconWrap = styled.div<{$t:"alert"|"confirm"|"prompt"}>`
   width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;
   margin-bottom:14px;flex-shrink:0;
   ${p=>p.$t==="alert"
-    ? "background:var(--accent-soft);color:var(--accent);"
+    ? "background:var(--accent-soft);color:var(--accent-ink);"
     : p.$t==="confirm"
     ? "background:rgba(245,197,66,.15);color:var(--gold);"
-    : "background:var(--success-soft);color:var(--success);"}
+    : "background:var(--success-soft);color:var(--success-ink);"}
 `;
 const Title = styled.h3`font-size:15px;font-weight:800;margin-bottom:6px;color:var(--text);`;
 const Body = styled.p`font-size:15px;color:var(--text-muted);margin-bottom:20px;line-height:1.55;`;
@@ -45,7 +45,7 @@ const Btn = styled.button<{$primary?:boolean}>`
   display:inline-flex;align-items:center;gap:6px;
   &:disabled{opacity:.4;cursor:not-allowed;}
   ${p=>p.$primary
-    ? "background:var(--accent);color:#fff;box-shadow:0 2px 8px var(--accent-glow);&:hover:not(:disabled){opacity:.88;transform:translateY(-1px);}"
+    ? "background:var(--accent);color:var(--on-accent);box-shadow:0 1px 2px rgba(0,0,0,.25);&:hover:not(:disabled){opacity:.88;transform:translateY(-1px);}"
     : "background:var(--surface3);color:var(--text);border:1px solid var(--border);&:hover{border-color:var(--border2);}"}
 `;
 

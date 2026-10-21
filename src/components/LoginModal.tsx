@@ -31,12 +31,12 @@ const Input = styled.input`
   width:100%;padding:9px 11px;border-radius:var(--radius-sm);
   border:1px solid var(--border);background:var(--surface2);
   color:var(--text);font-size:16px;font-family:inherit;
-  &:focus{outline:none;border-color:var(--border2);box-shadow:0 0 0 3px var(--accent-soft);}
+  &:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
   &::placeholder{color:var(--text-dim);}
 `;
 const Hint = styled.p`font-size:13px;color:var(--text-dim);margin-top:4px;`;
-const ErrMsg = styled.p`font-size:14px;color:var(--accent);margin-top:8px;font-weight:600;`;
-const OkMsg  = styled.p`font-size:14px;color:var(--success);margin-top:8px;font-weight:600;`;
+const ErrMsg = styled.p`font-size:14px;color:var(--accent-ink);margin-top:8px;font-weight:600;`;
+const OkMsg  = styled.p`font-size:14px;color:var(--success-ink);margin-top:8px;font-weight:600;`;
 const Divider = styled.div`height:1px;background:var(--border);margin:16px 0;`;
 const BtnRow  = styled.div`display:flex;gap:8px;margin-top:18px;justify-content:flex-end;`;
 
@@ -47,8 +47,8 @@ const Btn = styled.button<{$v?:BtnV;$full?:boolean;$sm?:boolean}>`
   width:${p=>p.$full?"100%":"auto"};transition:all .18s;
   &:disabled{opacity:.5;cursor:not-allowed;}
   ${p=>{switch(p.$v){
-    case"primary": return css`background:var(--accent);color:#fff;&:hover:not(:disabled){opacity:.88;}`;
-    case"success": return css`background:var(--success);color:#fff;&:hover:not(:disabled){opacity:.88;}`;
+    case"primary": return css`background:var(--accent);color:var(--on-accent);&:hover:not(:disabled){opacity:.88;}`;
+    case"success": return css`background:var(--success);color:var(--on-success);&:hover:not(:disabled){opacity:.88;}`;
     case"warn":    return css`background:var(--gold);color:#000;&:hover:not(:disabled){opacity:.88;}`;
     case"ghost":   return css`background:transparent;color:var(--text-muted);border:1px solid var(--border);&:hover{color:var(--text);}`;
     default:       return css`background:var(--surface3);color:var(--text);border:1px solid var(--border);&:hover{border-color:var(--border2);}`;
@@ -57,15 +57,15 @@ const Btn = styled.button<{$v?:BtnV;$full?:boolean;$sm?:boolean}>`
 
 export const PlanBadge = styled.span<{$plan:Plan}>`
   display:inline-block;padding:3px 10px;border-radius:20px;font-size:13px;font-weight:800;
-  background:${p=>PLAN_COLORS[p.$plan]}22;color:${p=>PLAN_COLORS[p.$plan]};
-  border:1px solid ${p=>PLAN_COLORS[p.$plan]}55;
+  background:color-mix(in srgb,${p=>PLAN_COLORS[p.$plan]} 13%,transparent);color:${p=>PLAN_COLORS[p.$plan]};
+  border:1px solid color-mix(in srgb,${p=>PLAN_COLORS[p.$plan]} 33%,transparent);
 `;
 const TabRow = styled.div`display:flex;gap:4px;margin-bottom:20px;`;
 const Tab = styled.button<{$active?:boolean}>`
   flex:1;padding:9px;border-radius:var(--radius-sm);border:1px solid var(--border);
   font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .18s;
   ${p=>p.$active
-    ? css`background:var(--accent);color:#fff;border-color:var(--accent);`
+    ? css`background:var(--accent);color:var(--on-accent);border-color:var(--accent);`
     : css`background:transparent;color:var(--text-muted);&:hover{color:var(--text);border-color:var(--border2);}`}
 `;
 const ForgotLink = styled.button`
@@ -75,7 +75,7 @@ const ForgotLink = styled.button`
 `;
 const ReasonBanner = styled.div`
   background:var(--accent-soft);border:1px solid var(--accent);border-radius:var(--radius-sm);
-  padding:9px 12px;font-size:14px;color:var(--accent);margin-bottom:16px;font-weight:600;
+  padding:9px 12px;font-size:14px;color:var(--accent-ink);margin-bottom:16px;font-weight:600;
 `;
 const PlanSection = styled.div`
   background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);
@@ -90,7 +90,7 @@ const AccountInfoRow = styled.div`display:flex;align-items:center;justify-conten
 const PlanPill = styled.span<{$plan:Plan}>`
   display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;
   font-size:17px;font-weight:800;background:var(--surface3);
-  color:${p=>PLAN_COLORS[p.$plan]};border:1px solid ${p=>PLAN_COLORS[p.$plan]}66;
+  color:${p=>PLAN_COLORS[p.$plan]};border:1px solid color-mix(in srgb,${p=>PLAN_COLORS[p.$plan]} 40%,transparent);
 `;
 const PlanExpiresOn = styled.div`font-size:12px;color:var(--text-muted);margin-top:6px;
   b{color:var(--text);font-weight:700;}
@@ -100,7 +100,7 @@ const ExpiryStat = styled.div`display:flex;align-items:center;gap:12px;`;
 const ExpiryIconCircle = styled.div`
   width:52px;height:52px;border-radius:50%;flex-shrink:0;
   border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;
-  color:var(--accent);
+  color:var(--accent-ink);
 `;
 const ExpiryNumbers = styled.div`
   .label{font-size:12px;color:var(--text-muted);}
@@ -115,8 +115,8 @@ const ExpiryNumbers = styled.div`
 const RenewFullBtn = styled.button`
   width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
   padding:12px;border-radius:var(--radius-sm);border:none;
-  background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;
-  font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .18s;
+  background:var(--success);color:var(--on-success);
+  font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;transition:opacity .18s;
   &:hover{opacity:.9;}
 `;
 
@@ -127,7 +127,7 @@ const AccountActionsRow = styled.div`display:flex;gap:8px;margin-top:18px;`;
    into a 3-line stack when the row's other buttons grow. */
 const LogoutBtn = styled.button`
   display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:var(--radius-sm);
-  border:1px solid #ef4444;background:transparent;color:#ef4444;white-space:nowrap;flex-shrink:0;
+  border:1px solid var(--danger-ink);background:transparent;color:var(--danger-ink);white-space:nowrap;flex-shrink:0;
   font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .18s;
   &:hover{background:rgba(239,68,68,.12);}
 `;
@@ -136,16 +136,17 @@ const LogoutBtn = styled.button`
 
 const UsernameStatus = styled.span<{$ok?:boolean|null}>`
   font-size:13px;margin-left:6px;
-  color:${p=>p.$ok===true?"var(--success)":p.$ok===false?"var(--accent)":"var(--text-dim)"};
+  color:${p=>p.$ok===true?"var(--success-ink)":p.$ok===false?"var(--accent-ink)":"var(--text-dim)"};
 `;
 
 export const NavLoginBtn = styled.button<{$loggedIn?:boolean}>`
   padding:5px 13px;border-radius:7px;border:1px solid var(--border);
   background:var(--surface2);color:var(--text-muted);
   font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
-  display:flex;align-items:center;gap:6px;transition:all .18s;
+  display:flex;align-items:center;gap:6px;transition:border-color .18s,color .18s;
   &:hover{border-color:var(--border2);color:var(--text);}
-  ${p=>p.$loggedIn&&css`border-color:var(--accent);color:var(--accent);background:var(--accent-soft);`}
+  @media(pointer:coarse){min-height:44px;}
+  ${p=>p.$loggedIn&&css`border-color:var(--accent);color:var(--accent-ink);background:var(--accent-soft);`}
 `;
 
 interface Props {
@@ -276,7 +277,7 @@ export function LoginModal({ user, reason, onLogin, onLogout, onClose, onUpgrade
                 {countdown === null ? (
                   <div style={{fontSize:12,color:"var(--text-muted)"}}>{isTH?"ไม่มีวันหมดอายุ":"No expiry date"}</div>
                 ) : countdown.expired ? (
-                  <div style={{fontSize:13,color:"var(--accent)",fontWeight:700}}>{isTH?"แพลนหมดอายุแล้ว":"Plan has expired"}</div>
+                  <div style={{fontSize:13,color:"var(--accent-ink)",fontWeight:700}}>{isTH?"แพลนหมดอายุแล้ว":"Plan has expired"}</div>
                 ) : (
                   <ExpiryStat>
                     <ExpiryIconCircle><Calendar size={22}/></ExpiryIconCircle>
@@ -291,7 +292,7 @@ export function LoginModal({ user, reason, onLogin, onLogout, onClose, onUpgrade
                 )}
               </AccountInfoRow>
               {countdown && !countdown.expired && countdown.days <= 7 && (
-                <div style={{fontSize:11,color:"var(--gold)",fontWeight:600,marginBottom:14}}>
+                <div style={{fontSize:12,color:"var(--gold)",fontWeight:600,marginBottom:14}}>
                   <AlertTriangle size={12} style={{display:"inline",verticalAlign:"middle",marginRight:3}}/>{isTH?"ใกล้หมดอายุ":"Expiring soon"}
                 </div>
               )}

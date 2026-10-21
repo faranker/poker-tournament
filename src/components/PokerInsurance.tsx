@@ -25,20 +25,20 @@ const ModalHeader = styled.div`
 const ModalTitle = styled.h3`
   font-size:16px;font-weight:900;display:flex;align-items:center;gap:8px;color:var(--text);
 `;
-const CloseBtn = styled.button`
+const CloseBtn = styled.button`@media(pointer:coarse){min-width:44px;min-height:44px;align-items:center;justify-content:center;}
   background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px;
   border-radius:6px;display:flex;&:hover{color:var(--text);background:var(--surface2);}
 `;
 
 const FieldLabel = styled.label`
-  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
   color:var(--text-muted);margin-bottom:5px;display:block;
 `;
 const Input = styled.input`
   width:100%;padding:9px 11px;border-radius:var(--radius-sm);
   border:1px solid var(--border);background:var(--surface2);
   color:var(--text);font-size:16px;font-family:inherit;
-  &:focus{outline:none;border-color:var(--border2);box-shadow:0 0 0 3px var(--accent-soft);}
+  &:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
   &::placeholder{color:var(--text-dim);}
 `;
 
@@ -48,7 +48,7 @@ const StreetBtn = styled.button<{$active?:boolean}>`
   border:1px solid var(--border);font-size:13px;font-weight:700;
   font-family:inherit;cursor:pointer;transition:all .15s;
   ${p=>p.$active
-    ?css`background:var(--accent);color:#fff;border-color:var(--accent);`
+    ?css`background:var(--accent);color:var(--on-accent);border-color:var(--accent);`
     :css`background:transparent;color:var(--text-muted);&:hover{color:var(--text);border-color:var(--border2);}`}
 `;
 
@@ -60,7 +60,7 @@ const Slider = styled.input`
 `;
 const SliderNum = styled.div<{$color?:string}>`
   min-width:36px;text-align:center;font-size:22px;font-weight:900;
-  color:${p=>p.$color??"var(--accent)"};
+  color:${p=>p.$color??"var(--accent-ink)"};
 `;
 
 const ResultGrid = styled.div`
@@ -72,9 +72,9 @@ const ResultCard = styled.div<{$accent?:string}>`
   background:${p=>p.$accent?`${p.$accent}0d`:"var(--surface2)"};
   padding:10px 10px;text-align:center;
 `;
-const ResultLabel = styled.div`font-size:9px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;`;
+const ResultLabel = styled.div`font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;`;
 const ResultValue = styled.div<{$color?:string}>`font-size:17px;font-weight:900;color:${p=>p.$color??"var(--text)"};`;
-const ResultSub   = styled.div`font-size:9px;color:var(--text-dim);margin-top:2px;`;
+const ResultSub   = styled.div`font-size:12px;color:var(--text-dim);margin-top:2px;`;
 
 const NetBox = styled.div`
   border-radius:var(--radius-sm);
@@ -83,7 +83,7 @@ const NetBox = styled.div`
   padding:12px 14px;
   display:flex;justify-content:space-between;align-items:center;
 `;
-const NetLabel = styled.div`font-size:12px;font-weight:700;color:var(--success);`;
+const NetLabel = styled.div`font-size:12px;font-weight:700;color:var(--success-ink);`;
 const NetValue = styled.div`font-size:22px;font-weight:900;color:var(--text);`;
 
 /* ── Trigger button ── */
@@ -91,7 +91,7 @@ const TriggerBtn = styled.button`
   display:flex;align-items:center;gap:7px;
   width:100%;padding:10px 14px;
   border-radius:var(--radius-sm);border:1px solid rgba(34,197,94,.35);
-  background:rgba(34,197,94,.07);color:var(--success);
+  background:rgba(34,197,94,.07);color:var(--success-ink);
   font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;
   transition:all .18s;
   &:hover{background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.6);}
@@ -148,13 +148,13 @@ export default function PokerInsurance({ lang, inline }: Props) {
             <StreetRow style={{marginBottom:14}}>
               <StreetBtn $active={street==="flop"} onClick={()=>setStreet("flop")}>
                 Flop
-                <div style={{fontSize:10,fontWeight:500,opacity:.7,marginTop:1}}>
+                <div style={{fontSize:12,fontWeight:500,opacity:.7,marginTop:1}}>
                   {isTH?"เหลือ 2 ใบ (45 ใบ)":"2 to come (45)"}
                 </div>
               </StreetBtn>
               <StreetBtn $active={street==="turn"} onClick={()=>setStreet("turn")}>
                 Turn
-                <div style={{fontSize:10,fontWeight:500,opacity:.7,marginTop:1}}>
+                <div style={{fontSize:12,fontWeight:500,opacity:.7,marginTop:1}}>
                   {isTH?"เหลือ 1 ใบ (44 ใบ)":"1 to come (44)"}
                 </div>
               </StreetBtn>
@@ -175,7 +175,7 @@ export default function PokerInsurance({ lang, inline }: Props) {
               />
               <SliderNum $color="var(--text-muted)">{totalOuts}</SliderNum>
             </SliderWrap>
-            <div style={{fontSize:10,color:"var(--text-dim)",marginBottom:14,textAlign:"right"}}>
+            <div style={{fontSize:12,color:"var(--text-dim)",marginBottom:14,textAlign:"right"}}>
               {isTH?`โอกาสฝั่งตรงข้ามแตก ${probTotal.toFixed(1)}%`:`Opponent hits ${probTotal.toFixed(1)}%`}
             </div>
 
@@ -190,7 +190,7 @@ export default function PokerInsurance({ lang, inline }: Props) {
               />
               <SliderNum>{safeBuy}</SliderNum>
             </SliderWrap>
-            <div style={{fontSize:10,color:"var(--text-dim)",marginBottom:16,textAlign:"right"}}>
+            <div style={{fontSize:12,color:"var(--text-dim)",marginBottom:16,textAlign:"right"}}>
               {isTH
                 ?`ซื้อ ${safeBuy} จาก ${totalOuts} out (${((safeBuy/totalOuts)*100).toFixed(0)}% ของ risk ทั้งหมด)`
                 :`${safeBuy} of ${totalOuts} outs (${((safeBuy/totalOuts)*100).toFixed(0)}% of total risk)`}
@@ -214,7 +214,7 @@ export default function PokerInsurance({ lang, inline }: Props) {
                   </ResultCard>
                   <ResultCard $accent="#22c55e">
                     <ResultLabel>{isTH?"ถ้าประกันแตก ได้รับ":"If Hit — Receive"}</ResultLabel>
-                    <ResultValue $color="var(--success)">฿{fmtN(payoutIfHit)}</ResultValue>
+                    <ResultValue $color="var(--success-ink)">฿{fmtN(payoutIfHit)}</ResultValue>
                     <ResultSub>{isTH?"(เต็ม Pot)":"(full pot)"}</ResultSub>
                   </ResultCard>
                 </ResultGrid>
@@ -224,18 +224,18 @@ export default function PokerInsurance({ lang, inline }: Props) {
                     <NetLabel>
                       {isTH?"กำไรสุทธิถ้าประกันแตก":"Net gain if insurance hits"}
                     </NetLabel>
-                    <div style={{fontSize:11,color:"var(--text-dim)",marginTop:2}}>
+                    <div style={{fontSize:12,color:"var(--text-dim)",marginTop:2}}>
                       {isTH
                         ?`฿${fmtN(payoutIfHit)} − ค่าประกัน ฿${fmtN(totalCost)}`
                         :`฿${fmtN(payoutIfHit)} − premium ฿${fmtN(totalCost)}`}
                     </div>
                   </div>
-                  <NetValue style={{color: netIfHit >= 0 ? "var(--success)" : "#ff4d4d"}}>
+                  <NetValue style={{color: netIfHit >= 0 ? "var(--success-ink)":"var(--accent-ink)"}}>
                     {netIfHit >= 0 ? "+" : ""}฿{fmtN(netIfHit)}
                   </NetValue>
                 </NetBox>
 
-                <div style={{fontSize:11,color:"var(--text-dim)",marginTop:10,lineHeight:1.6,
+                <div style={{fontSize:12,color:"var(--text-dim)",marginTop:10,lineHeight:1.6,
                   background:"var(--surface2)",borderRadius:"var(--radius-sm)",padding:"8px 10px",
                   border:"1px solid var(--border)"}}>
                   {isTH
@@ -255,7 +255,7 @@ export default function PokerInsurance({ lang, inline }: Props) {
     <div style={{padding:"12px 0"}}>
       <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:16,
         fontSize:14,fontWeight:800,color:"var(--text)",textTransform:"uppercase",letterSpacing:".06em"}}>
-        <ShieldCheck size={16} style={{color:"var(--success)"}}/>
+        <ShieldCheck size={16} style={{color:"var(--success-ink)"}}/>
         {isTH ? "คำนวณประกัน" : "Insurance Calculator"}
       </div>
       {content}
@@ -275,10 +275,10 @@ export default function PokerInsurance({ lang, inline }: Props) {
           <Box>
             <ModalHeader>
               <ModalTitle>
-                <ShieldCheck size={17} style={{color:"var(--success)"}}/>
+                <ShieldCheck size={17} style={{color:"var(--success-ink)"}}/>
                 {isTH ? "คำนวณประกัน" : "Insurance Calculator"}
               </ModalTitle>
-              <CloseBtn onClick={()=>setOpen(false)}><X size={18}/></CloseBtn>
+              <CloseBtn aria-label="Close" onClick={()=>setOpen(false)}><X size={18}/></CloseBtn>
             </ModalHeader>
             {content}
           </Box>

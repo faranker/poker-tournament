@@ -22,7 +22,7 @@ const Header = styled.div`
   padding:18px 20px;border-bottom:1px solid var(--border);flex-shrink:0;
 `;
 const Title = styled.h2`font-size:16px;font-weight:900;display:flex;align-items:center;gap:8px;`;
-const CloseBtn = styled.button`
+const CloseBtn = styled.button`@media(pointer:coarse){min-width:44px;min-height:44px;align-items:center;justify-content:center;}
   background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px;
   border-radius:6px;display:flex;&:hover{color:var(--text);background:var(--surface2);}
 `;
@@ -30,17 +30,18 @@ const Body = styled.div`flex:1;overflow-y:auto;padding:16px 20px;display:flex;fl
 
 const SessionCard = styled.div<{$open?:boolean}>`
   border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;
-  cursor:pointer;transition:border-color .15s;flex-shrink:0;
+  transition:border-color .15s;flex-shrink:0;
   &:hover{border-color:var(--border2);}
 `;
-const SessionHead = styled.div`
+const SessionHead = styled.button`
   display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface2);
+  width:100%;min-height:44px;border:none;text-align:left;font:inherit;color:inherit;cursor:pointer;
 `;
 const ModeBadge = styled.span<{$cash?:boolean}>`
-  font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;
+  font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;
   padding:2px 8px;border-radius:10px;flex-shrink:0;
   background:${p=>p.$cash?"rgba(34,197,94,.15)":"rgba(99,102,241,.15)"};
-  color:${p=>p.$cash?"var(--success)":"#818cf8"};
+  color:${p=>p.$cash?"var(--success-ink)":"var(--info-ink)"};
 `;
 const SessionName = styled.div`font-size:14px;font-weight:700;color:var(--text);flex:1;`;
 const SessionDate = styled.div`font-size:14px;color:var(--text-muted);flex-shrink:0;`;
@@ -54,7 +55,7 @@ const PName = styled.div`flex:1;font-size:15px;font-weight:600;color:var(--text)
 const PDetail = styled.div`font-size:14px;color:var(--text-muted);`;
 const PProfit = styled.div<{$pos:boolean}>`
   font-size:15px;font-weight:800;
-  color:${p=>p.$pos?"var(--success)":"var(--accent)"};
+  color:${p=>p.$pos?"var(--success-ink)":"var(--accent-ink)"};
 `;
 
 const Empty = styled.div`
@@ -131,7 +132,7 @@ export function HistoryModal({ lang, token, onClose }: Props) {
         <Box>
           <Header>
             <Title><History size={16}/>{isTH?"ประวัติการเล่น":"Session History"}</Title>
-            <CloseBtn onClick={onClose}><X size={18}/></CloseBtn>
+            <CloseBtn aria-label="Close" onClick={onClose}><X size={18}/></CloseBtn>
           </Header>
           <Body>
             {loading && <Empty>{isTH?"กำลังโหลด...":"Loading..."}</Empty>}
@@ -148,15 +149,15 @@ export function HistoryModal({ lang, token, onClose }: Props) {
               const isCash = s.mode==="CASH";
               const isOpen = openId===s.id;
               return (
-                <SessionCard key={s.id} $open={isOpen} onClick={()=>setOpenId(isOpen?null:s.id)}>
-                  <SessionHead>
+                <SessionCard key={s.id} $open={isOpen}>
+                  <SessionHead type="button" aria-expanded={isOpen} onClick={()=>setOpenId(isOpen?null:s.id)}>
                     <ModeBadge $cash={isCash}>{isCash?(isTH?"Cash":"Cash"):(isTH?"Tourn":"Tourn")}</ModeBadge>
                     <SessionName>{s.game_name||(isTH?"ไม่มีชื่อ":"Unnamed")}</SessionName>
                     <SessionDate>{fmtDate(s.played_at)}</SessionDate>
                   </SessionHead>
 
                   {isOpen && (
-                    <SessionDetail onClick={e=>e.stopPropagation()}>
+                    <SessionDetail>
                       {isCash ? (
                         <>
                           {s.summary?.totalBuyIn!=null && (

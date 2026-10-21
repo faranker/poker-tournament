@@ -46,9 +46,9 @@ export const PLAN_LABELS: Record<Plan, string> = {
 };
 
 export const PLAN_COLORS: Record<Plan, string> = {
-  free:      "#7878a8",
-  cash_pro:  "#3b82f6",
-  full_pro:  "#d4af37",
+  free:      "var(--plan-free)",
+  cash_pro:  "var(--plan-cash)",
+  full_pro:  "var(--plan-full)",
 };
 
 /* ── Auth functions ───────────────────────────────────── */

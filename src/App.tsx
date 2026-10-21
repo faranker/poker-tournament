@@ -1,22 +1,23 @@
 // Poker Tournament Timer — Responsive UI + i18n
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import styled, { createGlobalStyle, keyframes, css } from "styled-components";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Select from "@radix-ui/react-select";
 import {
   Plus, X, Play, Pause, SkipBack, SkipForward,
   Coffee, Trophy, Banknote, TrendingUp, TrendingDown, Check, ChevronDown,
-  Maximize, Minimize, Clock, Loader2, CheckCircle, Share2,
+  Maximize, Minimize, Clock, Loader2, CheckCircle, Share2, Heart, Lock,
 } from "lucide-react";
 import { SummaryCard } from "./components/SummaryCard";
-import PokerInsurance from "./components/PokerInsurance";
 import { LoginModal, NavLoginBtn } from "./components/LoginModal";
-import { PricingModal } from "./components/PricingModal";
-import { PaymentModal } from "./components/PaymentModal";
-import { DonateModal } from "./components/DonateModal";
-import { HistoryModal } from "./components/HistoryModal";
-import { ShareModal } from "./components/ShareModal";
 import { AppDialog, type DialogConfig } from "./components/AppDialog";
+
+const PokerInsurance = lazy(() => import("./components/PokerInsurance"));
+const PricingModal = lazy(() => import("./components/PricingModal").then(m => ({ default: m.PricingModal })));
+const PaymentModal = lazy(() => import("./components/PaymentModal").then(m => ({ default: m.PaymentModal })));
+const DonateModal = lazy(() => import("./components/DonateModal").then(m => ({ default: m.DonateModal })));
+const HistoryModal = lazy(() => import("./components/HistoryModal").then(m => ({ default: m.HistoryModal })));
+const ShareModal = lazy(() => import("./components/ShareModal").then(m => ({ default: m.ShareModal })));
 import {
   getSessionUser, refreshUser, type AuthUser, type Plan,
   getExportCount,
@@ -103,40 +104,50 @@ const themeVars: Record<ThemeKey, string> = {
   dark: `
     --bg:#0a0a10; --surface:#13131f; --surface2:#1c1c2e; --surface3:#252540;
     --border:#2e2e4a; --border2:#3d3d60;
-    --text:#f0f0f8; --text-muted:#7878a8; --text-dim:#4a4a70;
+    --text:#f0f0f8; --text-muted:#9a9ac4; --text-dim:#8a8ab8;
     --accent:#e50914; --accent-soft:rgba(229,9,20,.15); --accent-glow:rgba(229,9,20,.4);
-    --success:#22c55e; --success-soft:rgba(34,197,94,.15);
-    --info:#3b82f6; --discord:#7289da; --gold:#f5c542; --silver:#c0c0c0; --bronze:#cd7f32;
+    --accent-ink:#ff5a62; --on-accent:#fff;
+    --success:#22c55e; --success-soft:rgba(34,197,94,.15); --success-ink:#22c55e; --on-success:#052e16;
+    --info:#3b82f6; --info-ink:#60a5fa; --on-info:#04122e;
+    --discord:#7289da; --gold:#f5c542; --silver:#c0c0c0; --bronze:#cd7f32;
     --timer-color:#fff; --progress-bg:#2e2e4a; --tag-winner:#1e3a8a;
     --shadow:0 4px 24px rgba(0,0,0,.5); --shadow-lg:0 8px 40px rgba(0,0,0,.7);
     --radius:14px; --radius-sm:8px;`,
   light: `
     --bg:#eeeef5; --surface:#fff; --surface2:#f4f4fb; --surface3:#e8e8f4;
     --border:#dcdcee; --border2:#c8c8e0;
-    --text:#18182e; --text-muted:#6060a0; --text-dim:#a0a0c0;
+    --plan-free:#5a5a96; --plan-cash:#2563eb; --plan-full:#8a6a00; --on-plan:#fff; --donate-ink:#be185d;
+    --danger-ink:#dc2626; --warn-ink:#b45309;
+    --text:#18182e; --text-muted:#5a5a96; --text-dim:#6a6a8c;
     --accent:#e50914; --accent-soft:rgba(229,9,20,.08); --accent-glow:rgba(229,9,20,.2);
-    --success:#16a34a; --success-soft:rgba(22,163,74,.1);
-    --info:#2563eb; --discord:#5b70c4; --gold:#d4a017; --silver:#888; --bronze:#a0522d;
+    --accent-ink:#c81018; --on-accent:#fff;
+    --success:#15803d; --success-soft:rgba(22,163,74,.1); --success-ink:#15803d; --on-success:#fff;
+    --info:#2563eb; --info-ink:#2563eb; --on-info:#fff;
+    --discord:#5b70c4; --gold:#d4a017; --silver:#888; --bronze:#a0522d;
     --timer-color:#18182e; --progress-bg:#e0e0f0; --tag-winner:#dbeafe;
     --shadow:0 2px 16px rgba(0,0,0,.08); --shadow-lg:0 6px 32px rgba(0,0,0,.12);
     --radius:14px; --radius-sm:8px;`,
   neon: `
     --bg:#04040e; --surface:#0b0b1e; --surface2:#10102a; --surface3:#181836;
     --border:rgba(120,80,255,.2); --border2:rgba(120,80,255,.4);
-    --text:#d8d8ff; --text-muted:#6060a0; --text-dim:#303060;
-    --accent:#a855f7; --accent-soft:rgba(168,85,247,.15); --accent-glow:rgba(168,85,247,.5);
-    --success:#06d6a0; --success-soft:rgba(6,214,160,.15);
-    --info:#00d4ff; --discord:#7289da; --gold:#f0c060; --silver:#a0a0d0; --bronze:#c06040;
+    --text:#d8d8ff; --text-muted:#9a9ad4; --text-dim:#8484c0;
+    --accent:#9333ea; --accent-soft:rgba(168,85,247,.15); --accent-glow:rgba(168,85,247,.5);
+    --accent-ink:#c084fc; --on-accent:#fff;
+    --success:#06d6a0; --success-soft:rgba(6,214,160,.15); --success-ink:#06d6a0; --on-success:#022c22;
+    --info:#00d4ff; --info-ink:#00d4ff; --on-info:#002a33;
+    --discord:#7289da; --gold:#f0c060; --silver:#a0a0d0; --bronze:#c06040;
     --timer-color:#e0d0ff; --progress-bg:#181836; --tag-winner:#2d1060;
     --shadow:0 4px 24px rgba(80,0,160,.3); --shadow-lg:0 8px 40px rgba(80,0,160,.5);
     --radius:14px; --radius-sm:8px;`,
   casino: `
     --bg:#091409; --surface:#0e1e0e; --surface2:#152815; --surface3:#1e361e;
     --border:#2a4a2a; --border2:#3a6a3a;
-    --text:#f0e6c8; --text-muted:#8a7a5a; --text-dim:#4a3a2a;
+    --text:#f0e6c8; --text-muted:#b8a77f; --text-dim:#a8976f;
     --accent:#d4af37; --accent-soft:rgba(212,175,55,.15); --accent-glow:rgba(212,175,55,.4);
-    --success:#4ade80; --success-soft:rgba(74,222,128,.15);
-    --info:#60a5fa; --discord:#7289da; --gold:#ffd700; --silver:#c0c0c0; --bronze:#cd7f32;
+    --accent-ink:#d4af37; --on-accent:#1a1405;
+    --success:#4ade80; --success-soft:rgba(74,222,128,.15); --success-ink:#4ade80; --on-success:#052e16;
+    --info:#60a5fa; --info-ink:#60a5fa; --on-info:#04122e;
+    --discord:#7289da; --gold:#ffd700; --silver:#c0c0c0; --bronze:#cd7f32;
     --timer-color:#f0e6c8; --progress-bg:#1e361e; --tag-winner:#1a3a1a;
     --shadow:0 4px 24px rgba(0,0,0,.6); --shadow-lg:0 8px 40px rgba(0,0,0,.8);
     --radius:14px; --radius-sm:8px;`,
@@ -150,8 +161,8 @@ const themeSwatches: Record<ThemeKey, { label: string; color: string }> = {
 };
 
 const AVATAR_COLORS = [
-  "#e53935","#1e88e5","#43a047","#fb8c00",
-  "#8e24aa","#00897b","#d81b60","#3949ab","#f4511e","#0288d1",
+  "#c62828","#1565c0","#2e7d32","#b45309",
+  "#6a1b9a","#00695c","#ad1457","#283593","#bf360c","#01579b",
 ];
 
 /* ─────────────────────────────────────────
@@ -159,9 +170,18 @@ const AVATAR_COLORS = [
 ───────────────────────────────────────── */
 const GlobalStyle = createGlobalStyle<{ $t: ThemeKey }>`
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  :root{ ${p => themeVars[p.$t]} }
+  :root{
+    --plan-free:#9a9ac4; --plan-cash:#60a5fa; --plan-full:#f5c542; --on-plan:#0b0b14;
+    --donate:#db2777; --on-donate:#fff; --donate-ink:#f472b6;
+    --danger-ink:#f87171; --warn-ink:#f59e0b;
+    ${p => themeVars[p.$t]}
+    color-scheme:${p => p.$t==="light"?"light":"dark"};
+    accent-color:var(--accent);
+  }
   body{background:var(--bg);color:var(--text);font-family:'Noto Sans Thai',system-ui,sans-serif;
        -webkit-font-smoothing:antialiased;font-size:17px;}
+  ::selection{background:var(--accent);color:var(--on-accent);}
+  :root :focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px;}
   /* Hide the native up/down spinner on every number input project-wide —
      single source of truth instead of repeating this per styled-component
      (this replaces an old rule that did the opposite: opacity:1 forced it
@@ -180,14 +200,16 @@ const GlobalStyle = createGlobalStyle<{ $t: ThemeKey }>`
 ───────────────────────────────────────── */
 const fadeIn = keyframes`from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}`;
 const pulse  = keyframes`0%,100%{opacity:1}50%{opacity:.5}`;
-const glow   = keyframes`
-  0%,100%{text-shadow:0 0 20px var(--accent-glow),0 0 40px var(--accent-glow)}
-  50%{text-shadow:0 0 32px var(--accent-glow),0 0 64px var(--accent-glow)}`;
+const reducedMotion = "@media (prefers-reduced-motion: reduce)";
 
 /* ─────────────────────────────────────────
    Layout
 ───────────────────────────────────────── */
-const Page = styled.div`min-height:100vh;background:var(--bg);animation:${fadeIn} .25s ease;display:flex;flex-direction:column;`;
+const Page = styled.div`
+  min-height:100vh;background:var(--bg);animation:${fadeIn} .25s cubic-bezier(.16,1,.3,1);
+  display:flex;flex-direction:column;
+  ${reducedMotion}{animation:none;}
+`;
 const PageBody = styled.div`flex:1;background:var(--surface2);display:flex;flex-direction:column;`;
 
 /* ── Header ── */
@@ -211,10 +233,11 @@ const ModeTabs = styled.div`
   @media(max-width:480px){display:none}
 `;
 const ModeTab = styled.button<{$active?:boolean}>`
+  display:inline-flex;align-items:center;gap:6px;
   padding:5px 14px;border-radius:8px;border:none;font-size:16px;font-weight:700;
-  cursor:pointer;white-space:nowrap;transition:all .18s;
+  cursor:pointer;white-space:nowrap;transition:background .18s,color .18s;
   ${p=>p.$active
-    ? css`background:var(--accent);color:#fff;box-shadow:0 2px 8px var(--accent-glow);`
+    ? css`background:var(--accent);color:var(--on-accent);box-shadow:0 1px 2px rgba(0,0,0,.25);`
     : css`background:transparent;color:var(--text-muted);&:hover{background:var(--surface3);color:var(--text);}`}
 `;
 
@@ -224,8 +247,9 @@ const LangTrigger = styled(Select.Trigger)`
   display:inline-flex;align-items:center;gap:6px;
   padding:5px 10px;border-radius:7px;border:1px solid var(--border);
   background:var(--surface2);color:var(--text-muted);font-size:15px;font-weight:700;
-  cursor:pointer;outline:none;font-family:inherit;transition:all .18s;
+  cursor:pointer;font-family:inherit;transition:border-color .18s,color .18s;
   &:hover{border-color:var(--border2);color:var(--text);}
+  @media(pointer:coarse){min-height:44px;}
   &[data-state=open]{border-color:var(--border2);color:var(--text);}
   svg{width:12px;height:12px;flex-shrink:0;}
   .lang-short{display:none;}
@@ -244,19 +268,20 @@ const LangItem = styled(Select.Item)`
   padding:9px 14px;font-size:15px;font-weight:600;font-family:inherit;
   color:var(--text);cursor:pointer;outline:none;transition:background .12s;
   &[data-highlighted]{background:var(--surface2);}
-  &[data-state=checked]{color:var(--accent);font-weight:800;}
+  &[data-state=checked]{color:var(--accent-ink);font-weight:800;}
 `;
 
 const ThemeRow = styled.div`display:flex;align-items:center;gap:5px;@media(max-width:768px){display:none;}`;
 
 const NavAvatar = styled.button<{$color:string}>`
   width:34px;height:34px;border-radius:50%;border:2px solid ${p=>p.$color};
-  background:${p=>p.$color}22;color:${p=>p.$color};
+  background:color-mix(in srgb,${p=>p.$color} 13%,transparent);color:${p=>p.$color};
   font-size:15px;font-weight:900;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  position:relative;transition:all .18s;flex-shrink:0;
-  &:hover{background:${p=>p.$color}44;transform:scale(1.08);}
-  @media(max-width:480px){width:30px;height:30px;font-size:15px;}
+  position:relative;transition:background .18s,transform .18s;flex-shrink:0;
+  &:hover{background:color-mix(in srgb,${p=>p.$color} 27%,transparent);transform:scale(1.08);}
+  ${reducedMotion}{&:hover{transform:none;}}
+  @media(pointer:coarse){width:44px;height:44px;}
 `;
 const NavAvatarDot = styled.span<{$color:string}>`
   position:absolute;bottom:0;right:0;width:9px;height:9px;border-radius:50%;
@@ -264,7 +289,8 @@ const NavAvatarDot = styled.span<{$color:string}>`
 `;
 const Swatch = styled.button<{$c:string;$active?:boolean}>`
   width:20px;height:20px;border-radius:50%;border:2px solid ${p=>p.$active?"var(--text)":"transparent"};
-  background:${p=>p.$c};cursor:pointer;transition:all .18s;&:hover{transform:scale(1.2);}
+  background:${p=>p.$c};cursor:pointer;transition:transform .18s;&:hover{transform:scale(1.2);}
+  ${reducedMotion}{&:hover{transform:none;}}
 `;
 
 /* ── Mobile Tab Bar ── */
@@ -277,8 +303,8 @@ const MobileTabBar = styled.nav`
 `;
 const MobileTabBtn = styled.button<{$active?:boolean}>`
   flex:1;padding:11px 4px;border:none;background:transparent;cursor:pointer;
-  font-size:15px;font-weight:600;transition:all .18s;
-  color:${p=>p.$active?"var(--accent)":"var(--text-muted)"};
+  font-size:15px;font-weight:600;transition:color .18s,border-color .18s;min-height:44px;
+  color:${p=>p.$active?"var(--accent-ink)":"var(--text-muted)"};
   border-bottom:2px solid ${p=>p.$active?"var(--accent)":"transparent"};
   &:hover{color:var(--text);}
 `;
@@ -291,11 +317,12 @@ const MobileModeRow = styled.div`
   }
 `;
 const MobileModeBtn = styled.button<{$active?:boolean}>`
-  flex:1;padding:8px;border-radius:9px;border:1.5px solid;font-size:15px;font-weight:700;cursor:pointer;
-  transition:all .18s;
+  flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:8px;min-height:44px;border-radius:9px;border:1.5px solid;font-size:15px;font-weight:700;cursor:pointer;
+  transition:background .18s,color .18s,border-color .18s;
   ${p=>p.$active
-    ? css`background:var(--accent);color:#fff;border-color:var(--accent);`
-    : css`background:transparent;color:var(--text-muted);border-color:var(--border);&:hover{border-color:var(--accent);color:var(--accent);}`}
+    ? css`background:var(--accent);color:var(--on-accent);border-color:var(--accent);`
+    : css`background:transparent;color:var(--text-muted);border-color:var(--border);&:hover{border-color:var(--accent);color:var(--accent-ink);}`}
 `;
 
 /* ── Content Grid ── */
@@ -308,15 +335,38 @@ const Content = styled.main`
 /* Desktop 3-col grid */
 const ThreeCols = styled.div`
   display:grid;
-  grid-template-columns:400px 1fr 400px;
+  grid-template-columns:400px minmax(0,1fr) 400px;
   gap:0;
   flex:1;
-  @media(max-width:1300px){grid-template-columns:340px 1fr 340px;}
-  @media(max-width:1100px){grid-template-columns:300px 1fr 300px;}
+  @media(max-width:1300px){grid-template-columns:340px minmax(0,1fr) 340px;}
+  @media(max-width:1100px){
+    grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;
+    & > :nth-child(2){grid-column:1 / -1;order:-1;border-right:none;border-bottom:1px solid var(--border);}
+  }
   @media(max-width:768px){display:none;}
 `;
 
-/* Column with vertical divider — flattens Card inside */
+const BottomRow = styled.div`
+  display:grid;grid-template-columns:320px minmax(0,1fr);gap:0;border-top:1px solid var(--border);
+  @media(max-width:768px){display:none;}
+`;
+
+const LockedPanel = styled.div`
+  padding:32px;text-align:center;color:var(--text-muted);font-size:14px;
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+`;
+
+const DonateFab = styled.button`
+  position:fixed;bottom:16px;left:16px;z-index:9998;
+  width:44px;height:44px;border-radius:50%;border:none;
+  background:var(--donate);color:var(--on-donate);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 12px rgba(0,0,0,.35);
+  transition:transform .18s cubic-bezier(.16,1,.3,1);
+  &:hover{transform:scale(1.08);}
+  ${reducedMotion}{&:hover{transform:none;}}
+`;
+
 /* Mobile: single column panels hidden/shown by tab */
 const MobilePanel = styled.div<{$show?:boolean}>`
   display:none;
@@ -384,21 +434,24 @@ type BtnV = "primary"|"secondary"|"success"|"danger"|"ghost"|"info"|"discord";
 const Btn = styled.button<{$v?:BtnV;$sm?:boolean;$full?:boolean}>`
   display:inline-flex;align-items:center;justify-content:center;gap:5px;
   border:none;border-radius:var(--radius-sm);font-weight:600;cursor:pointer;
-  transition:all .18s;white-space:nowrap;font-family:inherit;
+  transition:background .18s,color .18s,border-color .18s,opacity .18s,transform .18s;
+  white-space:nowrap;font-family:inherit;
   padding:${p=>p.$sm?"6px 13px":"10px 16px"};
   font-size:${p=>p.$sm?"13px":"15px"};
   width:${p=>p.$full?"100%":"auto"};
 
   ${p=>{switch(p.$v){
-    case"primary":  return css`background:var(--accent);color:#fff;box-shadow:0 2px 8px var(--accent-glow);&:hover{opacity:.88;transform:translateY(-1px);}`;
-    case"success":  return css`background:var(--success);color:#fff;&:hover{opacity:.88;transform:translateY(-1px);}`;
-    case"danger":   return css`background:transparent;color:var(--accent);border:1px solid var(--accent);&:hover{background:var(--accent-soft);}`;
+    case"primary":  return css`background:var(--accent);color:var(--on-accent);box-shadow:0 1px 2px rgba(0,0,0,.25);&:hover{opacity:.88;transform:translateY(-1px);}`;
+    case"success":  return css`background:var(--success);color:var(--on-success);&:hover{opacity:.88;transform:translateY(-1px);}`;
+    case"danger":   return css`background:transparent;color:var(--accent-ink);border:1px solid var(--accent);&:hover{background:var(--accent-soft);}`;
     case"ghost":    return css`background:transparent;color:var(--text-muted);&:hover{background:var(--surface2);color:var(--text);}`;
-    case"info":     return css`background:var(--info);color:#fff;&:hover{opacity:.88;}`;
+    case"info":     return css`background:var(--info);color:var(--on-info);&:hover{opacity:.88;}`;
     default:        return css`background:var(--surface3);color:var(--text);border:1px solid var(--border);&:hover{border-color:var(--border2);}`;
   }}}
   &:disabled{opacity:.4;cursor:not-allowed;transform:none!important;}
   &:active:not(:disabled){transform:translateY(0) scale(.97);}
+  @media(pointer:coarse){min-height:44px;min-width:44px;}
+  ${reducedMotion}{&:hover,&:active:not(:disabled){transform:none;}}
 `;
 
 const CheckLabel = styled.label`
@@ -418,31 +471,47 @@ const Avatar = styled.div<{$c:string}>`
   font-size:14px;font-weight:800;color:#fff;letter-spacing:.5px;
 `;
 
+const medalColor = (rank?:number|null) =>
+  rank===1?"var(--gold)":rank===2?"var(--silver)":rank===3?"var(--bronze)":"var(--border2)";
+
+const MedalAvatar = styled.div<{$rank:number}>`
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  background:${p=>medalColor(p.$rank)};
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:900;color:#1a1206;letter-spacing:-0.5px;
+`;
+
 /* Desktop player row */
 const PlayerRow = styled.div<{$winner?:boolean;$rank?:number}>`
   display:grid;
-  grid-template-columns:40px 1fr 110px auto 120px 32px;
+  grid-template-columns:40px minmax(0,1fr) 110px auto 120px 32px;
   align-items:center;gap:10px;
   padding:8px 10px;border-radius:10px;
   border:1px solid transparent;
-  transition:all .15s;cursor:pointer;
+  transition:background .15s,border-color .15s;
   background:transparent;
   ${p=>p.$winner&&css`
     background:var(--surface2);
-    border-color:var(--border);
-    border-left:3px solid ${
-      p.$rank===1?"var(--gold)":p.$rank===2?"var(--silver)":p.$rank===3?"var(--bronze)":"var(--border2)"};
-    padding-left:8px;
+    border-color:${medalColor(p.$rank)};
   `}
   &:hover{background:var(--surface2);}
   @media(max-width:768px){display:none;}
 `;
 
+/* Avatar + name as one control that toggles the finishing rank */
+const RankToggle = styled.button`
+  grid-column:span 2;display:grid;grid-template-columns:40px minmax(0,1fr);gap:10px;align-items:center;
+  background:none;border:none;padding:0;margin:0;text-align:left;
+  color:inherit;font:inherit;cursor:pointer;border-radius:8px;min-height:44px;
+  @media(max-width:768px){display:flex;flex:1;min-width:0;}
+`;
+
 /* Mobile player card */
-const PlayerCardMobile = styled.div`
+const PlayerCardMobile = styled.div<{$rank?:number|null}>`
   display:none;
   @media(max-width:768px){
-    display:block;background:var(--surface2);border:1px solid var(--border);
+    display:block;background:var(--surface2);
+    border:1px solid ${p=>p.$rank?medalColor(p.$rank):"var(--border)"};
     border-radius:12px;padding:12px 14px;margin-bottom:10px;
   }
 `;
@@ -456,10 +525,10 @@ const PlayerSub  = styled.div`font-size:15px;color:var(--text-muted);margin-top:
 
 const MobileBuyBtns = styled.div`display:flex;gap:8px;margin-bottom:8px;`;
 const MobileBuyBtn = styled.button<{$variant:"buy"|"sell"}>`
-  flex:1;padding:8px;border-radius:8px;border:none;font-size:15px;font-weight:700;cursor:pointer;
-  transition:all .18s;
+  flex:1;padding:8px;min-height:44px;border-radius:8px;border:none;font-size:15px;font-weight:700;cursor:pointer;
+  font-family:inherit;transition:opacity .18s;
   background:${p=>p.$variant==="buy"?"var(--success)":"var(--accent)"};
-  color:#fff;
+  color:${p=>p.$variant==="buy"?"var(--on-success)":"var(--on-accent)"};
   &:hover{opacity:.88;}
 `;
 
@@ -473,16 +542,17 @@ const CountBox = styled.div`
   background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:2px 4px;
 `;
 const CountBtn = styled.button`
-  width:22px;height:22px;border-radius:5px;border:none;
+  width:28px;height:28px;border-radius:5px;border:none;
   background:var(--surface3);color:var(--text);font-size:16px;font-weight:700;
   cursor:pointer;display:flex;align-items:center;justify-content:center;
   &:hover{background:var(--border2);}
+  @media(pointer:coarse){width:44px;height:44px;}
 `;
 
 /* Desktop table header */
 const TableHeader = styled.div`
   display:grid;
-  grid-template-columns:40px 1fr 110px auto 120px 32px;
+  grid-template-columns:40px minmax(0,1fr) 110px auto 120px 32px;
   gap:10px;padding:0 10px 8px;
   font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
   color:var(--text-muted);border-bottom:1px solid var(--border);margin-bottom:6px;
@@ -494,9 +564,9 @@ const RankBadge = styled.span<{$pos:number}>`
   display:inline-flex;align-items:center;justify-content:center;
   min-width:26px;height:22px;padding:0 6px;border-radius:6px;
   font-size:15px;font-weight:900;margin-right:6px;letter-spacing:.02em;
-  ${p=>p.$pos===1?css`background:var(--gold);color:#000;box-shadow:0 1px 6px rgba(245,197,66,.5);`
-    :p.$pos===2?css`background:var(--silver);color:#000;box-shadow:0 1px 6px rgba(192,192,192,.4);`
-    :p.$pos===3?css`background:var(--bronze);color:#fff;box-shadow:0 1px 6px rgba(205,127,50,.4);`
+  ${p=>p.$pos===1?css`background:var(--gold);color:#1a1206;`
+    :p.$pos===2?css`background:var(--silver);color:#1a1206;`
+    :p.$pos===3?css`background:var(--bronze);color:#1a1206;`
     :css`background:var(--surface3);color:var(--text-muted);`}
 `;
 
@@ -513,8 +583,8 @@ const StatRow = styled.div`
 const BalanceBadge = styled.div<{$ok?:boolean}>`
   padding:5px 12px;border-radius:7px;font-size:15px;font-weight:700;
   ${p=>p.$ok
-    ? css`background:var(--success-soft);color:var(--success);border:1px solid var(--success);`
-    : css`background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent);`}
+    ? css`background:var(--success-soft);color:var(--success-ink);border:1px solid var(--success);`
+    : css`background:var(--accent-soft);color:var(--accent-ink);border:1px solid var(--accent);`}
 `;
 
 const SummaryPlayerItem = styled.div`
@@ -524,7 +594,7 @@ const SummaryPlayerItem = styled.div`
 
 const PLArrow = styled.span<{$pos?:boolean}>`
   display:inline-flex;align-items:center;
-  color:${p=>p.$pos?"var(--success)":"var(--accent)"};
+  color:${p=>p.$pos?"var(--success-ink)":"var(--accent-ink)"};
 `;
 
 const ShareBtns = styled.div`
@@ -549,9 +619,11 @@ const TimerCard = styled(Card)`
   }
 `;
 const FsBtn = styled.button`
-  position:absolute;top:12px;right:12px;z-index:10;
+  position:absolute;top:8px;right:8px;z-index:10;
   background:none;border:none;color:var(--text-muted);cursor:pointer;
-  padding:5px;border-radius:6px;display:flex;
+  padding:5px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+  min-width:32px;min-height:32px;
+  @media(pointer:coarse){min-width:44px;min-height:44px;}
   &:hover{color:var(--text);background:var(--surface2);}
 `;
 const LevelBadge = styled.div`
@@ -576,8 +648,7 @@ const CircleTrack = styled.circle`
 `;
 const CircleProgress = styled.circle<{$urgent?:boolean}>`
   fill:none;stroke-width:8;stroke-linecap:round;
-  stroke:${p=>p.$urgent?"var(--accent)":"var(--accent)"};
-  filter:drop-shadow(0 0 6px var(--accent-glow));
+  stroke:var(--accent);
   transition:stroke-dashoffset 1s linear;
 `;
 const CircleInner = styled.div`
@@ -586,13 +657,14 @@ const CircleInner = styled.div`
 const BigTimer = styled.div<{$urgent?:boolean}>`
   font-size:52px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;
   letter-spacing:-1px;color:var(--timer-color);
-  ${p=>p.$urgent&&css`color:var(--accent);animation:${glow} 1.5s ease-in-out infinite;`}
+  ${p=>p.$urgent&&css`color:var(--accent-ink);animation:${pulse} 1s ease-in-out infinite;`}
+  ${reducedMotion}{animation:none;}
   @media(max-width:640px){font-size:42px;}
   :fullscreen &, :-webkit-full-screen &{ font-size:min(13vmin,110px);letter-spacing:-2px; }
 `;
 const StatusLabel = styled.div<{$urgent?:boolean}>`
   font-size:15px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
-  color:${p=>p.$urgent?"var(--accent)":"var(--text-muted)"};
+  color:${p=>p.$urgent?"var(--accent-ink)":"var(--text-muted)"};
   :fullscreen &, :-webkit-full-screen &{ font-size:min(2.5vmin,20px); }
 `;
 
@@ -640,6 +712,7 @@ const TableScroll = styled.div`
 const ActiveDot = styled.span`
   display:inline-block;width:6px;height:6px;border-radius:50%;
   background:var(--accent);animation:${pulse} 1.4s ease infinite;
+  ${reducedMotion}{animation:none;}
 `;
 
 /* Payout row */
@@ -789,6 +862,8 @@ export default function App() {
 
   const t = (key: keyof typeof T.TH) => T[lang][key] as string;
 
+  useEffect(() => { document.documentElement.lang = lang === "TH" ? "th" : "en"; }, [lang]);
+
   /* ── Tournament state ── */
   const _defTournament: {
     name:string; buyIn:number; payouts:number[];
@@ -871,6 +946,8 @@ export default function App() {
   const totalCashout = players.reduce((s,p)=>s+(p.cashout||0),0);
   const diff         = totalCashout - sumBuyIn;
 
+  const rankLabel = (pos:number) => lang==="TH" ? `อันดับ ${pos}` : `Place ${pos}`;
+  const rankHint  = lang==="TH" ? "กดเพื่อกำหนด/ยกเลิกอันดับ" : "Tap to set or clear finishing place";
   const isWinner  = (name:string) => prizeWinners.some(w=>w.name===name);
   const getPos    = (name:string) => { const i=prizeWinners.findIndex(w=>w.name===name); return i!==-1?i+1:null; };
 
@@ -1005,13 +1082,12 @@ export default function App() {
     <Card>
       <CardTitle style={{marginBottom:14}}>{t("settings")}</CardTitle>
       <Label>{t("gameName")}</Label>
-      <Input value={tournament.name} placeholder={t("gameNamePh")}
+      <Input value={tournament.name} placeholder={t("gameNamePh")} aria-label={t("gameName")}
         onChange={e=>setTournament(s=>({...s,name:e.target.value}))} />
-
 
       {mode==="TOURNAMENT" && <>
         <Label>{t("buyInAmount")}</Label>
-        <Input type="number" value={tournament.buyIn}
+        <Input type="number" value={tournament.buyIn} aria-label={t("buyInAmount")}
           onChange={e=>setTournament(s=>({...s,buyIn:Number(e.target.value)}))} />
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",margin:"12px 0 6px"}}>
           <Label style={{margin:0}}>{t("payoutPct")}</Label>
@@ -1022,9 +1098,9 @@ export default function App() {
         {tournament.payouts.map((p,i)=>(
           <PayRow key={i}>
             <span className="num">#{i+1}</span>
-            <Input type="number" value={p}
+            <Input type="number" value={p} aria-label={`${t("payoutPct")} #${i+1}`}
               onChange={e=>{const v=[...tournament.payouts];v[i]=Number(e.target.value);setTournament(s=>({...s,payouts:v}));}} />
-            <Btn $v="danger" $sm onClick={()=>{
+            <Btn $v="danger" $sm aria-label={lang==="TH"?`ลบรางวัล #${i+1}`:`Remove payout #${i+1}`} onClick={()=>{
               setTournament(s=>({...s,payouts:s.payouts.filter((_,j)=>j!==i)}));
               setPrizeWinners(prev=>prev.filter((_,j)=>j!==i));
             }}><X size={12} /></Btn>
@@ -1037,7 +1113,7 @@ export default function App() {
         </CheckLabel>
         {modeBounty && <>
           <Label>{t("bountyPct")}</Label>
-          <Input type="number" value={bountyPct} onChange={e=>setBountyPct(Number(e.target.value))} />
+          <Input type="number" value={bountyPct} aria-label={t("bountyPct")} onChange={e=>setBountyPct(Number(e.target.value))} />
         </>}
       </>}
 
@@ -1083,17 +1159,17 @@ export default function App() {
                 </div>
               </div>
               <div style={{textAlign:"center",fontWeight:700,fontSize:14}}>{fmtN(p.buyInTotal)}</div>
-              <div style={{display:"flex",gap:4}} onClick={e=>e.stopPropagation()}>
-                <Btn $v="success" $sm onClick={()=>cashBuy(i,true)}>+</Btn>
-                <Btn $v="primary" $sm onClick={()=>cashBuy(i,false)}>−</Btn>
+              <div style={{display:"flex",gap:4}}>
+                <Btn $v="success" $sm aria-label={`+ ${t("buyIn")} ${p.name}`} onClick={()=>cashBuy(i,true)}>+</Btn>
+                <Btn $v="primary" $sm aria-label={`− ${t("buyIn")} ${p.name}`} onClick={()=>cashBuy(i,false)}>−</Btn>
               </div>
-              <div onClick={e=>e.stopPropagation()}>
-                <Input type="number" value={p.cashout===0?"":p.cashout}
+              <div>
+                <Input type="number" value={p.cashout===0?"":p.cashout} aria-label={`${t("cashOut")} ${p.name}`}
                   style={{fontSize:15,fontWeight:600}}
                   onChange={e=>{const np=[...players];np[i].cashout=Number(e.target.value)||0;setPlayers(np);}}
                   onBlur={e=>{if(e.target.value===""){const np=[...players];np[i].cashout=0;setPlayers(np);}}} />
               </div>
-              <Btn $v="ghost" $sm onClick={e=>{e.stopPropagation();removePlayer(i);}}><X size={13} /></Btn>
+              <Btn $v="ghost" $sm aria-label={`${lang==="TH"?"ลบ":"Remove"} ${p.name}`} onClick={()=>removePlayer(i)}><X size={13} /></Btn>
             </PlayerRow>
 
             {/* Mobile card */}
@@ -1104,7 +1180,7 @@ export default function App() {
                   <PlayerName>{p.name}</PlayerName>
                   <PlayerSub>{t("buyIn")}: {fmtN(p.buyInTotal)}</PlayerSub>
                 </div>
-                <Btn $v="ghost" $sm onClick={()=>removePlayer(i)}><X size={13} /></Btn>
+                <Btn $v="ghost" $sm aria-label={`${lang==="TH"?"ลบ":"Remove"} ${p.name}`} onClick={()=>removePlayer(i)}><X size={13} /></Btn>
               </PlayerCardTop>
               <MobileBuyBtns>
                 <MobileBuyBtn $variant="buy" onClick={()=>cashBuy(i,true)}>
@@ -1116,7 +1192,7 @@ export default function App() {
               </MobileBuyBtns>
               <CashOutRow>
                 <CashLabel>{t("cashOut")}</CashLabel>
-                <CashInput type="number" value={p.cashout===0?"":p.cashout}
+                <CashInput type="number" value={p.cashout===0?"":p.cashout} aria-label={`${t("cashOut")} ${p.name}`}
                   onChange={e=>{const np=[...players];np[i].cashout=Number(e.target.value)||0;setPlayers(np);}}
                   onBlur={e=>{if(e.target.value===""){const np=[...players];np[i].cashout=0;setPlayers(np);}}} />
               </CashOutRow>
@@ -1135,11 +1211,11 @@ export default function App() {
       <CardTitle style={{marginBottom:14}}>{t("summary")}</CardTitle>
       <StatRow>
         <span className="lbl">{t("totalBuyIn")}</span>
-        <span style={{fontWeight:800,fontSize:20,color:"var(--info)"}}>{fmtN(sumBuyIn)}</span>
+        <span style={{fontWeight:800,fontSize:20,color:"var(--info-ink)"}}>{fmtN(sumBuyIn)}</span>
       </StatRow>
       <StatRow>
         <span className="lbl">{t("totalCashout")}</span>
-        <span style={{fontWeight:800,fontSize:20,color:"var(--success)"}}>{fmtN(totalCashout)}</span>
+        <span style={{fontWeight:800,fontSize:20,color:"var(--success-ink)"}}>{fmtN(totalCashout)}</span>
       </StatRow>
       <StatRow>
         <span className="lbl">{t("difference")}</span>
@@ -1158,17 +1234,17 @@ export default function App() {
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:700,fontSize:15}}>{r.name}</div>
                 <div style={{display:"flex",gap:10,marginTop:2,flexWrap:"wrap"}}>
-                  <span style={{fontSize:15,fontWeight:700,color:"var(--info)"}}>
+                  <span style={{fontSize:15,fontWeight:700,color:"var(--info-ink)"}}>
                     {t("buyIn")}: {fmtN(r.count)}
                   </span>
-                  <span style={{fontSize:15,fontWeight:700,color:"var(--success)"}}>
+                  <span style={{fontSize:15,fontWeight:700,color:"var(--success-ink)"}}>
                     {t("cashOut")}: {fmtN(r.total)}
                   </span>
                 </div>
               </div>
               <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
                 <PLArrow $pos={r.profit>=0}>{r.profit>=0?<TrendingUp size={14}/>:<TrendingDown size={14}/>}</PLArrow>
-                <span style={{fontWeight:800,fontSize:14,color:r.profit>=0?"var(--success)":"var(--accent)"}}>
+                <span style={{fontWeight:800,fontSize:14,color:r.profit>=0?"var(--success-ink)":"var(--accent-ink)"}}>
                   {r.profit>=0?"+":""}{fmtN(r.profit)}
                 </span>
               </div>
@@ -1180,7 +1256,7 @@ export default function App() {
       <ShareBtns>
         <Btn $v="success" disabled={players.length===0} onClick={()=>setShowShare(true)}>
           <Share2 size={15}/>{lang==="TH"?"แชร์ผลลัพธ์":"Share Results"}
-          {plan==="free" && <span style={{fontSize:10,opacity:.75,fontWeight:500,marginLeft:2}}>
+          {plan==="free" && <span style={{fontSize:12,fontWeight:600,marginLeft:2}}>
             {Math.max(0,FREE_MAX_EXPORTS-exportCount)}/{FREE_MAX_EXPORTS}
           </span>}
         </Btn>
@@ -1213,75 +1289,66 @@ export default function App() {
         const color=AVATAR_COLORS[i%AVATAR_COLORS.length];
         return (
           <div key={i}>
-            <PlayerRow $winner={isWinner(p.name)} $rank={pos??undefined} onClick={()=>selectPlayer(p)}>
-              {pos && pos<=3
-                ? <div style={{
-                    width:36,height:36,borderRadius:"50%",flexShrink:0,
-                    background:pos===1?"var(--gold)":pos===2?"var(--silver)":"var(--bronze)",
-                    display:"flex",alignItems:"center",justifyContent:"center",
-                    fontSize:13,fontWeight:900,color:"#fff",letterSpacing:"-0.5px",
-                    boxShadow:`0 2px 8px ${pos===1?"rgba(245,197,66,.4)":pos===2?"rgba(192,192,192,.3)":"rgba(205,127,50,.4)"}`
-                  }}>
-                    #{pos}
-                  </div>
-                : <Avatar $c={color}>{initials(p.name)}</Avatar>}
-              <div>
-                <div style={{fontWeight:700,fontSize:15}}>
-                  {pos && pos>3 && <RankBadge $pos={pos}>#{pos}</RankBadge>}
-                  {p.name}
-                </div>
-                {pos && <div style={{fontSize:10,color:"var(--text-muted)",marginTop:2}}>
-                  {pos===1?"อันดับ 1":pos===2?"อันดับ 2":pos===3?"อันดับ 3":`อันดับ ${pos}`}
-                </div>}
-              </div>
+            <PlayerRow $winner={isWinner(p.name)} $rank={pos??undefined}>
+              <RankToggle type="button" aria-pressed={!!pos} title={rankHint} onClick={()=>selectPlayer(p)}>
+                {pos && pos<=3
+                  ? <MedalAvatar $rank={pos}>#{pos}</MedalAvatar>
+                  : <Avatar $c={color}>{initials(p.name)}</Avatar>}
+                <span style={{minWidth:0}}>
+                  <span style={{display:"block",fontWeight:700,fontSize:15}}>
+                    {pos && pos>3 && <RankBadge $pos={pos}>#{pos}</RankBadge>}
+                    {p.name}
+                  </span>
+                  {pos && <span style={{display:"block",fontSize:13,color:"var(--text-muted)",marginTop:2}}>
+                    {rankLabel(pos)}
+                  </span>}
+                </span>
+              </RankToggle>
               <div style={{textAlign:"center"}}>
-                <CountBox onClick={e=>e.stopPropagation()}>
-                  <CountBtn onClick={()=>tournBuy(i,-1)}>−</CountBtn>
+                <CountBox>
+                  <CountBtn aria-label={`− ${t("buyIn")} ${p.name}`} onClick={()=>tournBuy(i,-1)}>−</CountBtn>
                   <span style={{minWidth:20,textAlign:"center",fontSize:15,fontWeight:700}}>{p.count}</span>
-                  <CountBtn onClick={()=>tournBuy(i,1)}>+</CountBtn>
+                  <CountBtn aria-label={`+ ${t("buyIn")} ${p.name}`} onClick={()=>tournBuy(i,1)}>+</CountBtn>
                 </CountBox>
               </div>
               {modeBounty && (
-                <div onClick={e=>e.stopPropagation()}>
-                  <Input type="number" value={p.bounty||0} style={{width:60}}
+                <div>
+                  <Input type="number" value={p.bounty||0} style={{width:60}} aria-label={`Bounty ${p.name}`}
                     onChange={e=>{const np=[...players];np[i].bounty=Number(e.target.value);setPlayers(np);}} />
                 </div>
               )}
               <span></span>
-              <Btn $v="ghost" $sm onClick={e=>{e.stopPropagation();removePlayer(i);}}><X size={13} /></Btn>
+              <Btn $v="ghost" $sm aria-label={`${lang==="TH"?"ลบ":"Remove"} ${p.name}`} onClick={()=>removePlayer(i)}><X size={13} /></Btn>
             </PlayerRow>
             {/* Mobile card */}
-            <PlayerCardMobile style={pos?{borderLeft:`3px solid ${pos===1?"var(--gold)":pos===2?"var(--silver)":"var(--bronze)"}`}:{}}>
+            <PlayerCardMobile $rank={pos}>
               <PlayerCardTop>
-                {pos && pos<=3
-                  ? <div style={{
-                      width:36,height:36,borderRadius:"50%",flexShrink:0,
-                      background:pos===1?"var(--gold)":pos===2?"var(--silver)":"var(--bronze)",
-                      display:"flex",alignItems:"center",justifyContent:"center",
-                      fontSize:13,fontWeight:900,color:"#fff",letterSpacing:"-0.5px"
-                    }}>#{pos}</div>
-                  : <Avatar $c={color}>{initials(p.name)}</Avatar>}
-                <div style={{flex:1}}>
-                  <PlayerName>
-                    {pos && pos>3 && <RankBadge $pos={pos}>#{pos}</RankBadge>}
-                    {p.name}
-                  </PlayerName>
-                  <PlayerSub>{t("buyIn")} × {p.count} = {fmtN(p.count*tournament.buyIn)}</PlayerSub>
-                </div>
-                <Btn $v="ghost" $sm onClick={()=>removePlayer(i)}><X size={13} /></Btn>
+                <RankToggle type="button" aria-pressed={!!pos} title={rankHint} onClick={()=>selectPlayer(p)}>
+                  {pos && pos<=3
+                    ? <MedalAvatar $rank={pos}>#{pos}</MedalAvatar>
+                    : <Avatar $c={color}>{initials(p.name)}</Avatar>}
+                  <span style={{minWidth:0}}>
+                    <PlayerName>
+                      {pos && pos>3 && <RankBadge $pos={pos}>#{pos}</RankBadge>}
+                      {p.name}
+                    </PlayerName>
+                    <PlayerSub>{t("buyIn")} × {p.count} = {fmtN(p.count*tournament.buyIn)}</PlayerSub>
+                  </span>
+                </RankToggle>
+                <Btn $v="ghost" $sm aria-label={`${lang==="TH"?"ลบ":"Remove"} ${p.name}`} onClick={()=>removePlayer(i)}><X size={13} /></Btn>
               </PlayerCardTop>
-              <MobileBuyBtns onClick={()=>selectPlayer(p)}>
-                <MobileBuyBtn $variant="buy" onClick={e=>{e.stopPropagation();tournBuy(i,1);}}>
+              <MobileBuyBtns>
+                <MobileBuyBtn $variant="buy" onClick={()=>tournBuy(i,1)}>
                   + {t("buyIn")}
                 </MobileBuyBtn>
-                <MobileBuyBtn $variant="sell" onClick={e=>{e.stopPropagation();tournBuy(i,-1);}}>
+                <MobileBuyBtn $variant="sell" onClick={()=>tournBuy(i,-1)}>
                   − {t("buyIn")}
                 </MobileBuyBtn>
               </MobileBuyBtns>
               {modeBounty && (
                 <CashOutRow>
                   <CashLabel>Bounty</CashLabel>
-                  <CashInput type="number" value={p.bounty||0}
+                  <CashInput type="number" value={p.bounty||0} aria-label={`Bounty ${p.name}`}
                     onChange={e=>{const np=[...players];np[i].bounty=Number(e.target.value);setPlayers(np);}} />
                 </CashOutRow>
               )}
@@ -1328,7 +1395,7 @@ export default function App() {
                 </td>
                 <td>{fmtN(w.prize??0)}</td>
                 {modeBounty&&<td>{fmtN(w.bounty??0)}</td>}
-                <td style={{fontWeight:700,color:w.profit>=0?"var(--success)":"var(--accent)"}}>
+                <td style={{fontWeight:700,color:w.profit>=0?"var(--success-ink)":"var(--accent-ink)"}}>
                   {w.profit>=0?"+":""}{fmtN(w.profit)}
                 </td>
               </tr>
@@ -1339,7 +1406,7 @@ export default function App() {
       <ShareBtns>
         <Btn $v="success" disabled={players.length===0} onClick={()=>setShowShare(true)}>
           <Share2 size={15}/>{lang==="TH"?"แชร์ผลลัพธ์":"Share Results"}
-          {plan==="free" && <span style={{fontSize:10,opacity:.75,fontWeight:500,marginLeft:2}}>
+          {plan==="free" && <span style={{fontSize:12,fontWeight:600,marginLeft:2}}>
             {Math.max(0,FREE_MAX_EXPORTS-exportCount)}/{FREE_MAX_EXPORTS}
           </span>}
         </Btn>
@@ -1360,7 +1427,7 @@ export default function App() {
         : (lang==="TH"?"หยุด":"PAUSED");
     return (
     <TimerCard ref={timerRef}>
-      <FsBtn onClick={toggleFs} title={isFs?"Exit Fullscreen":"Fullscreen"}>
+      <FsBtn onClick={toggleFs} title={isFs?"Exit Fullscreen":"Fullscreen"} aria-label={isFs?"Exit Fullscreen":"Fullscreen"}>
         {isFs ? <Minimize size={16}/> : <Maximize size={16}/>}
       </FsBtn>
       <LevelBadge>{breakTime?t("breakTime"):`${t("level")} ${roundIndex+1}`}</LevelBadge>
@@ -1410,7 +1477,7 @@ export default function App() {
               {lang==="TH"?"Level ถัดไป":"Next Level"}
             </span>
             {next.isBreak
-              ? <span style={{fontSize:18,fontWeight:800,color:"#60a5fa"}}>☕ Break · {fmt(next.duration)}</span>
+              ? <span style={{fontSize:18,fontWeight:800,color:"var(--info-ink)",display:"inline-flex",alignItems:"center",gap:6}}><Coffee size={16}/> Break · {fmt(next.duration)}</span>
               : <span style={{fontSize:18,fontWeight:800,color:"var(--text)"}}>
                   {fmtN(next.sb)} / {fmtN(next.bb)}
                   {next.ante ? <span style={{fontSize:14,fontWeight:600,color:"var(--text-muted)"}}> · Ante {fmtN(next.ante)}</span> : null}
@@ -1422,19 +1489,19 @@ export default function App() {
       })()}
 
       <TimerCtrl>
-        <Btn $v="secondary" $sm onClick={()=>{
+        <Btn $v="secondary" $sm aria-label={t("prev")} title={t("prev")} onClick={()=>{
           levelUpSound.currentTime=0;levelUpSound.play().catch(()=>{});
           setRoundIndex(i=>{const p=Math.max(i-1,0);setTimeLeft(tournament.rounds[p].duration);return p;});
         }}><SkipBack size={14} /></Btn>
-        <Btn $v="primary" style={{padding:"9px 28px",fontSize:15}} onClick={()=>{
+        <Btn $v="primary" style={{padding:"9px 28px",fontSize:15}} aria-label={running?t("pause"):t("start")} onClick={()=>{
           if(timeLeft<=0) setTimeLeft(round.duration);
           setRunning(r=>!r);
         }}>{running?<Pause size={18}/>:<Play size={18}/>}</Btn>
-        <Btn $v="secondary" $sm onClick={()=>{
+        <Btn $v="secondary" $sm aria-label={t("next")} title={t("next")} onClick={()=>{
           levelUpSound.currentTime=0;levelUpSound.play().catch(()=>{});
           setRoundIndex(i=>{const n=Math.min(i+1,tournament.rounds.length-1);setTimeLeft(tournament.rounds[n].duration);return n;});
         }}><SkipForward size={14} /></Btn>
-        <Btn $v="ghost" $sm onClick={()=>setBreakTime(b=>!b)} title={breakTime?t("resumeTime"):t("breakTime")}>
+        <Btn $v="ghost" $sm onClick={()=>setBreakTime(b=>!b)} title={breakTime?t("resumeTime"):t("breakTime")} aria-label={breakTime?t("resumeTime"):t("breakTime")}>
           {breakTime?<Play size={14}/>:<Coffee size={14}/>}
         </Btn>
       </TimerCtrl>
@@ -1467,16 +1534,18 @@ export default function App() {
           <tbody>
             {tournament.rounds.map((r,i)=>(
               <tr key={i} style={i===roundIndex
-                ? {background:"var(--accent-soft)",color:"var(--accent)"}
-                : r.isBreak?{background:"rgba(96,165,250,.07)",color:"var(--text-muted)"}:{}}>
+                ? {background:"var(--accent-soft)",color:"var(--accent-ink)"}
+                : r.isBreak?{background:"color-mix(in srgb,var(--info) 7%,transparent)",color:"var(--text-muted)"}:{}}>
                 <td style={{width:20}}>{i===roundIndex&&running&&<ActiveDot/>}</td>
                 {r.isBreak
-                  ? <td colSpan={3} style={{fontSize:14,fontWeight:700,letterSpacing:".04em",color:"#60a5fa"}}>☕ Break</td>
+                  ? <td colSpan={3} style={{fontSize:14,fontWeight:700,letterSpacing:".04em",color:"var(--info-ink)"}}>
+                      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><Coffee size={14}/> Break</span>
+                    </td>
                   : <><td>{r.sb?fmtN(r.sb):"—"}</td><td>{r.bb?fmtN(r.bb):"—"}</td><td>{r.ante?fmtN(r.ante):"—"}</td></>
                 }
                 <td>{fmt(r.duration)}</td>
                 <td>
-                  <Btn $v="danger" $sm disabled={plan==="free"} onClick={()=>deleteLevel(i)}><X size={12} /></Btn>
+                  <Btn $v="danger" $sm disabled={plan==="free"} aria-label={t("confirmDelLevel")} onClick={()=>deleteLevel(i)}><X size={12} /></Btn>
                 </td>
               </tr>
             ))}
@@ -1510,6 +1579,7 @@ export default function App() {
           />
         )}
 
+        <Suspense fallback={null}>
         {/* ── Pricing Modal ── */}
         {showPricing && (
           <PricingModal
@@ -1564,6 +1634,7 @@ export default function App() {
             onClose={() => setShowDonate(false)}
           />
         )}
+        </Suspense>
 
         {/* ── Add Level Modal ── */}
         <Dialog.Root open={openModal} onOpenChange={open=>{ if(!open) setOpenModal(false); }}>
@@ -1574,7 +1645,7 @@ export default function App() {
               {([["Small Blind","sb"],["Big Blind","bb"],["Ante","ante"],["Duration (min)","duration"]] as [string,string][]).map(([lbl,k])=>(
                 <div key={k} style={{marginBottom:10}}>
                   <Label>{lbl}</Label>
-                  <Input type="number" value={(newLevel as any)[k]}
+                  <Input type="number" value={(newLevel as any)[k]} aria-label={lbl}
                     onChange={e=>setNewLevel(s=>({...s,[k]:Number(e.target.value)}))} />
                 </div>
               ))}
@@ -1599,7 +1670,7 @@ export default function App() {
               <h3 style={{display:"flex",alignItems:"center",gap:6}}><Coffee size={15}/> {t("addBreak")}</h3>
               <div style={{marginBottom:10}}>
                 <Label>Duration (min)</Label>
-                <Input type="number" min={1} value={breakDuration}
+                <Input type="number" min={1} value={breakDuration} aria-label="Duration (min)"
                   onChange={e=>setBreakDuration(Math.max(1,Number(e.target.value)))} />
               </div>
               <div style={{display:"flex",gap:8,marginTop:16,justifyContent:"flex-end"}}>
@@ -1651,7 +1722,8 @@ export default function App() {
             <ThemeRow>
               {(Object.keys(themeSwatches) as ThemeKey[]).map(k=>(
                 <Swatch key={k} $c={themeSwatches[k].color} $active={theme===k}
-                  title={themeSwatches[k].label} onClick={()=>setTheme(k)}
+                  title={themeSwatches[k].label} aria-label={`${t("theme")}: ${themeSwatches[k].label}`}
+                  aria-pressed={theme===k} onClick={()=>setTheme(k)}
                   style={k==="light"?{border:`2px solid ${theme===k?"var(--text)":"#aaa"}`,background:"#f0f0f0"}:{}} />
               ))}
             </ThemeRow>
@@ -1659,6 +1731,7 @@ export default function App() {
               <>
               <Btn $v="ghost" $sm onClick={()=>setShowHistory(true)}
                 title={lang==="TH"?"ประวัติการเล่น":"Session History"}
+                aria-label={lang==="TH"?"ประวัติการเล่น":"Session History"}
                 style={{padding:"5px 8px"}}>
                 <Clock size={15}/>
               </Btn>
@@ -1666,6 +1739,7 @@ export default function App() {
                 $color={PLAN_COLORS[plan]}
                 onClick={()=>{setLoginReason("");setShowLogin(true);}}
                 title={`@${user.username ?? user.email.split("@")[0]}`}
+                aria-label={lang==="TH"?"บัญชีของคุณ":"Your account"}
               >
                 {(user.username ?? user.email).slice(0,2).toUpperCase()}
                 <NavAvatarDot $color={PLAN_COLORS[plan]} />
@@ -1679,35 +1753,25 @@ export default function App() {
           </HeaderRight>
         </Header>
         {/* Donate floating button */}
-        <button
+        <DonateFab
           onClick={() => setShowDonate(true)}
-          style={{
-            position:"fixed",bottom:16,left:16,zIndex:9998,
-            width:40,height:40,borderRadius:"50%",border:"none",
-            background:"linear-gradient(135deg,#be185d,#e879a0)",
-            color:"#fff",fontSize:18,cursor:"pointer",
-            display:"flex",alignItems:"center",justifyContent:"center",
-            boxShadow:"0 4px 12px rgba(232,121,160,.45)",
-            transition:"transform .18s,opacity .18s",
-          }}
-          onMouseEnter={e=>(e.currentTarget.style.transform="scale(1.12)")}
-          onMouseLeave={e=>(e.currentTarget.style.transform="scale(1)")}
           title={lang==="TH"?"Support ผู้พัฒนา":"Support Developer"}
-        >🩷</button>
+          aria-label={lang==="TH"?"Support ผู้พัฒนา":"Support Developer"}
+        ><Heart size={18} fill="currentColor" /></DonateFab>
 
         {/* Save status indicator */}
         {saveStatus !== "idle" && (
-          <div style={{
+          <div role="status" style={{
             position:"fixed",bottom:16,right:16,zIndex:9999,
             background:"var(--surface)",border:"1px solid var(--border2)",
             borderRadius:8,padding:"6px 12px",fontSize:14,fontWeight:700,
-            color: saveStatus==="saved" ? "var(--success)" : "var(--text-muted)",
+            color: saveStatus==="saved" ? "var(--success-ink)" : "var(--text-muted)",
             boxShadow:"var(--shadow-lg)",display:"flex",alignItems:"center",gap:6,
             transition:"opacity .3s",
           }}>
             {saveStatus==="saving"
-              ? <><Loader2 size={14} style={{animation:"spin 1s linear infinite"}}/> กำลังบันทึก...</>
-              : <><CheckCircle size={14}/> บันทึกแล้ว</>}
+              ? <><Loader2 size={14} style={{animation:"spin 1s linear infinite"}}/> {lang==="TH"?"กำลังบันทึก...":"Saving..."}</>
+              : <><CheckCircle size={14}/> {lang==="TH"?"บันทึกแล้ว":"Saved"}</>}
           </div>
         )}
 
@@ -1746,14 +1810,11 @@ export default function App() {
             <ThreeCols>
               <Col>
                 {SettingsPanel()}
-                {user
-                  ? (plan==="cash_pro"||plan==="full_pro") && (
-                      <div style={{padding:"0 16px 16px"}}>
-                        <PokerInsurance lang={lang}/>
-                      </div>
-                    )
-                  : null
-                }
+                {user && (plan==="cash_pro"||plan==="full_pro") && (
+                  <div style={{padding:"0 16px 16px"}}>
+                    <Suspense fallback={null}><PokerInsurance lang={lang}/></Suspense>
+                  </div>
+                )}
               </Col>
               <Col>{PlayersPanel()}</Col>
               <Col>{SummaryPanel()}</Col>
@@ -1764,29 +1825,29 @@ export default function App() {
             <MobilePanel $show={mobileTab==="summary"}>{SummaryPanel()}</MobilePanel>
             <MobilePanel $show={mobileTab==="insurance"}>
               {!user
-                ? <div style={{padding:32,textAlign:"center",color:"var(--text-muted)",fontSize:14,display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
-                    <span style={{fontSize:32}}>🔒</span>
+                ? <LockedPanel>
+                    <Lock size={28} aria-hidden="true" />
                     <div style={{fontWeight:700,color:"var(--text)"}}>
                       {lang==="TH"?"กรุณาเข้าสู่ระบบก่อนใช้งาน":"Please sign in to use this feature"}
                     </div>
-                    <div style={{fontSize:14,color:"var(--text-dim)"}}>
+                    <div>
                       {lang==="TH"?"ฟีเจอร์ประกันสำหรับสมาชิก Cash Pro / Full Pro":"Insurance feature for Cash Pro / Full Pro members"}
                     </div>
-                    <button style={{padding:"9px 22px",borderRadius:8,border:"none",background:"var(--accent)",color:"#fff",fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:14}} onClick={()=>setShowLogin(true)}>
+                    <Btn $v="primary" onClick={()=>setShowLogin(true)}>
                       {lang==="TH"?"เข้าสู่ระบบ / สมัครสมาชิก":"Sign In / Register"}
-                    </button>
-                  </div>
+                    </Btn>
+                  </LockedPanel>
                 : (plan==="cash_pro"||plan==="full_pro")
-                  ? <div style={{padding:"12px 16px"}}><PokerInsurance lang={lang} inline/></div>
-                  : <div style={{padding:32,textAlign:"center",color:"var(--text-muted)",fontSize:14,display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
-                      <span style={{fontSize:32}}>🔒</span>
+                  ? <div style={{padding:"12px 16px"}}><Suspense fallback={null}><PokerInsurance lang={lang} inline/></Suspense></div>
+                  : <LockedPanel>
+                      <Lock size={28} aria-hidden="true" />
                       <div style={{fontWeight:700,color:"var(--text)"}}>
                         {lang==="TH"?"ฟีเจอร์นี้สำหรับ Cash Pro / Full Pro":"This feature requires Cash Pro or Full Pro"}
                       </div>
-                      <button style={{padding:"9px 22px",borderRadius:8,border:"none",background:"var(--accent)",color:"#fff",fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:14}} onClick={()=>setShowPricing(true)}>
+                      <Btn $v="primary" onClick={()=>setShowPricing(true)}>
                         {lang==="TH"?"อัพเกรดแพลน":"Upgrade Plan"}
-                      </button>
-                    </div>
+                      </Btn>
+                    </LockedPanel>
               }
             </MobilePanel>
             <MobilePanel $show={mobileTab==="settings"}>{SettingsPanel()}</MobilePanel>
@@ -1804,10 +1865,10 @@ export default function App() {
             </ThreeCols>
 
             {/* Desktop: 2-col bottom row */}
-            <div style={{display:"grid",gridTemplateColumns:"320px 1fr",gap:0,borderTop:"1px solid var(--border)"}}>
+            <BottomRow>
               <Col>{SettingsPanel()}</Col>
               <Col style={{borderRight:"none"}}>{TournPlayersPanel()}</Col>
-            </div>
+            </BottomRow>
 
             {/* Mobile panels */}
             <MobilePanel $show={mobileTab==="timer"}>
