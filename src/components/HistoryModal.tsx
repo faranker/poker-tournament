@@ -7,21 +7,21 @@ const overlayShow = keyframes`from{opacity:0}to{opacity:1}`;
 const contentShow = keyframes`from{opacity:0;transform:translate(-50%,-48%) scale(.97)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}`;
 
 const Overlay = styled(Dialog.Overlay)`
-  position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:2000;backdrop-filter:blur(6px);
-  animation:${overlayShow} .15s ease;
+  position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:var(--z-modal);backdrop-filter:blur(6px);
+  animation:${overlayShow} var(--dur-fast) var(--ease-out);
 `;
 const Box = styled(Dialog.Content)`
-  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2001;
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:calc(var(--z-modal) + 1);
   background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);
   width:min(600px,96vw);max-height:88vh;display:flex;flex-direction:column;
-  box-shadow:var(--shadow-lg);animation:${contentShow} .18s ease;
+  box-shadow:var(--shadow-lg);animation:${contentShow} var(--dur) var(--ease-out);
   &:focus{outline:none;}
 `;
 const Header = styled.div`
   display:flex;align-items:center;justify-content:space-between;
   padding:18px 20px;border-bottom:1px solid var(--border);flex-shrink:0;
 `;
-const Title = styled.h2`font-size:16px;font-weight:900;display:flex;align-items:center;gap:8px;`;
+const Title = styled.h2`font-size:1rem;font-weight:900;display:flex;align-items:center;gap:8px;`;
 const CloseBtn = styled.button`@media(pointer:coarse){min-width:44px;min-height:44px;align-items:center;justify-content:center;}
   background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px;
   border-radius:6px;display:flex;&:hover{color:var(--text);background:var(--surface2);}
@@ -30,7 +30,7 @@ const Body = styled.div`flex:1;overflow-y:auto;padding:16px 20px;display:flex;fl
 
 const SessionCard = styled.div<{$open?:boolean}>`
   border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;
-  transition:border-color .15s;flex-shrink:0;
+  transition:border-color var(--dur-fast);flex-shrink:0;
   &:hover{border-color:var(--border2);}
 `;
 const SessionHead = styled.button`
@@ -38,28 +38,28 @@ const SessionHead = styled.button`
   width:100%;min-height:44px;border:none;text-align:left;font:inherit;color:inherit;cursor:pointer;
 `;
 const ModeBadge = styled.span<{$cash?:boolean}>`
-  font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;
+  font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:calc(.08em * var(--tracking));
   padding:2px 8px;border-radius:10px;flex-shrink:0;
   background:${p=>p.$cash?"rgba(34,197,94,.15)":"rgba(99,102,241,.15)"};
   color:${p=>p.$cash?"var(--success-ink)":"var(--info-ink)"};
 `;
-const SessionName = styled.div`font-size:14px;font-weight:700;color:var(--text);flex:1;`;
-const SessionDate = styled.div`font-size:14px;color:var(--text-muted);flex-shrink:0;`;
+const SessionName = styled.div`font-size:0.875rem;font-weight:700;color:var(--text);flex:1;`;
+const SessionDate = styled.div`font-size:0.875rem;color:var(--text-muted);flex-shrink:0;`;
 
 const SessionDetail = styled.div`padding:12px 14px;display:flex;flex-direction:column;gap:8px;`;
 const PlayerRow = styled.div<{$profit:number}>`
   display:flex;align-items:center;gap:8px;padding:6px 10px;
   border-radius:6px;background:var(--surface2);
 `;
-const PName = styled.div`flex:1;font-size:15px;font-weight:600;color:var(--text);`;
-const PDetail = styled.div`font-size:14px;color:var(--text-muted);`;
+const PName = styled.div`flex:1;font-size:0.9375rem;font-weight:600;color:var(--text);`;
+const PDetail = styled.div`font-size:0.875rem;color:var(--text-muted);`;
 const PProfit = styled.div<{$pos:boolean}>`
-  font-size:15px;font-weight:800;
+  font-size:0.9375rem;font-weight:800;
   color:${p=>p.$pos?"var(--success-ink)":"var(--accent-ink)"};
 `;
 
 const Empty = styled.div`
-  text-align:center;padding:40px 20px;color:var(--text-muted);font-size:14px;
+  text-align:center;padding:40px 20px;color:var(--text-muted);font-size:0.875rem;
 `;
 
 const Footer = styled.div`
@@ -68,7 +68,7 @@ const Footer = styled.div`
 `;
 const PageSizeSelect = styled.select`
   padding:6px 28px 6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);
-  background:var(--surface2);color:var(--text);font-size:13px;font-family:inherit;cursor:pointer;
+  background:var(--surface2);color:var(--text);font-size:0.8125rem;font-family:inherit;cursor:pointer;
   appearance:none;-webkit-appearance:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238892a4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 9px center;
@@ -81,7 +81,7 @@ const PageBtn = styled.button`
   &:disabled{opacity:.4;cursor:not-allowed;}
   &:hover:not(:disabled){border-color:var(--border2);}
 `;
-const PageLabel = styled.div`font-size:13px;color:var(--text-muted);white-space:nowrap;`;
+const PageLabel = styled.div`font-size:0.8125rem;color:var(--text-muted);white-space:nowrap;`;
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100];
 
@@ -140,7 +140,7 @@ export function HistoryModal({ lang, token, onClose }: Props) {
               <Empty>
                 <History size={32} style={{marginBottom:10,opacity:.3}}/>
                 <div>{isTH?"ยังไม่มีประวัติการเล่น":"No sessions yet"}</div>
-                <div style={{fontSize:14,marginTop:6,color:"var(--text-dim)"}}>
+                <div style={{fontSize:"0.875rem",marginTop:6,color:"var(--text-dim)"}}>
                   {isTH?"ระบบจะบันทึกให้อัตโนมัติเมื่อกด Export หรือ Share":"Auto-saved when you Export or Share"}
                 </div>
               </Empty>
@@ -161,7 +161,7 @@ export function HistoryModal({ lang, token, onClose }: Props) {
                       {isCash ? (
                         <>
                           {s.summary?.totalBuyIn!=null && (
-                            <div style={{display:"flex",gap:16,fontSize:14,color:"var(--text-muted)",marginBottom:4}}>
+                            <div style={{display:"flex",gap:16,fontSize:"0.875rem",color:"var(--text-muted)",marginBottom:4}}>
                               <span>Buy-in รวม: <b style={{color:"var(--text)"}}>{fmtN(s.summary.totalBuyIn!)}</b></span>
                               <span>Cashout รวม: <b style={{color:"var(--text)"}}>{fmtN(s.summary.totalCashout!)}</b></span>
                             </div>
@@ -183,7 +183,7 @@ export function HistoryModal({ lang, token, onClose }: Props) {
                       ) : (
                         <>
                           {s.summary?.prizePool!=null && (
-                            <div style={{fontSize:14,color:"var(--text-muted)",marginBottom:4}}>
+                            <div style={{fontSize:"0.875rem",color:"var(--text-muted)",marginBottom:4}}>
                               <Trophy size={12} style={{marginRight:4}}/>
                               Prize Pool: <b style={{color:"var(--text)"}}>{fmtN(s.summary.prizePool!)}</b>
                             </div>
@@ -193,7 +193,7 @@ export function HistoryModal({ lang, token, onClose }: Props) {
                               <PName>
                                 {p.position!=null && (
                                   <span style={{
-                                    fontSize:15,fontWeight:800,marginRight:6,
+                                    fontSize:"0.9375rem",fontWeight:800,marginRight:6,
                                     color:p.position===1?"var(--gold)":p.position===2?"var(--silver)":p.position===3?"var(--bronze)":"var(--text-muted)"
                                   }}>#{p.position}</span>
                                 )}

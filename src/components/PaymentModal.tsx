@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import styled, { keyframes } from "styled-components";
-import { X, Check, CheckCircle, Clock, AlertTriangle, MessageCircle } from "lucide-react";
+import { bp } from "../breakpoints";
+import { X, Check, CheckCircle, Clock, AlertTriangle, MessageCircle, Club } from "lucide-react";
 import type { Plan } from "../auth";
 
 const overlayShow = keyframes`from{opacity:0}to{opacity:1}`;
@@ -9,14 +10,14 @@ const contentShow = keyframes`from{opacity:0;transform:translate(-50%,-48%) scal
 const rotateBorder = keyframes`from{transform:rotate(0deg)}to{transform:rotate(360deg)}`;
 
 const Overlay = styled(Dialog.Overlay)`
-  position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:2200;backdrop-filter:blur(6px);
-  animation:${overlayShow} .15s ease;
+  position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:var(--z-modal-checkout);backdrop-filter:blur(6px);
+  animation:${overlayShow} var(--dur-fast) var(--ease-out);
 `;
 const Box = styled(Dialog.Content)`
-  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2201;
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:calc(var(--z-modal-checkout) + 1);
   background:#0d1117;border:1px solid #1e2a1e;border-radius:16px;
   width:min(400px,94vw);box-shadow:0 24px 80px rgba(0,0,0,.6);
-  animation:${contentShow} .18s ease;max-height:92vh;overflow-y:auto;
+  animation:${contentShow} var(--dur) var(--ease-out);max-height:92vh;overflow-y:auto;
   &:focus{outline:none;}
 `;
 
@@ -31,11 +32,11 @@ const LogoBox = styled.div`
   width:44px;height:44px;border-radius:10px;
   background:#1a4a1a;border:1px solid #2a6a2a;
   display:flex;align-items:center;justify-content:center;
-  font-size:22px;flex-shrink:0;
+  font-size:1.375rem;flex-shrink:0;
 `;
 const HeaderText = styled.div`
-  h2{font-size:15px;font-weight:800;letter-spacing:.05em;color:#fff;}
-  p{font-size:12px;color:#6aa86a;font-weight:600;letter-spacing:.12em;margin-top:1px;}
+  h2{font-size:0.9375rem;font-weight:800;letter-spacing:calc(.05em * var(--tracking));color:#fff;}
+  p{font-size:0.75rem;color:#6aa86a;font-weight:600;letter-spacing:calc(.12em * var(--tracking));margin-top:1px;}
 `;
 const CloseBtn = styled.button`@media(pointer:coarse){min-width:44px;min-height:44px;align-items:center;justify-content:center;}
   margin-left:auto;background:none;border:none;color:#6aa86a;cursor:pointer;
@@ -50,7 +51,7 @@ const Body = styled.div`padding:20px;display:flex;flex-direction:column;gap:16px
 const PPBadge = styled.div`
   display:flex;align-items:center;justify-content:center;gap:8px;
   background:transparent;border:1px solid #2a3a2a;border-radius:8px;padding:8px 16px;
-  font-size:13px;font-weight:700;align-self:center;
+  font-size:0.8125rem;font-weight:700;align-self:center;
 `;
 
 /* QR card */
@@ -86,47 +87,47 @@ const QRInner = styled.div`
 `;
 const QRImg = styled.img`
   width:200px;height:200px;object-fit:contain;display:block;
-  @media(max-width:400px){width:170px;height:170px;}
+  @media(max-width:${bp.phone}px){width:170px;height:170px;}
 `;
 
 /* Amount */
 const AmountBox = styled.div`
   background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);
   border-radius:12px;padding:14px;text-align:center;
-  .label{font-size:12px;color:#6aa86a;font-weight:600;letter-spacing:.08em;margin-bottom:4px;}
-  .amount{font-size:36px;font-weight:900;color:#22c55e;letter-spacing:-.5px;}
-  .unit{font-size:16px;font-weight:600;color:#6aa86a;margin-left:4px;}
+  .label{font-size:0.75rem;color:#6aa86a;font-weight:600;letter-spacing:calc(.08em * var(--tracking));margin-bottom:4px;}
+  .amount{font-size:2.25rem;font-weight:900;color:#22c55e;letter-spacing:-.5px;}
+  .unit{font-size:1rem;font-weight:600;color:#6aa86a;margin-left:4px;}
 `;
 
 /* Account info */
 const AccountInfo = styled.div`
   text-align:center;
-  .title{font-size:13px;font-weight:700;color:#22c55e;margin-bottom:6px;}
-  .name{font-size:14px;font-weight:700;color:#e2e8f0;margin-bottom:2px;}
-  .acc{font-size:13px;color:#8892a4;margin-bottom:2px;}
-  .ref{font-size:12px;color:#8892a4;}
+  .title{font-size:0.8125rem;font-weight:700;color:#22c55e;margin-bottom:6px;}
+  .name{font-size:0.875rem;font-weight:700;color:#e2e8f0;margin-bottom:2px;}
+  .acc{font-size:0.8125rem;color:#8892a4;margin-bottom:2px;}
+  .ref{font-size:0.75rem;color:#8892a4;}
 `;
 
 /* Countdown */
 const CountdownBox = styled.div`
-  text-align:center;font-size:13px;color:#8892a4;font-weight:600;
-  .digits{font-variant-numeric:tabular-nums;font-size:22px;font-weight:900;color:#e2e8f0;margin-top:2px;}
+  text-align:center;font-size:0.8125rem;color:#8892a4;font-weight:600;
+  .digits{font-variant-numeric:tabular-nums;font-size:1.375rem;font-weight:900;color:#e2e8f0;margin-top:2px;}
 `;
 
 /* Form fields (step 1 — sender bank/account) */
 const FieldGroup = styled.div`
   display:flex;flex-direction:column;gap:6px;
-  label{font-size:12px;font-weight:700;color:#8892a4;letter-spacing:.04em;}
+  label{font-size:0.75rem;font-weight:700;color:#8892a4;letter-spacing:calc(.04em * var(--tracking));}
 `;
 const FieldInput = styled.input`
   width:100%;padding:11px 12px;border-radius:10px;border:1px solid #2a3a2a;
-  background:#11181f;color:#e2e8f0;font-size:14px;font-family:inherit;
+  background:#11181f;color:#e2e8f0;font-size:0.875rem;font-family:inherit;
   &:focus{outline:none;border-color:#22c55e;}
   &::placeholder{color:#7a8296;}
 `;
 const FieldSelect = styled.select`
   width:100%;padding:11px 34px 11px 12px;border-radius:10px;border:1px solid #2a3a2a;
-  background:#11181f;color:#e2e8f0;font-size:14px;font-family:inherit;cursor:pointer;
+  background:#11181f;color:#e2e8f0;font-size:0.875rem;font-family:inherit;cursor:pointer;
   appearance:none;-webkit-appearance:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238892a4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 12px center;
@@ -137,22 +138,22 @@ const FieldSelect = styled.select`
 const SubmitBtn = styled.button<{$loading?:boolean}>`
   width:100%;padding:13px;border-radius:10px;border:none;
   background:linear-gradient(135deg,#16a34a,#22c55e);
-  color:#fff;font-size:15px;font-weight:800;cursor:pointer;
-  font-family:inherit;transition:all .18s;letter-spacing:.02em;
+  color:#fff;font-size:0.9375rem;font-weight:800;cursor:pointer;
+  font-family:inherit;transition:all var(--dur);letter-spacing:calc(.02em * var(--tracking));
   &:hover:not(:disabled){opacity:.9;transform:translateY(-1px);}
   &:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 `;
 const LineBtn = styled.a`
   display:flex;align-items:center;justify-content:center;gap:8px;
   width:100%;padding:12px;border-radius:10px;border:none;text-decoration:none;
-  background:#06c755;color:#fff;font-size:14px;font-weight:800;cursor:pointer;
-  font-family:inherit;transition:all .18s;
+  background:#06c755;color:#fff;font-size:0.875rem;font-weight:800;cursor:pointer;
+  font-family:inherit;transition:all var(--dur);
   &:hover{opacity:.9;}
 `;
 
 /* Cancel link + confirm alert (nested modal) */
 const CancelLink = styled.button`
-  background:none;border:none;color:#8892a4;font-size:12px;font-weight:600;
+  background:none;border:none;color:#8892a4;font-size:0.75rem;font-weight:600;
   cursor:pointer;text-decoration:underline;text-underline-offset:2px;
   align-self:center;font-family:inherit;
   &:hover{color:#8892a4;}
@@ -167,24 +168,24 @@ const ConfirmCard = styled.div`
   padding:22px;width:min(300px,100%);text-align:center;
   box-shadow:0 20px 60px rgba(0,0,0,.5);
   display:flex;flex-direction:column;gap:14px;
-  h3{font-size:15px;font-weight:800;color:#fff;}
-  p{font-size:13px;color:#8892a4;line-height:1.5;}
+  h3{font-size:0.9375rem;font-weight:800;color:#fff;}
+  p{font-size:0.8125rem;color:#8892a4;line-height:1.5;}
 `;
 const ConfirmActions = styled.div`display:flex;gap:8px;`;
 const DangerBtn = styled.button`
   flex:1;padding:11px;border-radius:10px;border:none;cursor:pointer;
-  background:#dc2626;color:#fff;font-size:13px;font-weight:800;font-family:inherit;
+  background:#dc2626;color:#fff;font-size:0.8125rem;font-weight:800;font-family:inherit;
   &:hover{opacity:.9;}
 `;
 const GhostBtn = styled.button`
   flex:1;padding:11px;border-radius:10px;border:1px solid #2a3a2a;cursor:pointer;
-  background:transparent;color:#e2e8f0;font-size:13px;font-weight:700;font-family:inherit;
+  background:transparent;color:#e2e8f0;font-size:0.8125rem;font-weight:700;font-family:inherit;
   &:hover{border-color:#6aa86a;}
 `;
 
 const StatusBox = styled.div<{$ok?:boolean;$warn?:boolean}>`
   display:flex;align-items:center;gap:10px;padding:12px 14px;
-  border-radius:10px;font-size:13px;font-weight:600;
+  border-radius:10px;font-size:0.8125rem;font-weight:600;
   background:${p=>p.$ok?"rgba(34,197,94,.1)":p.$warn?"rgba(239,68,68,.1)":"rgba(245,158,11,.1)"};
   border:1px solid ${p=>p.$ok?"rgba(34,197,94,.3)":p.$warn?"rgba(239,68,68,.3)":"rgba(245,158,11,.3)"};
   color:${p=>p.$ok?"#22c55e":p.$warn?"#ef4444":"#f59e0b"};
@@ -318,7 +319,7 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: P
           onInteractOutside={e => e.preventDefault()}
         >
           <Header>
-            <LogoBox>♣️</LogoBox>
+            <LogoBox><Club size={20} aria-hidden="true" /></LogoBox>
             <HeaderText>
               <h2>THAI QR PAYMENT</h2>
               <p>GO POKER</p>
@@ -359,7 +360,7 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: P
 
                 <StatusBox>
                   <Clock size={16} style={{flexShrink:0}}/>
-                  <div style={{lineHeight:1.6,fontSize:12}}>
+                  <div style={{lineHeight:1.6,fontSize:"0.75rem"}}>
                     {isTH
                       ? "ระบบจะตรวจสอบยอดโอนอัตโนมัติจากบัญชีนี้ กรุณากรอกให้ตรงกับบัญชีที่จะใช้โอนจริง"
                       : "We'll auto-match your transfer from this account — enter the exact account you'll pay from."}
@@ -406,7 +407,7 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: P
 
                 <StatusBox>
                   <Clock size={16} style={{flexShrink:0}}/>
-                  <div style={{lineHeight:1.6,fontSize:12}}>
+                  <div style={{lineHeight:1.6,fontSize:"0.75rem"}}>
                     {isTH
                       ? "กำลังรอตรวจสอบยอดโอนอัตโนมัติ... เมื่อโอนเสร็จระบบจะเปิดใช้งานให้ภายในไม่กี่วินาที"
                       : "Waiting to auto-detect your transfer... it'll activate within seconds of paying."}
@@ -421,7 +422,7 @@ export function PaymentModal({ plan, billingCycle, lang, onClose, onSuccess }: P
               <>
                 <StatusBox $warn>
                   <AlertTriangle size={18} style={{flexShrink:0}}/>
-                  <div style={{lineHeight:1.65,fontSize:12}}>
+                  <div style={{lineHeight:1.65,fontSize:"0.75rem"}}>
                     {isTH
                       ? "ไม่พบรายการโอนภายในเวลาที่กำหนด กรุณาติดต่อแอดมินเพื่อตรวจสอบ"
                       : "No transfer detected within the time window. Please contact the admin for manual review."}

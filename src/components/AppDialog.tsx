@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useId } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import styled, { keyframes } from "styled-components";
 import { AlertTriangle, HelpCircle, Pencil, Check, X } from "lucide-react";
@@ -9,14 +9,14 @@ const contentShow = keyframes`
   to{opacity:1;transform:translate(-50%,-50%) scale(1)}`;
 
 const Overlay = styled(Dialog.Overlay)`
-  position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:3000;backdrop-filter:blur(5px);
-  animation:${overlayShow} .15s ease;
+  position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:var(--z-dialog);backdrop-filter:blur(5px);
+  animation:${overlayShow} var(--dur-fast) var(--ease-out);
 `;
 const Box = styled(Dialog.Content)`
-  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3001;
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:calc(var(--z-dialog) + 1);
   background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);
   padding:24px;width:min(360px,90vw);box-shadow:var(--shadow-lg);
-  animation:${contentShow} .18s ease;
+  animation:${contentShow} var(--dur) var(--ease-out);
   &:focus{outline:none;}
 `;
 const IconWrap = styled.div<{$t:"alert"|"confirm"|"prompt"}>`
@@ -28,20 +28,24 @@ const IconWrap = styled.div<{$t:"alert"|"confirm"|"prompt"}>`
     ? "background:rgba(245,197,66,.15);color:var(--gold);"
     : "background:var(--success-soft);color:var(--success-ink);"}
 `;
-const Title = styled.h3`font-size:15px;font-weight:800;margin-bottom:6px;color:var(--text);`;
-const Body = styled.p`font-size:15px;color:var(--text-muted);margin-bottom:20px;line-height:1.55;`;
-const PromptInput = styled.input`
+const Title = styled.h3`font-size:0.9375rem;font-weight:800;margin-bottom:6px;color:var(--text);`;
+const Body = styled.p`font-size:0.9375rem;color:var(--text-muted);margin-bottom:20px;line-height:1.55;`;
+const PromptInput = styled.input<{$invalid?:boolean}>`
   width:100%;padding:9px 12px;border-radius:var(--radius-sm);
-  border:1.5px solid var(--border);background:var(--surface2);
-  color:var(--text);font-size:16px;font-family:inherit;margin-bottom:20px;
-  transition:border-color .18s,box-shadow .18s;
-  &:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  border:1.5px solid ${p=>p.$invalid?"var(--danger-ink)":"var(--border)"};background:var(--surface2);
+  color:var(--text);font-size:1rem;font-family:inherit;margin-bottom:${p=>p.$invalid?"8px":"20px"};
+  transition:border-color var(--dur),box-shadow var(--dur);
+  &:focus{outline:none;border-color:${p=>p.$invalid?"var(--danger-ink)":"var(--accent)"};box-shadow:0 0 0 3px var(--accent-soft);}
   &::placeholder{color:var(--text-dim);}
+`;
+const FieldError = styled.p`
+  display:flex;align-items:center;gap:6px;margin-bottom:16px;
+  font-size:0.875rem;font-weight:600;color:var(--danger-ink);
 `;
 const BtnRow = styled.div`display:flex;gap:8px;justify-content:flex-end;`;
 const Btn = styled.button<{$primary?:boolean}>`
   padding:9px 18px;border-radius:var(--radius-sm);border:none;
-  font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .18s;
+  font-size:0.9375rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all var(--dur);
   display:inline-flex;align-items:center;gap:6px;
   &:disabled{opacity:.4;cursor:not-allowed;}
   ${p=>p.$primary
@@ -51,7 +55,12 @@ const Btn = styled.button<{$primary?:boolean}>`
 
 export type AlertConfig  = { type:"alert";   message:string;                                       resolve:()=>void };
 export type ConfirmConfig = { type:"confirm"; title:string; body?:string;                          resolve:(ok:boolean)=>void };
-export type PromptConfig  = { type:"prompt";  label:string; placeholder?:string;                   resolve:(val:string|null)=>void };
+export type PromptConfig  = {
+  type:"prompt"; label:string; placeholder?:string;
+  inputMode?:"text"|"numeric"|"decimal";
+  validate?:(val:string)=>string|null;
+  resolve:(val:string|null)=>void;
+};
 export type DialogConfig  = AlertConfig | ConfirmConfig | PromptConfig;
 
 interface Props {
@@ -61,17 +70,29 @@ interface Props {
 
 export function AppDialog({ config, lang = "TH" }: Props) {
   const [val, setVal] = useState("");
+  const [error, setError] = useState<string|null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const uid = useId();
   const isTH = lang === "TH";
 
   useEffect(() => {
     if (config?.type === "prompt") {
       setVal("");
+      setError(null);
       setTimeout(() => inputRef.current?.focus(), 60);
     }
   }, [config]);
 
   if (!config) return null;
+
+  const submitPrompt = () => {
+    if (config.type !== "prompt") return;
+    const v = val.trim();
+    if (!v) return;
+    const problem = config.validate?.(v) ?? null;
+    if (problem) { setError(problem); inputRef.current?.focus(); return; }
+    config.resolve(v);
+  };
 
   const dismiss = () => {
     if (config.type === "alert")   config.resolve();
@@ -116,22 +137,32 @@ export function AppDialog({ config, lang = "TH" }: Props) {
           {config.type === "prompt" && (
             <>
               <IconWrap $t="prompt"><Pencil size={20} /></IconWrap>
-              <Title>{config.label}</Title>
+              <Title id={`${uid}-label`}>{config.label}</Title>
               <PromptInput
                 ref={inputRef}
                 value={val}
                 placeholder={config.placeholder ?? ""}
-                onChange={e => setVal(e.target.value)}
+                inputMode={config.inputMode}
+                aria-labelledby={`${uid}-label`}
+                aria-invalid={!!error || undefined}
+                aria-describedby={error ? `${uid}-err` : undefined}
+                $invalid={!!error}
+                onChange={e => { setVal(e.target.value); setError(null); }}
                 onKeyDown={e => {
-                  if (e.key === "Enter" && val.trim()) config.resolve(val.trim());
+                  if (e.key === "Enter") submitPrompt();
                   if (e.key === "Escape") config.resolve(null);
                 }}
               />
+              {error && (
+                <FieldError id={`${uid}-err`} role="alert">
+                  <AlertTriangle size={14} aria-hidden="true" /> {error}
+                </FieldError>
+              )}
               <BtnRow>
                 <Btn onClick={() => config.resolve(null)}>
                   <X size={14} /> {isTH ? "ยกเลิก" : "Cancel"}
                 </Btn>
-                <Btn $primary disabled={!val.trim()} onClick={() => { if (val.trim()) config.resolve(val.trim()); }}>
+                <Btn $primary disabled={!val.trim()} onClick={submitPrompt}>
                   <Check size={14} /> {isTH ? "ตกลง" : "OK"}
                 </Btn>
               </BtnRow>

@@ -7,14 +7,14 @@ const overlayShow = keyframes`from{opacity:0}to{opacity:1}`;
 const contentShow = keyframes`from{opacity:0;transform:translate(-50%,-48%) scale(.97)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}`;
 
 const Overlay = styled(Dialog.Overlay)`
-  position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:2200;backdrop-filter:blur(6px);
-  animation:${overlayShow} .15s ease;
+  position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:var(--z-modal-checkout);backdrop-filter:blur(6px);
+  animation:${overlayShow} var(--dur-fast) var(--ease-out);
 `;
 const Box = styled(Dialog.Content)`
-  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2201;
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:calc(var(--z-modal-checkout) + 1);
   background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);
   width:min(420px,94vw);box-shadow:var(--shadow-lg);
-  animation:${contentShow} .18s ease;max-height:92vh;overflow-y:auto;
+  animation:${contentShow} var(--dur) var(--ease-out);max-height:92vh;overflow-y:auto;
   &:focus{outline:none;}
 `;
 const Header = styled.div`
@@ -22,7 +22,7 @@ const Header = styled.div`
   padding:20px 20px 0;
 `;
 const Title = styled.h2`
-  font-size:17px;font-weight:900;display:flex;align-items:center;gap:8px;
+  font-size:1.0625rem;font-weight:900;display:flex;align-items:center;gap:8px;
 `;
 const CloseBtn = styled.button`@media(pointer:coarse){min-width:44px;min-height:44px;align-items:center;justify-content:center;}
   background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px;
@@ -33,19 +33,19 @@ const Body = styled.div`padding:16px 20px 20px;display:flex;flex-direction:colum
 const NameInput = styled.input`
   width:100%;padding:9px 11px;border-radius:var(--radius-sm);
   border:1px solid var(--border);background:var(--surface2);
-  color:var(--text);font-size:15px;font-family:inherit;
+  color:var(--text);font-size:0.9375rem;font-family:inherit;
   &:focus{outline:none;border-color:var(--donate-ink);box-shadow:0 0 0 3px color-mix(in srgb,var(--donate-ink) 13%,transparent);}
   &::placeholder{color:var(--text-dim);}
 `;
 const ReadOnlyName = styled.div`
   width:100%;padding:9px 11px;border-radius:var(--radius-sm);
   border:1px solid var(--border);background:var(--surface3);
-  color:var(--text);font-size:15px;font-weight:700;
+  color:var(--text);font-size:0.9375rem;font-weight:700;
 `;
 const FieldSelect = styled.select`
   width:100%;padding:9px 32px 9px 11px;border-radius:var(--radius-sm);
   border:1px solid var(--border);background:var(--surface2);
-  color:var(--text);font-size:15px;font-family:inherit;cursor:pointer;
+  color:var(--text);font-size:0.9375rem;font-family:inherit;cursor:pointer;
   appearance:none;-webkit-appearance:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238892a4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 11px center;
@@ -55,13 +55,13 @@ const FieldSelect = styled.select`
 const SubmitBtn = styled.button`
   width:100%;padding:12px;border-radius:var(--radius-sm);border:none;
   background:var(--donate);
-  color:var(--on-donate);font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;
-  transition:all .18s;display:flex;align-items:center;justify-content:center;gap:8px;
+  color:var(--on-donate);font-size:0.9375rem;font-weight:800;cursor:pointer;font-family:inherit;
+  transition:all var(--dur);display:flex;align-items:center;justify-content:center;gap:8px;
   &:hover:not(:disabled){opacity:.9;transform:translateY(-1px);}
   &:disabled{opacity:.45;cursor:not-allowed;transform:none;}
 `;
 const CancelLink = styled.button`
-  background:none;border:none;color:var(--text-dim);font-size:12px;font-weight:600;
+  background:none;border:none;color:var(--text-dim);font-size:0.75rem;font-weight:600;
   cursor:pointer;text-decoration:underline;text-underline-offset:2px;
   align-self:center;font-family:inherit;
   &:hover{color:var(--text-muted);}
@@ -69,8 +69,8 @@ const CancelLink = styled.button`
 const LineBtn = styled.a`
   display:flex;align-items:center;justify-content:center;gap:8px;
   width:100%;padding:12px;border-radius:var(--radius-sm);border:none;text-decoration:none;
-  background:#06c755;color:#fff;font-size:14px;font-weight:800;cursor:pointer;
-  font-family:inherit;transition:all .18s;
+  background:#06c755;color:#fff;font-size:0.875rem;font-weight:800;cursor:pointer;
+  font-family:inherit;transition:all var(--dur);
   &:hover{opacity:.9;}
 `;
 
@@ -83,18 +83,18 @@ const ConfirmCard = styled.div`
   background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);
   padding:22px;width:min(300px,100%);text-align:center;
   box-shadow:var(--shadow-lg);display:flex;flex-direction:column;gap:14px;
-  h3{font-size:15px;font-weight:800;color:var(--text);}
-  p{font-size:13px;color:var(--text-muted);line-height:1.5;}
+  h3{font-size:0.9375rem;font-weight:800;color:var(--text);}
+  p{font-size:0.8125rem;color:var(--text-muted);line-height:1.5;}
 `;
 const ConfirmActions = styled.div`display:flex;gap:8px;`;
 const DangerBtn = styled.button`
   flex:1;padding:11px;border-radius:var(--radius-sm);border:none;cursor:pointer;
-  background:#dc2626;color:#fff;font-size:13px;font-weight:800;font-family:inherit;
+  background:#dc2626;color:#fff;font-size:0.8125rem;font-weight:800;font-family:inherit;
   &:hover{opacity:.9;}
 `;
 const GhostBtn = styled.button`
   flex:1;padding:11px;border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;
-  background:transparent;color:var(--text);font-size:13px;font-weight:700;font-family:inherit;
+  background:transparent;color:var(--text);font-size:0.8125rem;font-weight:700;font-family:inherit;
   &:hover{border-color:var(--border2);}
 `;
 
@@ -111,28 +111,28 @@ const Top5Row  = styled.div<{$rank:number}>`
 const RankBadge = styled.div<{$rank:number}>`
   width:24px;height:24px;border-radius:50%;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:900;
+  font-size:0.75rem;font-weight:900;
   background:${p=>p.$rank===1?"var(--donate)":p.$rank===2?"#9ca3af":p.$rank===3?"#b45309":"var(--surface3)"};
   color:${p=>p.$rank===2?"#1a1206":p.$rank<=3?"#fff":"var(--text-muted)"};
 `;
-const Top5Name   = styled.div`flex:1;font-size:14px;font-weight:700;color:var(--text);`;
-const Top5Amount = styled.div`font-size:13px;font-weight:800;color:var(--donate-ink);`;
+const Top5Name   = styled.div`flex:1;font-size:0.875rem;font-weight:700;color:var(--text);`;
+const Top5Amount = styled.div`font-size:0.8125rem;font-weight:800;color:var(--donate-ink);`;
 
 const StatusBox = styled.div<{$ok?:boolean;$warn?:boolean}>`
   display:flex;align-items:center;gap:10px;padding:12px 14px;
-  border-radius:var(--radius-sm);font-size:13px;font-weight:600;
+  border-radius:var(--radius-sm);font-size:0.8125rem;font-weight:600;
   background:${p=>p.$ok?"color-mix(in srgb,var(--donate-ink) 7%,transparent)":p.$warn?"rgba(239,68,68,.1)":"rgba(245,158,11,.1)"};
   border:1px solid ${p=>p.$ok?"color-mix(in srgb,var(--donate-ink) 27%,transparent)":p.$warn?"rgba(239,68,68,.3)":"rgba(245,158,11,.3)"};
   color:${p=>p.$ok?"var(--donate-ink)":p.$warn?"var(--danger-ink)":"var(--warn-ink)"};
 `;
 
 const CountdownBox = styled.div`
-  text-align:center;font-size:13px;color:var(--text-muted);font-weight:600;
-  .digits{font-variant-numeric:tabular-nums;font-size:22px;font-weight:900;color:var(--text);margin-top:2px;}
+  text-align:center;font-size:0.8125rem;color:var(--text-muted);font-weight:600;
+  .digits{font-variant-numeric:tabular-nums;font-size:1.375rem;font-weight:900;color:var(--text);margin-top:2px;}
 `;
 
-const FieldLabel = styled.div`font-size:12px;font-weight:700;text-transform:uppercase;
-  letter-spacing:.07em;color:var(--text-muted);margin-bottom:5px;`;
+const FieldLabel = styled.div`font-size:0.75rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:calc(.07em * var(--tracking));color:var(--text-muted);margin-bottom:5px;`;
 
 /* Short bank codes — same vocabulary as PaymentModal.tsx's BANKS / server's
    KNOWN_BANK_CODES (line-forwarder-app's parser output). */
@@ -271,20 +271,20 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
             <div>
               <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}>
                 <Trophy size={14} style={{color:"var(--donate-ink)"}}/>
-                <span style={{fontSize:12,fontWeight:800,letterSpacing:".06em",
+                <span style={{fontSize:"0.75rem",fontWeight:800,letterSpacing:"calc(.06em * var(--tracking))",
                   textTransform:"uppercase",color:"var(--text-muted)"}}>
                   Top Supporters
                 </span>
               </div>
               {top5.length === 0 ? (
-                <div style={{textAlign:"center",padding:"12px 0",fontSize:13,color:"var(--text-dim)"}}>
+                <div style={{textAlign:"center",padding:"12px 0",fontSize:"0.8125rem",color:"var(--text-dim)"}}>
                   {isTH?"ยังไม่มีข้อมูล — เป็นคนแรกได้เลย!":"No data yet — be the first!"}
                 </div>
               ) : (
                 <Top5Wrap>
                   {top5.map((d, i) => (
                     <Top5Row key={i} $rank={i+1}>
-                      <RankBadge $rank={i+1}>{i===0?"♥":i+1}</RankBadge>
+                      <RankBadge $rank={i+1}>{i===0?<Heart size={12} fill="currentColor" aria-label="1"/>:i+1}</RankBadge>
                       <Top5Name>{d.display_name}</Top5Name>
                       <Top5Amount>฿{Number(d.amount).toLocaleString()}</Top5Amount>
                     </Top5Row>
@@ -348,10 +348,10 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
                   background:"var(--surface2)",border:"1px solid var(--border)"}}>
                   <img src="/promptpay-qr.jpg" alt="PromptPay QR"
                     style={{width:160,height:160,objectFit:"contain",borderRadius:8}}/>
-                  <div style={{fontSize:12,color:"var(--text-muted)",fontWeight:600}}>
+                  <div style={{fontSize:"0.75rem",color:"var(--text-muted)",fontWeight:600}}>
                     {isTH?"สแกน QR เพื่อโอนเงิน — จะโอนเท่าไหร่ก็ได้":"Scan QR to transfer — any amount you like"}
                   </div>
-                  <div style={{fontSize:12,color:"var(--text-dim)"}}>
+                  <div style={{fontSize:"0.75rem",color:"var(--text-dim)"}}>
                     นาย ปัฐวี จันทร์สว่าง · 096-153-6525
                   </div>
                 </div>
@@ -363,7 +363,7 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
 
                 <StatusBox>
                   <Clock size={16} style={{flexShrink:0}}/>
-                  <div style={{lineHeight:1.6,fontSize:12}}>
+                  <div style={{lineHeight:1.6,fontSize:"0.75rem"}}>
                     {isTH
                       ? "กำลังรอตรวจสอบยอดโอนอัตโนมัติ... เมื่อโอนเสร็จระบบจะอัปเดตให้ภายในไม่กี่วินาที"
                       : "Waiting to auto-detect your transfer... it'll update within seconds of paying."}
@@ -378,7 +378,7 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
               <>
                 <StatusBox $warn>
                   <AlertTriangle size={18} style={{flexShrink:0}}/>
-                  <div style={{lineHeight:1.65,fontSize:12}}>
+                  <div style={{lineHeight:1.65,fontSize:"0.75rem"}}>
                     {isTH
                       ? "ไม่พบรายการโอนภายในเวลาที่กำหนด กรุณาติดต่อแอดมินเพื่อตรวจสอบ"
                       : "No transfer detected within the time window. Please contact the admin for manual review."}
@@ -398,7 +398,7 @@ export function DonateModal({ lang, defaultName = "", userId, onClose }: Props) 
             <ConfirmOverlay>
               <ConfirmCard>
                 <h3 style={{color:"var(--donate-ink)",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                  <CheckCircle size={20}/> {isTH ? "ขอบคุณมากครับ 🩷" : "Thank you so much 🩷"}
+                  <CheckCircle size={20}/> {isTH ? "ขอบคุณมากครับ" : "Thank you so much"}
                 </h3>
                 <p>
                   {isTH

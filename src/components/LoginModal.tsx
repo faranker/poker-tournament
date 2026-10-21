@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useId, type FormEvent } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import styled, { css, keyframes } from "styled-components";
-import { User, AlertTriangle, Crown, RefreshCw, Calendar, LogOut } from "lucide-react";
+import { User, AlertTriangle, Crown, RefreshCw, Calendar, LogOut, Eye, EyeOff, Check, X, Loader2 } from "lucide-react";
 import {
   signIn, signUp, signOut, resetPassword, checkUsername,
   type AuthUser, type Plan,
@@ -12,39 +12,50 @@ const overlayShow = keyframes`from{opacity:0}to{opacity:1}`;
 const contentShow = keyframes`from{opacity:0;transform:translate(-50%,-48%) scale(.97)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}`;
 
 const Overlay = styled(Dialog.Overlay)`
-  position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:2000;backdrop-filter:blur(5px);
-  animation:${overlayShow} .15s ease;
+  position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:var(--z-modal);backdrop-filter:blur(5px);
+  animation:${overlayShow} var(--dur-fast) var(--ease-out);
 `;
 const Box = styled(Dialog.Content)`
-  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2001;
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:calc(var(--z-modal) + 1);
   background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);
   padding:24px;width:min(440px,92vw);box-shadow:var(--shadow-lg);
-  animation:${contentShow} .18s ease;max-height:92vh;overflow-y:auto;
+  animation:${contentShow} var(--dur) var(--ease-out);max-height:92vh;overflow-y:auto;
   &:focus{outline:none;}
 `;
-const Title = styled.h3`font-size:16px;font-weight:800;margin-bottom:18px;color:var(--text);display:flex;align-items:center;gap:8px;`;
-const FieldLabel = styled.p`
-  font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+const Title = styled.h3`font-size:1rem;font-weight:800;margin-bottom:18px;color:var(--text);display:flex;align-items:center;gap:8px;`;
+const FieldLabel = styled.label`
+  display:block;
+  font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:calc(.08em * var(--tracking));
   color:var(--text-muted);margin-bottom:5px;margin-top:12px;&:first-child{margin-top:0;}
 `;
 const Input = styled.input`
   width:100%;padding:9px 11px;border-radius:var(--radius-sm);
   border:1px solid var(--border);background:var(--surface2);
-  color:var(--text);font-size:16px;font-family:inherit;
+  color:var(--text);font-size:1rem;font-family:inherit;
   &:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
   &::placeholder{color:var(--text-dim);}
 `;
-const Hint = styled.p`font-size:13px;color:var(--text-dim);margin-top:4px;`;
-const ErrMsg = styled.p`font-size:14px;color:var(--accent-ink);margin-top:8px;font-weight:600;`;
-const OkMsg  = styled.p`font-size:14px;color:var(--success-ink);margin-top:8px;font-weight:600;`;
+const PasswordWrap = styled.div`
+  position:relative;
+  input{padding-right:48px;}
+`;
+const PwToggle = styled.button`
+  position:absolute;top:0;right:0;height:100%;min-width:44px;
+  display:flex;align-items:center;justify-content:center;
+  background:none;border:none;color:var(--text-muted);cursor:pointer;border-radius:var(--radius-sm);
+  &:hover{color:var(--text);}
+`;
+const Hint = styled.p`font-size:0.8125rem;color:var(--text-dim);margin-top:4px;`;
+const ErrMsg = styled.p`font-size:0.875rem;color:var(--accent-ink);margin-top:8px;font-weight:600;`;
+const OkMsg  = styled.p`font-size:0.875rem;color:var(--success-ink);margin-top:8px;font-weight:600;`;
 const Divider = styled.div`height:1px;background:var(--border);margin:16px 0;`;
 const BtnRow  = styled.div`display:flex;gap:8px;margin-top:18px;justify-content:flex-end;`;
 
 type BtnV = "primary"|"secondary"|"ghost"|"success"|"warn";
 const Btn = styled.button<{$v?:BtnV;$full?:boolean;$sm?:boolean}>`
   padding:${p=>p.$sm?"6px 12px":"9px 18px"};border-radius:var(--radius-sm);border:none;
-  font-size:${p=>p.$sm?"12px":"13px"};font-weight:700;cursor:pointer;font-family:inherit;
-  width:${p=>p.$full?"100%":"auto"};transition:all .18s;
+  font-size:${p=>p.$sm?"0.75rem":"0.8125rem"};font-weight:700;cursor:pointer;font-family:inherit;
+  width:${p=>p.$full?"100%":"auto"};transition:all var(--dur);
   &:disabled{opacity:.5;cursor:not-allowed;}
   ${p=>{switch(p.$v){
     case"primary": return css`background:var(--accent);color:var(--on-accent);&:hover:not(:disabled){opacity:.88;}`;
@@ -56,43 +67,43 @@ const Btn = styled.button<{$v?:BtnV;$full?:boolean;$sm?:boolean}>`
 `;
 
 export const PlanBadge = styled.span<{$plan:Plan}>`
-  display:inline-block;padding:3px 10px;border-radius:20px;font-size:13px;font-weight:800;
+  display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.8125rem;font-weight:800;
   background:color-mix(in srgb,${p=>PLAN_COLORS[p.$plan]} 13%,transparent);color:${p=>PLAN_COLORS[p.$plan]};
   border:1px solid color-mix(in srgb,${p=>PLAN_COLORS[p.$plan]} 33%,transparent);
 `;
 const TabRow = styled.div`display:flex;gap:4px;margin-bottom:20px;`;
 const Tab = styled.button<{$active?:boolean}>`
   flex:1;padding:9px;border-radius:var(--radius-sm);border:1px solid var(--border);
-  font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .18s;
+  font-size:0.9375rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all var(--dur);
   ${p=>p.$active
     ? css`background:var(--accent);color:var(--on-accent);border-color:var(--accent);`
     : css`background:transparent;color:var(--text-muted);&:hover{color:var(--text);border-color:var(--border2);}`}
 `;
 const ForgotLink = styled.button`
-  background:none;border:none;padding:0;font-size:13px;color:var(--text-muted);
+  background:none;border:none;padding:0;font-size:0.8125rem;color:var(--text-muted);
   cursor:pointer;text-decoration:underline;margin-top:5px;
   &:hover{color:var(--text);}
 `;
 const ReasonBanner = styled.div`
   background:var(--accent-soft);border:1px solid var(--accent);border-radius:var(--radius-sm);
-  padding:9px 12px;font-size:14px;color:var(--accent-ink);margin-bottom:16px;font-weight:600;
+  padding:9px 12px;font-size:0.875rem;color:var(--accent-ink);margin-bottom:16px;font-weight:600;
 `;
 const PlanSection = styled.div`
   background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);
   padding:14px;margin-bottom:14px;
 `;
 /* ── Account card (logged-in view) ── */
-const AccountUsername = styled.div`font-size:20px;font-weight:900;color:var(--text);margin-bottom:2px;`;
-const AccountEmail = styled.div`font-size:14px;color:var(--text-muted);margin-bottom:16px;`;
+const AccountUsername = styled.div`font-size:1.25rem;font-weight:900;color:var(--text);margin-bottom:2px;`;
+const AccountEmail = styled.div`font-size:0.875rem;color:var(--text-muted);margin-bottom:16px;`;
 const AccountDivider = styled.div`height:1px;background:var(--border);margin-bottom:18px;`;
 const AccountInfoRow = styled.div`display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap;`;
 
 const PlanPill = styled.span<{$plan:Plan}>`
   display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;
-  font-size:17px;font-weight:800;background:var(--surface3);
+  font-size:1.0625rem;font-weight:800;background:var(--surface3);
   color:${p=>PLAN_COLORS[p.$plan]};border:1px solid color-mix(in srgb,${p=>PLAN_COLORS[p.$plan]} 40%,transparent);
 `;
-const PlanExpiresOn = styled.div`font-size:12px;color:var(--text-muted);margin-top:6px;
+const PlanExpiresOn = styled.div`font-size:0.75rem;color:var(--text-muted);margin-top:6px;
   b{color:var(--text);font-weight:700;}
 `;
 
@@ -103,9 +114,9 @@ const ExpiryIconCircle = styled.div`
   color:var(--accent-ink);
 `;
 const ExpiryNumbers = styled.div`
-  .label{font-size:12px;color:var(--text-muted);}
-  .value{font-size:26px;font-weight:900;color:var(--text);font-variant-numeric:tabular-nums;}
-  .unit{font-size:13px;color:var(--text-muted);margin-left:3px;}
+  .label{font-size:0.75rem;color:var(--text-muted);}
+  .value{font-size:1.625rem;font-weight:900;color:var(--text);font-variant-numeric:tabular-nums;}
+  .unit{font-size:0.8125rem;color:var(--text-muted);margin-left:3px;}
 `;
 
 /* Fixed green regardless of theme accent (which is red in the Dark theme —
@@ -116,7 +127,7 @@ const RenewFullBtn = styled.button`
   width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
   padding:12px;border-radius:var(--radius-sm);border:none;
   background:var(--success);color:var(--on-success);
-  font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;transition:opacity .18s;
+  font-size:0.875rem;font-weight:800;cursor:pointer;font-family:inherit;transition:opacity var(--dur);
   &:hover{opacity:.9;}
 `;
 
@@ -128,22 +139,22 @@ const AccountActionsRow = styled.div`display:flex;gap:8px;margin-top:18px;`;
 const LogoutBtn = styled.button`
   display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:var(--radius-sm);
   border:1px solid var(--danger-ink);background:transparent;color:var(--danger-ink);white-space:nowrap;flex-shrink:0;
-  font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .18s;
+  font-size:0.8125rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all var(--dur);
   &:hover{background:rgba(239,68,68,.12);}
 `;
 
 
 
 const UsernameStatus = styled.span<{$ok?:boolean|null}>`
-  font-size:13px;margin-left:6px;
+  font-size:0.8125rem;margin-left:6px;
   color:${p=>p.$ok===true?"var(--success-ink)":p.$ok===false?"var(--accent-ink)":"var(--text-dim)"};
 `;
 
 export const NavLoginBtn = styled.button<{$loggedIn?:boolean}>`
   padding:5px 13px;border-radius:7px;border:1px solid var(--border);
   background:var(--surface2);color:var(--text-muted);
-  font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
-  display:flex;align-items:center;gap:6px;transition:border-color .18s,color .18s;
+  font-size:0.875rem;font-weight:700;cursor:pointer;font-family:inherit;
+  display:flex;align-items:center;gap:6px;transition:border-color var(--dur),color var(--dur);
   &:hover{border-color:var(--border2);color:var(--text);}
   @media(pointer:coarse){min-height:44px;}
   ${p=>p.$loggedIn&&css`border-color:var(--accent);color:var(--accent-ink);background:var(--accent-soft);`}
@@ -173,6 +184,8 @@ export function LoginModal({ user, reason, onLogin, onLogout, onClose, onUpgrade
   const [ok,          setOk]          = useState("");
   const [usernameOk,  setUsernameOk]  = useState<boolean | null>(null);
   const [checkingUN,  setCheckingUN]  = useState(false);
+  const [showPw,      setShowPw]      = useState(false);
+  const uid = useId();
 
   const isTH = lang === "TH";
   const reset = () => { setErr(""); setOk(""); };
@@ -275,9 +288,9 @@ export function LoginModal({ user, reason, onLogin, onLogout, onClose, onUpgrade
                 </div>
 
                 {countdown === null ? (
-                  <div style={{fontSize:12,color:"var(--text-muted)"}}>{isTH?"ไม่มีวันหมดอายุ":"No expiry date"}</div>
+                  <div style={{fontSize:"0.75rem",color:"var(--text-muted)"}}>{isTH?"ไม่มีวันหมดอายุ":"No expiry date"}</div>
                 ) : countdown.expired ? (
-                  <div style={{fontSize:13,color:"var(--accent-ink)",fontWeight:700}}>{isTH?"แพลนหมดอายุแล้ว":"Plan has expired"}</div>
+                  <div style={{fontSize:"0.8125rem",color:"var(--accent-ink)",fontWeight:700}}>{isTH?"แพลนหมดอายุแล้ว":"Plan has expired"}</div>
                 ) : (
                   <ExpiryStat>
                     <ExpiryIconCircle><Calendar size={22}/></ExpiryIconCircle>
@@ -292,7 +305,7 @@ export function LoginModal({ user, reason, onLogin, onLogout, onClose, onUpgrade
                 )}
               </AccountInfoRow>
               {countdown && !countdown.expired && countdown.days <= 7 && (
-                <div style={{fontSize:12,color:"var(--gold)",fontWeight:600,marginBottom:14}}>
+                <div style={{fontSize:"0.75rem",color:"var(--gold)",fontWeight:600,marginBottom:14}}>
                   <AlertTriangle size={12} style={{display:"inline",verticalAlign:"middle",marginRight:3}}/>{isTH?"ใกล้หมดอายุ":"Expiring soon"}
                 </div>
               )}
@@ -321,106 +334,127 @@ export function LoginModal({ user, reason, onLogin, onLogout, onClose, onUpgrade
   }
 
   /* ── Auth form ── */
+  const errId = `${uid}-err`;
+  const errProps = err ? { "aria-invalid": true, "aria-describedby": errId } : {};
+  const feedback = <>
+    {err && <ErrMsg id={errId} role="alert"><AlertTriangle size={14} aria-hidden="true" style={{display:"inline",verticalAlign:"middle",marginRight:4}}/>{err}</ErrMsg>}
+    {ok  && <OkMsg role="status"><Check size={14} aria-hidden="true" style={{display:"inline",verticalAlign:"middle",marginRight:4}}/>{ok}</OkMsg>}
+  </>;
+  const busy = (label: string) => loading
+    ? <><Loader2 size={14} aria-hidden="true" style={{animation:"spin 1s linear infinite"}}/>{label}</>
+    : label;
+  const passwordField = (id: string, autoComplete: string) => (
+    <PasswordWrap>
+      <Input id={id} type={showPw?"text":"password"} autoComplete={autoComplete} placeholder="••••••••"
+        value={password} onChange={e=>{setPassword(e.target.value);reset();}} {...errProps} />
+      <PwToggle type="button" aria-pressed={showPw} aria-label={showPw?(isTH?"ซ่อนรหัสผ่าน":"Hide password"):(isTH?"แสดงรหัสผ่าน":"Show password")}
+        onClick={()=>setShowPw(s=>!s)}>
+        {showPw ? <EyeOff size={16}/> : <Eye size={16}/>}
+      </PwToggle>
+    </PasswordWrap>
+  );
+  const submit = (fn: () => void) => (e: FormEvent) => { e.preventDefault(); if (!loading) fn(); };
+
   return (
     <Dialog.Root open onOpenChange={open=>{ if(!open) onClose(); }}>
       <Dialog.Portal>
         <Overlay />
-        <Box>
-          <Title style={{justifyContent:"center",marginBottom:20}}>
-            <img src="/logo22.png" alt="Go Poker" style={{height:125,objectFit:"contain"}} />
-          </Title>
+        <Box aria-describedby={undefined}>
+          <Dialog.Title asChild>
+            <Title style={{justifyContent:"center",marginBottom:20}}>
+              <img src={`${import.meta.env.BASE_URL}logo.webp`} alt="Go Poker" width={459} height={250} style={{height:125,width:"auto",objectFit:"contain"}} />
+            </Title>
+          </Dialog.Title>
 
           {reason && <ReasonBanner>{reason}</ReasonBanner>}
 
           {view !== "forgot" && (
             <TabRow>
-              <Tab $active={view==="login"}    onClick={()=>{setView("login");reset();}}>{isTH?"เข้าสู่ระบบ":"Sign In"}</Tab>
-              <Tab $active={view==="register"} onClick={()=>{setView("register");reset();}}>{isTH?"สมัครสมาชิก":"Register"}</Tab>
+              <Tab type="button" aria-pressed={view==="login"} $active={view==="login"} onClick={()=>{setView("login");reset();}}>{isTH?"เข้าสู่ระบบ":"Sign In"}</Tab>
+              <Tab type="button" aria-pressed={view==="register"} $active={view==="register"} onClick={()=>{setView("register");reset();}}>{isTH?"สมัครสมาชิก":"Register"}</Tab>
           </TabRow>
         )}
 
         {/* ── LOGIN ── */}
-        {view === "login" && <>
-          <FieldLabel>{isTH?"Email หรือ Username":"Email or Username"}</FieldLabel>
-          <Input autoFocus placeholder={isTH?"กรอก email หรือ username":"Enter email or username"}
-            value={identifier} onChange={e=>{setIdentifier(e.target.value);reset();}}
-            onKeyDown={e=>e.key==="Enter"&&handleLogin()} />
+        {view === "login" && <form onSubmit={submit(handleLogin)} noValidate>
+          <FieldLabel htmlFor={`${uid}-id`}>{isTH?"Email หรือ Username":"Email or Username"}</FieldLabel>
+          <Input id={`${uid}-id`} autoFocus autoComplete="username" autoCapitalize="none" spellCheck={false}
+            placeholder={isTH?"กรอก email หรือ username":"Enter email or username"}
+            value={identifier} onChange={e=>{setIdentifier(e.target.value);reset();}} {...errProps} />
 
-          <FieldLabel>{isTH?"รหัสผ่าน":"Password"}</FieldLabel>
-          <Input type="password" placeholder="••••••••" value={password}
-            onChange={e=>{setPassword(e.target.value);reset();}}
-            onKeyDown={e=>e.key==="Enter"&&handleLogin()} />
-          <ForgotLink onClick={()=>{setView("forgot");reset();}}>
+          <FieldLabel htmlFor={`${uid}-pw`}>{isTH?"รหัสผ่าน":"Password"}</FieldLabel>
+          {passwordField(`${uid}-pw`, "current-password")}
+          <ForgotLink type="button" onClick={()=>{setView("forgot");reset();}}>
             {isTH?"ลืมรหัสผ่าน?":"Forgot password?"}
           </ForgotLink>
 
-          {err && <ErrMsg><AlertTriangle size={14} style={{display:"inline",verticalAlign:"middle",marginRight:4}}/>{err}</ErrMsg>}
+          {feedback}
           <BtnRow>
-            <Btn $v="ghost" onClick={onClose}>{isTH?"ยกเลิก":"Cancel"}</Btn>
-            <Btn $v="primary" disabled={loading} onClick={handleLogin}>
-              {loading?"...":(isTH?"เข้าสู่ระบบ":"Sign In")}
+            <Btn type="button" $v="ghost" onClick={onClose}>{isTH?"ยกเลิก":"Cancel"}</Btn>
+            <Btn type="submit" $v="primary" disabled={loading} aria-busy={loading}>
+              {busy(isTH?"เข้าสู่ระบบ":"Sign In")}
             </Btn>
           </BtnRow>
-        </>}
+        </form>}
 
         {/* ── REGISTER ── */}
-        {view === "register" && <>
-          <FieldLabel>
+        {view === "register" && <form onSubmit={submit(handleRegister)} noValidate>
+          <FieldLabel htmlFor={`${uid}-un`}>
             Username
             {username.length >= 3 && (
-              checkingUN
-                ? <UsernameStatus $ok={null}> {isTH?"กำลังตรวจสอบ...":"checking..."}</UsernameStatus>
-                : usernameOk === true
-                  ? <UsernameStatus $ok={true}> ✓ {isTH?"ว่างอยู่":"available"}</UsernameStatus>
-                  : usernameOk === false
-                    ? <UsernameStatus $ok={false}> ✗ {isTH?"ถูกใช้แล้ว":"taken"}</UsernameStatus>
-                    : null
+              <span aria-live="polite">
+                {checkingUN
+                  ? <UsernameStatus $ok={null}> {isTH?"กำลังตรวจสอบ...":"checking..."}</UsernameStatus>
+                  : usernameOk === true
+                    ? <UsernameStatus $ok={true}><Check size={13} aria-hidden="true"/> {isTH?"ว่างอยู่":"available"}</UsernameStatus>
+                    : usernameOk === false
+                      ? <UsernameStatus $ok={false}><X size={13} aria-hidden="true"/> {isTH?"ถูกใช้แล้ว":"taken"}</UsernameStatus>
+                      : null}
+              </span>
             )}
           </FieldLabel>
-          <Input autoFocus placeholder={isTH?"เช่น john_poker":"e.g. john_poker"}
+          <Input id={`${uid}-un`} autoFocus autoComplete="username" autoCapitalize="none" spellCheck={false}
+            placeholder={isTH?"เช่น john_poker":"e.g. john_poker"} aria-describedby={`${uid}-un-hint`}
+            aria-invalid={usernameOk===false || undefined}
             value={username} onChange={e=>handleUsernameChange(e.target.value)} />
-          <Hint>{isTH?"ตัวอักษร ตัวเลข _ . เท่านั้น อย่างน้อย 3 ตัว":"Letters, numbers, _ . only. Min 3 characters."}</Hint>
+          <Hint id={`${uid}-un-hint`}>{isTH?"ตัวอักษร ตัวเลข _ . เท่านั้น อย่างน้อย 3 ตัว":"Letters, numbers, _ . only. Min 3 characters."}</Hint>
 
-          <FieldLabel>Email</FieldLabel>
-          <Input type="email" placeholder="you@example.com" value={email}
-            onChange={e=>{setEmail(e.target.value);reset();}} />
+          <FieldLabel htmlFor={`${uid}-em`}>Email</FieldLabel>
+          <Input id={`${uid}-em`} type="email" autoComplete="email" placeholder="you@example.com" value={email}
+            onChange={e=>{setEmail(e.target.value);reset();}} {...errProps} />
 
-          <FieldLabel>{isTH?"รหัสผ่าน (อย่างน้อย 6 ตัว)":"Password (min 6 characters)"}</FieldLabel>
-          <Input type="password" placeholder="••••••••" value={password}
-            onChange={e=>{setPassword(e.target.value);reset();}}
-            onKeyDown={e=>e.key==="Enter"&&handleRegister()} />
+          <FieldLabel htmlFor={`${uid}-npw`}>{isTH?"รหัสผ่าน (อย่างน้อย 6 ตัว)":"Password (min 6 characters)"}</FieldLabel>
+          {passwordField(`${uid}-npw`, "new-password")}
 
-          {err && <ErrMsg><AlertTriangle size={14} style={{display:"inline",verticalAlign:"middle",marginRight:4}}/>{err}</ErrMsg>}
-          {ok  && <OkMsg>✓ {ok}</OkMsg>}
+          {feedback}
           <BtnRow>
             <Dialog.Close asChild>
-              <Btn $v="ghost">{isTH?"ยกเลิก":"Cancel"}</Btn>
+              <Btn type="button" $v="ghost">{isTH?"ยกเลิก":"Cancel"}</Btn>
             </Dialog.Close>
-            <Btn $v="success" disabled={loading||usernameOk===false} onClick={handleRegister}>
-              {loading?"...":(isTH?"สมัครสมาชิก":"Register")}
+            <Btn type="submit" $v="success" disabled={loading||usernameOk===false} aria-busy={loading}>
+              {busy(isTH?"สมัครสมาชิก":"Register")}
             </Btn>
           </BtnRow>
-        </>}
+        </form>}
 
         {/* ── FORGOT PASSWORD ── */}
-        {view === "forgot" && <>
-          <div style={{fontSize:13,color:"var(--text-muted)",marginBottom:16}}>
+        {view === "forgot" && <form onSubmit={submit(handleForgot)} noValidate>
+          <div id={`${uid}-fg-hint`} style={{fontSize:"0.8125rem",color:"var(--text-muted)",marginBottom:16}}>
             {isTH?"กรอกอีเมลเพื่อรับลิงก์ตั้งรหัสผ่านใหม่":"Enter your email to receive a password reset link"}
           </div>
-          <FieldLabel>Email</FieldLabel>
-          <Input autoFocus type="email" placeholder="you@example.com"
+          <FieldLabel htmlFor={`${uid}-fg`}>Email</FieldLabel>
+          <Input id={`${uid}-fg`} autoFocus type="email" autoComplete="email" placeholder="you@example.com"
             value={identifier.includes("@")?identifier:email}
             onChange={e=>{identifier.includes("@")?setIdentifier(e.target.value):setEmail(e.target.value);reset();}}
-            onKeyDown={e=>e.key==="Enter"&&handleForgot()} />
-          {err && <ErrMsg><AlertTriangle size={14} style={{display:"inline",verticalAlign:"middle",marginRight:4}}/>{err}</ErrMsg>}
-          {ok  && <OkMsg>✓ {ok}</OkMsg>}
+            {...errProps} />
+          {feedback}
           <BtnRow>
-            <Btn $v="ghost" onClick={()=>{setView("login");reset();}}>{isTH?"กลับ":"Back"}</Btn>
-            <Btn $v="primary" disabled={loading} onClick={handleForgot}>
-              {loading?"...":(isTH?"ส่งลิงก์":"Send Link")}
+            <Btn type="button" $v="ghost" onClick={()=>{setView("login");reset();}}>{isTH?"กลับ":"Back"}</Btn>
+            <Btn type="submit" $v="primary" disabled={loading} aria-busy={loading}>
+              {busy(isTH?"ส่งลิงก์":"Send Link")}
             </Btn>
           </BtnRow>
-        </>}
+        </form>}
 
         <Divider />
         </Box>

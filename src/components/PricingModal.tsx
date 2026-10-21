@@ -1,7 +1,8 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import styled, { css, keyframes } from "styled-components";
-import { Check, X, Spade, Crown, Calendar, CreditCard } from "lucide-react";
+import { bp } from "../breakpoints";
+import { Check, X, Spade, Crown, Calendar, CreditCard, RefreshCw } from "lucide-react";
 import type { Plan } from "../auth";
 import { PLAN_COLORS } from "../auth";
 import type { AuthUser } from "../auth";
@@ -10,17 +11,17 @@ const overlayShow = keyframes`from{opacity:0}to{opacity:1}`;
 const contentShow = keyframes`from{opacity:0;transform:translate(-50%,-48%) scale(.97)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}`;
 
 const Overlay = styled(Dialog.Overlay)`
-  position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:2100;backdrop-filter:blur(6px);
-  animation:${overlayShow} .15s ease;
+  position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:var(--z-modal-stacked);backdrop-filter:blur(6px);
+  animation:${overlayShow} var(--dur-fast) var(--ease-out);
 `;
 const Box = styled(Dialog.Content)`
-  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2101;
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:calc(var(--z-modal-stacked) + 1);
   background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);
   width:min(940px,96vw);box-shadow:var(--shadow-lg);
-  animation:${contentShow} .18s ease;max-height:94vh;overflow-y:auto;
+  animation:${contentShow} var(--dur) var(--ease-out);max-height:94vh;overflow-y:auto;
   display:flex;flex-direction:row;
   &:focus{outline:none;}
-  @media(max-width:680px){flex-direction:column;width:min(480px,96vw);}
+  @media(max-width:${bp.tablet}px){flex-direction:column;width:min(480px,96vw);}
 `;
 
 const LeftPanel = styled.div`
@@ -28,69 +29,69 @@ const LeftPanel = styled.div`
   background:var(--surface2);border-right:1px solid var(--border);
   border-radius:var(--radius) 0 0 var(--radius);
   padding:32px 24px;display:flex;flex-direction:column;gap:20px;
-  @media(max-width:680px){display:none;}
+  @media(max-width:${bp.tablet}px){display:none;}
 `;
 
 const RightPanel = styled.div`
   flex:1;padding:32px 28px;overflow-y:auto;
-  @media(max-width:680px){padding:20px 16px;}
+  @media(max-width:${bp.tablet}px){padding:20px 16px;}
 `;
 
 const MobileClose = styled.div`
   display:none;
-  @media(max-width:680px){display:flex;justify-content:center;margin-top:16px;}
+  @media(max-width:${bp.tablet}px){display:flex;justify-content:center;margin-top:16px;}
 `;
 
 const AccountCard = styled.div`display:flex;flex-direction:column;gap:6px;`;
 const Avatar = styled.div<{$color:string}>`
   width:52px;height:52px;border-radius:50%;
   background:color-mix(in srgb,${p=>p.$color} 13%,transparent);border:2px solid ${p=>p.$color};
-  color:${p=>p.$color};font-size:20px;font-weight:900;
+  color:${p=>p.$color};font-size:1.25rem;font-weight:900;
   display:flex;align-items:center;justify-content:center;margin-bottom:4px;
 `;
-const AccountName  = styled.div`font-size:15px;font-weight:800;color:var(--text);`;
-const AccountEmail = styled.div`font-size:12px;color:var(--text-muted);word-break:break-all;`;
+const AccountName  = styled.div`font-size:0.9375rem;font-weight:800;color:var(--text);`;
+const AccountEmail = styled.div`font-size:0.75rem;color:var(--text-muted);word-break:break-all;`;
 
 const InfoRow = styled.div`
   display:flex;align-items:center;gap:8px;
   padding:10px 12px;border-radius:var(--radius-sm);
   background:var(--surface);border:1px solid var(--border);
 `;
-const InfoLabel = styled.div`font-size:12px;color:var(--text-muted);font-weight:600;margin-bottom:2px;`;
-const InfoValue  = styled.div<{$color?:string}>`font-size:13px;font-weight:800;color:${p=>p.$color??"var(--text)"};`;
+const InfoLabel = styled.div`font-size:0.75rem;color:var(--text-muted);font-weight:600;margin-bottom:2px;`;
+const InfoValue  = styled.div<{$color?:string}>`font-size:0.8125rem;font-weight:800;color:${p=>p.$color??"var(--text)"};`;
 
 const Grid = styled.div`
   display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
-  @media(max-width:480px){grid-template-columns:1fr;}
+  @media(max-width:${bp.phone}px){grid-template-columns:1fr;}
 `;
 
 const PlanCard = styled.div<{$plan:Plan;$current?:boolean}>`
   border-radius:var(--radius);border:2px solid ${p=>p.$current?PLAN_COLORS[p.$plan]:"var(--border)"};
   padding:20px 16px 18px;display:flex;flex-direction:column;gap:0;position:relative;
   background:${p=>p.$current?`color-mix(in srgb,${PLAN_COLORS[p.$plan]} 6%,transparent)`:"var(--surface2)"};
-  transition:border-color .18s;
+  transition:border-color var(--dur);
   &:hover{border-color:${p=>PLAN_COLORS[p.$plan]};}
 `;
 
 const CurrentBadge = styled.div<{$plan:Plan}>`
   position:absolute;top:-11px;left:50%;transform:translateX(-50%);
-  background:${p=>PLAN_COLORS[p.$plan]};color:var(--on-plan);font-size:12px;font-weight:800;
+  background:${p=>PLAN_COLORS[p.$plan]};color:var(--on-plan);font-size:0.75rem;font-weight:800;
   padding:3px 12px;border-radius:10px;white-space:nowrap;
 `;
 
 const PlanName = styled.div<{$plan:Plan}>`
-  font-size:16px;font-weight:900;color:${p=>PLAN_COLORS[p.$plan]};margin-bottom:10px;
+  font-size:1rem;font-weight:900;color:${p=>PLAN_COLORS[p.$plan]};margin-bottom:10px;
 `;
 const Price = styled.div`
-  font-size:28px;font-weight:900;line-height:1;margin-bottom:4px;
-  span{font-size:15px;font-weight:500;color:var(--text-muted);}
+  font-size:1.75rem;font-weight:900;line-height:1;margin-bottom:4px;
+  span{font-size:0.9375rem;font-weight:400;color:var(--text-muted);}
 `;
-const PriceAlt = styled.div`font-size:13px;color:var(--text-muted);margin-bottom:14px;`;
+const PriceAlt = styled.div`font-size:0.8125rem;color:var(--text-muted);margin-bottom:14px;`;
 const Divider  = styled.div`height:1px;background:var(--border);margin-bottom:14px;`;
 
 const FeatureList = styled.ul`list-style:none;display:flex;flex-direction:column;gap:8px;flex:1;margin-bottom:16px;`;
 const Feature = styled.li<{$ok?:boolean}>`
-  font-size:14px;display:flex;align-items:flex-start;gap:7px;line-height:1.45;
+  font-size:0.875rem;display:flex;align-items:flex-start;gap:7px;line-height:1.45;
   color:${p=>p.$ok===false?"var(--text-dim)":"var(--text)"};
   svg{flex-shrink:0;margin-top:2px;}
 `;
@@ -98,8 +99,8 @@ const Feature = styled.li<{$ok?:boolean}>`
 type BtnV = "primary"|"secondary"|"ghost";
 const Btn = styled.button<{$v?:BtnV;$full?:boolean;$plan?:Plan}>`
   padding:10px 16px;border-radius:var(--radius-sm);border:none;
-  font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;
-  width:${p=>p.$full?"100%":"auto"};transition:all .18s;
+  font-size:0.9375rem;font-weight:700;cursor:pointer;font-family:inherit;
+  width:${p=>p.$full?"100%":"auto"};transition:all var(--dur);
   &:disabled{opacity:.45;cursor:default;}
   ${p=>{
     if(p.$plan) return css`
@@ -113,7 +114,7 @@ const Btn = styled.button<{$v?:BtnV;$full?:boolean;$plan?:Plan}>`
   }}
 `;
 
-const Note = styled.p`font-size:13px;color:var(--text-dim);line-height:1.6;`;
+const Note = styled.p`font-size:0.8125rem;color:var(--text-dim);line-height:1.6;`;
 
 /* Billing toggle */
 const ToggleWrap = styled.div`
@@ -123,13 +124,13 @@ const ToggleWrap = styled.div`
 `;
 const ToggleBtn = styled.button<{$active?:boolean}>`
   padding:7px 20px;border-radius:7px;border:none;cursor:pointer;
-  font-size:13px;font-weight:700;font-family:inherit;transition:all .18s;
+  font-size:0.8125rem;font-weight:700;font-family:inherit;transition:all var(--dur);
   ${p=>p.$active
     ? "background:var(--accent);color:var(--on-accent);box-shadow:0 1px 2px rgba(0,0,0,.25);"
     : "background:transparent;color:var(--text-muted);&:hover{color:var(--text);}"}
 `;
 const SaveBadge = styled.span`
-  font-size:12px;font-weight:800;background:#16a34a22;color:var(--success-ink);
+  font-size:0.75rem;font-weight:800;background:#16a34a22;color:var(--success-ink);
   border:1px solid #16a34a44;border-radius:10px;padding:1px 7px;margin-left:6px;
 `;
 
@@ -225,7 +226,7 @@ export function PricingModal({ currentPlan, lang, user, onClose, onUpgrade }: Pr
           <LeftPanel>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
               <Spade size={15} style={{color:"var(--accent-ink)"}}/>
-              <span style={{fontSize:12,fontWeight:800,letterSpacing:".08em",color:"var(--text-muted)",textTransform:"uppercase"}}>
+              <span style={{fontSize:"0.75rem",fontWeight:800,letterSpacing:"calc(.08em * var(--tracking))",color:"var(--text-muted)",textTransform:"uppercase"}}>
                 {isTH?"บัญชีของคุณ":"Your Account"}
               </span>
             </div>
@@ -239,7 +240,7 @@ export function PricingModal({ currentPlan, lang, user, onClose, onUpgrade }: Pr
                 <AccountEmail>{user.email}</AccountEmail>
               </AccountCard>
             ) : (
-              <div style={{fontSize:13,color:"var(--text-muted)"}}>
+              <div style={{fontSize:"0.8125rem",color:"var(--text-muted)"}}>
                 {isTH?"ไม่ได้ login":"Not logged in"}
               </div>
             )}
@@ -259,7 +260,7 @@ export function PricingModal({ currentPlan, lang, user, onClose, onUpgrade }: Pr
                     <InfoLabel>{isTH?"หมดอายุ":"Expires"}</InfoLabel>
                     <InfoValue>{expiresAt.toLocaleDateString(isTH?"th-TH":"en-GB")}</InfoValue>
                     {daysLeft !== null && (
-                      <div style={{fontSize:12,color:daysLeft<=3?"#f59e0b":"var(--success-ink)",marginTop:1,fontWeight:700}}>
+                      <div style={{fontSize:"0.75rem",color:daysLeft<=3?"#f59e0b":"var(--success-ink)",marginTop:1,fontWeight:700}}>
                         {daysLeft===0
                           ? (isTH?"หมดอายุวันนี้":"Expires today")
                           : isTH?`อีก ${daysLeft} วัน`:`${daysLeft} days left`}
@@ -271,7 +272,7 @@ export function PricingModal({ currentPlan, lang, user, onClose, onUpgrade }: Pr
             </div>
 
             <div style={{marginTop:"auto",paddingTop:12,borderTop:"1px solid var(--border)"}}>
-              <Note style={{margin:0,fontSize:12}}>
+              <Note style={{margin:0,fontSize:"0.75rem"}}>
                 <CreditCard size={13} style={{display:"inline",verticalAlign:"middle",marginRight:5}}/> PromptPay QR<br/>
                 <span style={{color:"var(--success-ink)",fontWeight:700}}>
                   {isTH?"พร้อมให้บริการแล้ว":"Now available"}
@@ -287,11 +288,11 @@ export function PricingModal({ currentPlan, lang, user, onClose, onUpgrade }: Pr
           {/* ── Right: Plan selection ── */}
           <RightPanel>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
-              <h2 style={{fontSize:18,fontWeight:900,display:"flex",alignItems:"center",gap:8}}>
+              <h2 style={{fontSize:"1.125rem",fontWeight:900,display:"flex",alignItems:"center",gap:8}}>
                 {isTH ? "เลือกแพลน" : "Choose Your Plan"}
               </h2>
             </div>
-            <p style={{fontSize:14,color:"var(--text-muted)",marginBottom:20}}>
+            <p style={{fontSize:"0.875rem",color:"var(--text-muted)",marginBottom:20}}>
               {isTH ? "อัพเกรดเพื่อใช้งานได้เต็มที่" : "Upgrade to unlock all features"}
             </p>
 
@@ -344,7 +345,7 @@ export function PricingModal({ currentPlan, lang, user, onClose, onUpgrade }: Pr
                         : isDowngrade
                           ? (isTH ? "แพลนปัจจุบันสูงกว่า" : "Current plan is higher")
                           : isCurrent
-                            ? (isTH ? "🔄 ต่ออายุ" : "🔄 Renew")
+                            ? <><RefreshCw size={13} aria-hidden="true" style={{verticalAlign:"-2px",marginRight:4}}/>{isTH ? "ต่ออายุ" : "Renew"}</>
                             : (isTH ? "อัพเกรด" : "Upgrade")}
                     </Btn>
                   </PlanCard>

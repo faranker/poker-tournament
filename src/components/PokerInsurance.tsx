@@ -1,21 +1,21 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import styled, { css, keyframes } from "styled-components";
-import { ShieldCheck, X } from "lucide-react";
+import { ShieldCheck, X, Lightbulb } from "lucide-react";
 
 /* ── Animations ── */
 const overlayShow  = keyframes`from{opacity:0}to{opacity:1}`;
 const contentShow  = keyframes`from{opacity:0;transform:translate(-50%,-48%) scale(.97)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}`;
 
 const Overlay = styled(Dialog.Overlay)`
-  position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:2300;backdrop-filter:blur(5px);
-  animation:${overlayShow} .15s ease;
+  position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:var(--z-modal-tool);backdrop-filter:blur(5px);
+  animation:${overlayShow} var(--dur-fast) var(--ease-out);
 `;
 const Box = styled(Dialog.Content)`
-  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2301;
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:calc(var(--z-modal-tool) + 1);
   background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);
   padding:24px;width:min(420px,94vw);box-shadow:var(--shadow-lg);
-  animation:${contentShow} .18s ease;max-height:92vh;overflow-y:auto;
+  animation:${contentShow} var(--dur) var(--ease-out);max-height:92vh;overflow-y:auto;
   &:focus{outline:none;}
 `;
 
@@ -23,7 +23,7 @@ const ModalHeader = styled.div`
   display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;
 `;
 const ModalTitle = styled.h3`
-  font-size:16px;font-weight:900;display:flex;align-items:center;gap:8px;color:var(--text);
+  font-size:1rem;font-weight:900;display:flex;align-items:center;gap:8px;color:var(--text);
 `;
 const CloseBtn = styled.button`@media(pointer:coarse){min-width:44px;min-height:44px;align-items:center;justify-content:center;}
   background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px;
@@ -31,13 +31,13 @@ const CloseBtn = styled.button`@media(pointer:coarse){min-width:44px;min-height:
 `;
 
 const FieldLabel = styled.label`
-  font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:calc(.07em * var(--tracking));
   color:var(--text-muted);margin-bottom:5px;display:block;
 `;
 const Input = styled.input`
   width:100%;padding:9px 11px;border-radius:var(--radius-sm);
   border:1px solid var(--border);background:var(--surface2);
-  color:var(--text);font-size:16px;font-family:inherit;
+  color:var(--text);font-size:1rem;font-family:inherit;
   &:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
   &::placeholder{color:var(--text-dim);}
 `;
@@ -45,8 +45,8 @@ const Input = styled.input`
 const StreetRow = styled.div`display:flex;gap:6px;`;
 const StreetBtn = styled.button<{$active?:boolean}>`
   flex:1;padding:8px 4px;border-radius:var(--radius-sm);
-  border:1px solid var(--border);font-size:13px;font-weight:700;
-  font-family:inherit;cursor:pointer;transition:all .15s;
+  border:1px solid var(--border);font-size:0.8125rem;font-weight:700;
+  font-family:inherit;cursor:pointer;transition:all var(--dur-fast);
   ${p=>p.$active
     ?css`background:var(--accent);color:var(--on-accent);border-color:var(--accent);`
     :css`background:transparent;color:var(--text-muted);&:hover{color:var(--text);border-color:var(--border2);}`}
@@ -59,7 +59,7 @@ const Slider = styled.input`
   flex:1;accent-color:var(--accent);cursor:pointer;height:4px;
 `;
 const SliderNum = styled.div<{$color?:string}>`
-  min-width:36px;text-align:center;font-size:22px;font-weight:900;
+  min-width:36px;text-align:center;font-size:1.375rem;font-weight:900;
   color:${p=>p.$color??"var(--accent-ink)"};
 `;
 
@@ -72,9 +72,9 @@ const ResultCard = styled.div<{$accent?:string}>`
   background:${p=>p.$accent?`${p.$accent}0d`:"var(--surface2)"};
   padding:10px 10px;text-align:center;
 `;
-const ResultLabel = styled.div`font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;`;
-const ResultValue = styled.div<{$color?:string}>`font-size:17px;font-weight:900;color:${p=>p.$color??"var(--text)"};`;
-const ResultSub   = styled.div`font-size:12px;color:var(--text-dim);margin-top:2px;`;
+const ResultLabel = styled.div`font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:calc(.06em * var(--tracking));margin-bottom:4px;`;
+const ResultValue = styled.div<{$color?:string}>`font-size:1.0625rem;font-weight:900;color:${p=>p.$color??"var(--text)"};`;
+const ResultSub   = styled.div`font-size:0.75rem;color:var(--text-dim);margin-top:2px;`;
 
 const NetBox = styled.div`
   border-radius:var(--radius-sm);
@@ -83,8 +83,8 @@ const NetBox = styled.div`
   padding:12px 14px;
   display:flex;justify-content:space-between;align-items:center;
 `;
-const NetLabel = styled.div`font-size:12px;font-weight:700;color:var(--success-ink);`;
-const NetValue = styled.div`font-size:22px;font-weight:900;color:var(--text);`;
+const NetLabel = styled.div`font-size:0.75rem;font-weight:700;color:var(--success-ink);`;
+const NetValue = styled.div`font-size:1.375rem;font-weight:900;color:var(--text);`;
 
 /* ── Trigger button ── */
 const TriggerBtn = styled.button`
@@ -92,8 +92,8 @@ const TriggerBtn = styled.button`
   width:100%;padding:10px 14px;
   border-radius:var(--radius-sm);border:1px solid rgba(34,197,94,.35);
   background:rgba(34,197,94,.07);color:var(--success-ink);
-  font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;
-  transition:all .18s;
+  font-size:0.8125rem;font-weight:700;font-family:inherit;cursor:pointer;
+  transition:all var(--dur);
   &:hover{background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.6);}
 `;
 
@@ -148,13 +148,13 @@ export default function PokerInsurance({ lang, inline }: Props) {
             <StreetRow style={{marginBottom:14}}>
               <StreetBtn $active={street==="flop"} onClick={()=>setStreet("flop")}>
                 Flop
-                <div style={{fontSize:12,fontWeight:500,opacity:.7,marginTop:1}}>
+                <div style={{fontSize:"0.75rem",fontWeight:400,opacity:.7,marginTop:1}}>
                   {isTH?"เหลือ 2 ใบ (45 ใบ)":"2 to come (45)"}
                 </div>
               </StreetBtn>
               <StreetBtn $active={street==="turn"} onClick={()=>setStreet("turn")}>
                 Turn
-                <div style={{fontSize:12,fontWeight:500,opacity:.7,marginTop:1}}>
+                <div style={{fontSize:"0.75rem",fontWeight:400,opacity:.7,marginTop:1}}>
                   {isTH?"เหลือ 1 ใบ (44 ใบ)":"1 to come (44)"}
                 </div>
               </StreetBtn>
@@ -175,7 +175,7 @@ export default function PokerInsurance({ lang, inline }: Props) {
               />
               <SliderNum $color="var(--text-muted)">{totalOuts}</SliderNum>
             </SliderWrap>
-            <div style={{fontSize:12,color:"var(--text-dim)",marginBottom:14,textAlign:"right"}}>
+            <div style={{fontSize:"0.75rem",color:"var(--text-dim)",marginBottom:14,textAlign:"right"}}>
               {isTH?`โอกาสฝั่งตรงข้ามแตก ${probTotal.toFixed(1)}%`:`Opponent hits ${probTotal.toFixed(1)}%`}
             </div>
 
@@ -190,7 +190,7 @@ export default function PokerInsurance({ lang, inline }: Props) {
               />
               <SliderNum>{safeBuy}</SliderNum>
             </SliderWrap>
-            <div style={{fontSize:12,color:"var(--text-dim)",marginBottom:16,textAlign:"right"}}>
+            <div style={{fontSize:"0.75rem",color:"var(--text-dim)",marginBottom:16,textAlign:"right"}}>
               {isTH
                 ?`ซื้อ ${safeBuy} จาก ${totalOuts} out (${((safeBuy/totalOuts)*100).toFixed(0)}% ของ risk ทั้งหมด)`
                 :`${safeBuy} of ${totalOuts} outs (${((safeBuy/totalOuts)*100).toFixed(0)}% of total risk)`}
@@ -224,7 +224,7 @@ export default function PokerInsurance({ lang, inline }: Props) {
                     <NetLabel>
                       {isTH?"กำไรสุทธิถ้าประกันแตก":"Net gain if insurance hits"}
                     </NetLabel>
-                    <div style={{fontSize:12,color:"var(--text-dim)",marginTop:2}}>
+                    <div style={{fontSize:"0.75rem",color:"var(--text-dim)",marginTop:2}}>
                       {isTH
                         ?`฿${fmtN(payoutIfHit)} − ค่าประกัน ฿${fmtN(totalCost)}`
                         :`฿${fmtN(payoutIfHit)} − premium ฿${fmtN(totalCost)}`}
@@ -235,16 +235,17 @@ export default function PokerInsurance({ lang, inline }: Props) {
                   </NetValue>
                 </NetBox>
 
-                <div style={{fontSize:12,color:"var(--text-dim)",marginTop:10,lineHeight:1.6,
+                <div style={{fontSize:"0.75rem",color:"var(--text-dim)",marginTop:10,lineHeight:1.6,
                   background:"var(--surface2)",borderRadius:"var(--radius-sm)",padding:"8px 10px",
-                  border:"1px solid var(--border)"}}>
+                  border:"1px solid var(--border)",display:"flex",gap:8,alignItems:"flex-start"}}>
+                  <Lightbulb size={14} aria-hidden="true" style={{flexShrink:0,marginTop:3,color:"var(--gold)"}}/>
                   {isTH
-                    ?`💡 ซื้อ ${safeBuy} จาก ${totalOuts} out · ค่าประกัน/out = ฿${fmtN(costPerOut)} · ถ้า out ที่ไม่ได้ซื้อ (${totalOuts-safeBuy} out) ออกมา — ไม่ได้รับอะไร`
-                    :`💡 Covering ${safeBuy} of ${totalOuts} outs · ฿${fmtN(costPerOut)}/out · If uncovered outs (${totalOuts-safeBuy}) hit — no payout`}
+                    ?`ซื้อ ${safeBuy} จาก ${totalOuts} out · ค่าประกัน/out = ฿${fmtN(costPerOut)} · ถ้า out ที่ไม่ได้ซื้อ (${totalOuts-safeBuy} out) ออกมา — ไม่ได้รับอะไร`
+                    :`Covering ${safeBuy} of ${totalOuts} outs · ฿${fmtN(costPerOut)}/out · If uncovered outs (${totalOuts-safeBuy}) hit — no payout`}
                 </div>
               </>
             ) : (
-              <div style={{textAlign:"center",color:"var(--text-dim)",fontSize:13,padding:"16px 0"}}>
+              <div style={{textAlign:"center",color:"var(--text-dim)",fontSize:"0.8125rem",padding:"16px 0"}}>
                 {isTH?"กรอกยอด Pot เพื่อคำนวณ":"Enter pot size to calculate"}
               </div>
             )}
@@ -254,7 +255,7 @@ export default function PokerInsurance({ lang, inline }: Props) {
   if (inline) return (
     <div style={{padding:"12px 0"}}>
       <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:16,
-        fontSize:14,fontWeight:800,color:"var(--text)",textTransform:"uppercase",letterSpacing:".06em"}}>
+        fontSize:"0.875rem",fontWeight:800,color:"var(--text)",textTransform:"uppercase",letterSpacing:"calc(.06em * var(--tracking))"}}>
         <ShieldCheck size={16} style={{color:"var(--success-ink)"}}/>
         {isTH ? "คำนวณประกัน" : "Insurance Calculator"}
       </div>

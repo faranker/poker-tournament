@@ -1,12 +1,13 @@
 // Poker Tournament Timer — Responsive UI + i18n
 import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import styled, { createGlobalStyle, keyframes, css } from "styled-components";
+import { bp } from "./breakpoints";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Select from "@radix-ui/react-select";
 import {
   Plus, X, Play, Pause, SkipBack, SkipForward,
   Coffee, Trophy, Banknote, TrendingUp, TrendingDown, Check, ChevronDown,
-  Maximize, Minimize, Clock, Loader2, CheckCircle, Share2, Heart, Lock,
+  Maximize, Minimize, Clock, Loader2, CheckCircle, Share2, Heart, Lock, Languages,
 } from "lucide-react";
 import { SummaryCard } from "./components/SummaryCard";
 import { LoginModal, NavLoginBtn } from "./components/LoginModal";
@@ -174,14 +175,25 @@ const GlobalStyle = createGlobalStyle<{ $t: ThemeKey }>`
     --plan-free:#9a9ac4; --plan-cash:#60a5fa; --plan-full:#f5c542; --on-plan:#0b0b14;
     --donate:#db2777; --on-donate:#fff; --donate-ink:#f472b6;
     --danger-ink:#f87171; --warn-ink:#f59e0b;
+    --tracking:1;
+    --dur-fast:.12s; --dur:.18s; --dur-slow:.3s; --ease-out:cubic-bezier(.16,1,.3,1);
+    --z-fab:150; --z-subnav:190; --z-header:200; --z-popover:500;
+    --z-modal-base:1000; --z-modal:2000; --z-modal-stacked:2100; --z-modal-checkout:2200;
+    --z-modal-tool:2300; --z-dialog:3000; --z-toast:9999;
     ${p => themeVars[p.$t]}
     color-scheme:${p => p.$t==="light"?"light":"dark"};
     accent-color:var(--accent);
   }
   body{background:var(--bg);color:var(--text);font-family:'Noto Sans Thai',system-ui,sans-serif;
-       -webkit-font-smoothing:antialiased;font-size:17px;}
+       -webkit-font-smoothing:antialiased;font-size:1.0625rem;font-variant-numeric:tabular-nums;}
+  /* Thai has no case, and wide tracking breaks up its stacked vowels and tone marks */
+  :root:lang(th){--tracking:0;}
+  button,input,select,textarea{touch-action:manipulation;}
   ::selection{background:var(--accent);color:var(--on-accent);}
   :root :focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px;}
+  @media (prefers-reduced-motion: reduce){
+    [role=dialog]{animation:none!important;}
+  }
   /* Hide the native up/down spinner on every number input project-wide —
      single source of truth instead of repeating this per styled-component
      (this replaces an old rule that did the opposite: opacity:1 forced it
@@ -206,7 +218,7 @@ const reducedMotion = "@media (prefers-reduced-motion: reduce)";
    Layout
 ───────────────────────────────────────── */
 const Page = styled.div`
-  min-height:100vh;background:var(--bg);animation:${fadeIn} .25s cubic-bezier(.16,1,.3,1);
+  min-height:100vh;min-height:100dvh;background:var(--bg);animation:${fadeIn} var(--dur-slow) var(--ease-out);
   display:flex;flex-direction:column;
   ${reducedMotion}{animation:none;}
 `;
@@ -216,26 +228,26 @@ const PageBody = styled.div`flex:1;background:var(--surface2);display:flex;flex-
 const Header = styled.header`
   background:var(--surface);border-bottom:1px solid var(--border);
   padding:0 20px;height:56px;display:flex;align-items:center;
-  justify-content:space-between;gap:12px;position:sticky;top:0;z-index:200;
+  justify-content:space-between;gap:12px;position:sticky;top:0;z-index:var(--z-header);
   box-shadow:var(--shadow);
 
-  @media(max-width:768px){padding:0 14px;height:52px;}
+  @media(max-width:${bp.tablet}px){padding:0 14px;height:52px;}
 `;
 
 const LogoImg = styled.img`
   height:60px;width:auto;object-fit:contain;
-  @media(max-width:480px){height:28px;}
+  @media(max-width:${bp.phone}px){height:28px;}
 `;
 
 const ModeTabs = styled.div`
   display:flex;background:var(--surface2);border-radius:10px;
   padding:3px;gap:2px;border:1px solid var(--border);
-  @media(max-width:480px){display:none}
+  @media(max-width:${bp.phone}px){display:none}
 `;
 const ModeTab = styled.button<{$active?:boolean}>`
   display:inline-flex;align-items:center;gap:6px;
-  padding:5px 14px;border-radius:8px;border:none;font-size:16px;font-weight:700;
-  cursor:pointer;white-space:nowrap;transition:background .18s,color .18s;
+  padding:5px 14px;border-radius:8px;border:none;font-size:1rem;font-weight:700;
+  cursor:pointer;white-space:nowrap;transition:background var(--dur),color var(--dur);
   ${p=>p.$active
     ? css`background:var(--accent);color:var(--on-accent);box-shadow:0 1px 2px rgba(0,0,0,.25);`
     : css`background:transparent;color:var(--text-muted);&:hover{background:var(--surface3);color:var(--text);}`}
@@ -246,14 +258,14 @@ const HeaderRight = styled.div`display:flex;align-items:center;gap:8px;`;
 const LangTrigger = styled(Select.Trigger)`
   display:inline-flex;align-items:center;gap:6px;
   padding:5px 10px;border-radius:7px;border:1px solid var(--border);
-  background:var(--surface2);color:var(--text-muted);font-size:15px;font-weight:700;
-  cursor:pointer;font-family:inherit;transition:border-color .18s,color .18s;
+  background:var(--surface2);color:var(--text-muted);font-size:0.9375rem;font-weight:700;
+  cursor:pointer;font-family:inherit;transition:border-color var(--dur),color var(--dur);
   &:hover{border-color:var(--border2);color:var(--text);}
   @media(pointer:coarse){min-height:44px;}
   &[data-state=open]{border-color:var(--border2);color:var(--text);}
   svg{width:12px;height:12px;flex-shrink:0;}
   .lang-short{display:none;}
-  @media(max-width:768px){
+  @media(max-width:${bp.tablet}px){
     padding:5px 8px;
     .lang-full{display:none;}
     .lang-short{display:inline;}
@@ -261,24 +273,24 @@ const LangTrigger = styled(Select.Trigger)`
 `;
 const LangContent = styled(Select.Content)`
   background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-sm);
-  box-shadow:var(--shadow-lg);overflow:hidden;z-index:500;min-width:130px;
+  box-shadow:var(--shadow-lg);overflow:hidden;z-index:var(--z-popover);min-width:130px;
 `;
 const LangItem = styled(Select.Item)`
   display:flex;align-items:center;gap:8px;
-  padding:9px 14px;font-size:15px;font-weight:600;font-family:inherit;
-  color:var(--text);cursor:pointer;outline:none;transition:background .12s;
+  padding:9px 14px;font-size:0.9375rem;font-weight:600;font-family:inherit;
+  color:var(--text);cursor:pointer;outline:none;transition:background var(--dur-fast);
   &[data-highlighted]{background:var(--surface2);}
   &[data-state=checked]{color:var(--accent-ink);font-weight:800;}
 `;
 
-const ThemeRow = styled.div`display:flex;align-items:center;gap:5px;@media(max-width:768px){display:none;}`;
+const ThemeRow = styled.div`display:flex;align-items:center;gap:5px;@media(max-width:${bp.tablet}px){display:none;}`;
 
 const NavAvatar = styled.button<{$color:string}>`
   width:34px;height:34px;border-radius:50%;border:2px solid ${p=>p.$color};
   background:color-mix(in srgb,${p=>p.$color} 13%,transparent);color:${p=>p.$color};
-  font-size:15px;font-weight:900;cursor:pointer;
+  font-size:0.9375rem;font-weight:900;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  position:relative;transition:background .18s,transform .18s;flex-shrink:0;
+  position:relative;transition:background var(--dur),transform var(--dur);flex-shrink:0;
   &:hover{background:color-mix(in srgb,${p=>p.$color} 27%,transparent);transform:scale(1.08);}
   ${reducedMotion}{&:hover{transform:none;}}
   @media(pointer:coarse){width:44px;height:44px;}
@@ -289,21 +301,21 @@ const NavAvatarDot = styled.span<{$color:string}>`
 `;
 const Swatch = styled.button<{$c:string;$active?:boolean}>`
   width:20px;height:20px;border-radius:50%;border:2px solid ${p=>p.$active?"var(--text)":"transparent"};
-  background:${p=>p.$c};cursor:pointer;transition:transform .18s;&:hover{transform:scale(1.2);}
+  background:${p=>p.$c};cursor:pointer;transition:transform var(--dur);&:hover{transform:scale(1.2);}
   ${reducedMotion}{&:hover{transform:none;}}
 `;
 
 /* ── Mobile Tab Bar ── */
 const MobileTabBar = styled.nav`
   display:none;
-  @media(max-width:768px){
+  @media(max-width:${bp.tablet}px){
     display:flex;background:var(--surface);border-bottom:1px solid var(--border);
-    position:sticky;top:52px;z-index:190;
+    position:sticky;top:52px;z-index:var(--z-subnav);
   }
 `;
 const MobileTabBtn = styled.button<{$active?:boolean}>`
   flex:1;padding:11px 4px;border:none;background:transparent;cursor:pointer;
-  font-size:15px;font-weight:600;transition:color .18s,border-color .18s;min-height:44px;
+  font-size:0.9375rem;font-weight:600;transition:color var(--dur),border-color var(--dur);min-height:44px;
   color:${p=>p.$active?"var(--accent-ink)":"var(--text-muted)"};
   border-bottom:2px solid ${p=>p.$active?"var(--accent)":"transparent"};
   &:hover{color:var(--text);}
@@ -312,24 +324,38 @@ const MobileTabBtn = styled.button<{$active?:boolean}>`
 /* ── Mode select for mobile ── */
 const MobileModeRow = styled.div`
   display:none;
-  @media(max-width:480px){
+  @media(max-width:${bp.phone}px){
     display:flex;gap:8px;padding:12px 14px 0;
   }
 `;
 const MobileModeBtn = styled.button<{$active?:boolean}>`
   flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;
-  padding:8px;min-height:44px;border-radius:9px;border:1.5px solid;font-size:15px;font-weight:700;cursor:pointer;
-  transition:background .18s,color .18s,border-color .18s;
+  padding:8px;min-height:44px;border-radius:9px;border:1.5px solid;font-size:0.9375rem;font-weight:700;cursor:pointer;
+  transition:background var(--dur),color var(--dur),border-color var(--dur);
   ${p=>p.$active
     ? css`background:var(--accent);color:var(--on-accent);border-color:var(--accent);`
     : css`background:transparent;color:var(--text-muted);border-color:var(--border);&:hover{border-color:var(--accent);color:var(--accent-ink);}`}
 `;
 
 /* ── Content Grid ── */
+/* Bottom padding keeps the floating Donate button clear of the last controls */
 const Content = styled.main`
-  padding:0;
+  padding:0 0 calc(72px + env(safe-area-inset-bottom));
   flex:1;display:flex;flex-direction:column;
-  @media(max-width:768px){padding:10px;}
+  &:focus{outline:none;}
+  @media(max-width:${bp.tablet}px){padding:10px 10px calc(72px + env(safe-area-inset-bottom));}
+`;
+
+const SkipLink = styled.a`
+  position:absolute;left:12px;top:-60px;z-index:var(--z-toast);
+  padding:10px 16px;border-radius:var(--radius-sm);
+  background:var(--accent);color:var(--on-accent);font-weight:700;text-decoration:none;
+  &:focus{top:12px;}
+`;
+
+const VisuallyHidden = styled.span`
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
 `;
 
 /* Desktop 3-col grid */
@@ -338,31 +364,31 @@ const ThreeCols = styled.div`
   grid-template-columns:400px minmax(0,1fr) 400px;
   gap:0;
   flex:1;
-  @media(max-width:1300px){grid-template-columns:340px minmax(0,1fr) 340px;}
-  @media(max-width:1100px){
+  @media(max-width:${bp.desktop}px){grid-template-columns:340px minmax(0,1fr) 340px;}
+  @media(max-width:${bp.laptop}px){
     grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;
     & > :nth-child(2){grid-column:1 / -1;order:-1;border-right:none;border-bottom:1px solid var(--border);}
   }
-  @media(max-width:768px){display:none;}
+  @media(max-width:${bp.tablet}px){display:none;}
 `;
 
 const BottomRow = styled.div`
   display:grid;grid-template-columns:320px minmax(0,1fr);gap:0;border-top:1px solid var(--border);
-  @media(max-width:768px){display:none;}
+  @media(max-width:${bp.tablet}px){display:none;}
 `;
 
 const LockedPanel = styled.div`
-  padding:32px;text-align:center;color:var(--text-muted);font-size:14px;
+  padding:32px;text-align:center;color:var(--text-muted);font-size:0.875rem;
   display:flex;flex-direction:column;align-items:center;gap:12px;
 `;
 
 const DonateFab = styled.button`
-  position:fixed;bottom:16px;left:16px;z-index:9998;
+  position:fixed;bottom:calc(16px + env(safe-area-inset-bottom));left:16px;z-index:var(--z-fab);
   width:44px;height:44px;border-radius:50%;border:none;
   background:var(--donate);color:var(--on-donate);cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   box-shadow:0 4px 12px rgba(0,0,0,.35);
-  transition:transform .18s cubic-bezier(.16,1,.3,1);
+  transition:transform var(--dur) var(--ease-out);
   &:hover{transform:scale(1.08);}
   ${reducedMotion}{&:hover{transform:none;}}
 `;
@@ -370,7 +396,7 @@ const DonateFab = styled.button`
 /* Mobile: single column panels hidden/shown by tab */
 const MobilePanel = styled.div<{$show?:boolean}>`
   display:none;
-  @media(max-width:768px){display:${p=>p.$show?"block":"none"};}
+  @media(max-width:${bp.tablet}px){display:${p=>p.$show?"block":"none"};}
 `;
 
 /* ─────────────────────────────────────────
@@ -379,7 +405,7 @@ const MobilePanel = styled.div<{$show?:boolean}>`
 const Card = styled.div`
   background:var(--surface);border:1px solid var(--border);
   border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);
-  @media(max-width:768px){padding:14px;}
+  @media(max-width:${bp.tablet}px){padding:14px;}
 `;
 
 /* Column with vertical divider — flattens Card inside */
@@ -406,14 +432,14 @@ const CardHead = styled.div`
 `;
 
 const CardTitle = styled.h2`
-  font-size:16px;font-weight:800;color:var(--text);
+  font-size:1rem;font-weight:800;color:var(--text);
   display:flex;align-items:center;gap:7px;
   &::before{content:'';display:inline-block;width:3px;height:15px;
     background:var(--accent);border-radius:2px;}
 `;
 
 const Label = styled.p`
-  font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  font-size:0.875rem;font-weight:700;text-transform:uppercase;letter-spacing:calc(.08em * var(--tracking));
   color:var(--text-muted);margin-bottom:5px;margin-top:12px;
   &:first-child{margin-top:0;}
 `;
@@ -421,10 +447,10 @@ const Label = styled.p`
 /* ─────────────────────────────────────────
    Inputs & Buttons
 ───────────────────────────────────────── */
-const Input = styled.input`
+const Input = styled.input.attrs(p => p.type === "number" && !p.inputMode ? { inputMode: "decimal" as const } : {})`
   width:100%;padding:9px 12px;border-radius:var(--radius-sm);
   border:1.5px solid var(--border);background:var(--surface);
-  color:var(--text);font-size:15px;font-family:inherit;transition:border-color .18s,box-shadow .18s;
+  color:var(--text);font-size:0.9375rem;font-family:inherit;transition:border-color var(--dur),box-shadow var(--dur);
   &:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
   &:hover:not(:focus){border-color:var(--border2);}
   &::placeholder{color:var(--text-dim);}
@@ -434,10 +460,10 @@ type BtnV = "primary"|"secondary"|"success"|"danger"|"ghost"|"info"|"discord";
 const Btn = styled.button<{$v?:BtnV;$sm?:boolean;$full?:boolean}>`
   display:inline-flex;align-items:center;justify-content:center;gap:5px;
   border:none;border-radius:var(--radius-sm);font-weight:600;cursor:pointer;
-  transition:background .18s,color .18s,border-color .18s,opacity .18s,transform .18s;
+  transition:background var(--dur),color var(--dur),border-color var(--dur),opacity var(--dur),transform var(--dur);
   white-space:nowrap;font-family:inherit;
   padding:${p=>p.$sm?"6px 13px":"10px 16px"};
-  font-size:${p=>p.$sm?"13px":"15px"};
+  font-size:${p=>p.$sm?"0.8125rem":"0.9375rem"};
   width:${p=>p.$full?"100%":"auto"};
 
   ${p=>{switch(p.$v){
@@ -456,7 +482,7 @@ const Btn = styled.button<{$v?:BtnV;$sm?:boolean;$full?:boolean}>`
 
 const CheckLabel = styled.label`
   display:flex;align-items:center;gap:9px;cursor:pointer;color:var(--text);
-  font-size:15px;padding:8px 10px;border-radius:var(--radius-sm);
+  font-size:0.9375rem;padding:8px 10px;border-radius:var(--radius-sm);
   border:1px solid var(--border);background:var(--surface2);
   input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;}
   &:hover{border-color:var(--border2);}
@@ -468,7 +494,7 @@ const CheckLabel = styled.label`
 const Avatar = styled.div<{$c:string}>`
   width:36px;height:36px;border-radius:50%;background:${p=>p.$c};flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
-  font-size:14px;font-weight:800;color:#fff;letter-spacing:.5px;
+  font-size:0.875rem;font-weight:800;color:#fff;letter-spacing:.5px;
 `;
 
 const medalColor = (rank?:number|null) =>
@@ -478,7 +504,7 @@ const MedalAvatar = styled.div<{$rank:number}>`
   width:36px;height:36px;border-radius:50%;flex-shrink:0;
   background:${p=>medalColor(p.$rank)};
   display:flex;align-items:center;justify-content:center;
-  font-size:13px;font-weight:900;color:#1a1206;letter-spacing:-0.5px;
+  font-size:0.8125rem;font-weight:900;color:#1a1206;letter-spacing:-0.5px;
 `;
 
 /* Desktop player row */
@@ -488,14 +514,14 @@ const PlayerRow = styled.div<{$winner?:boolean;$rank?:number}>`
   align-items:center;gap:10px;
   padding:8px 10px;border-radius:10px;
   border:1px solid transparent;
-  transition:background .15s,border-color .15s;
+  transition:background var(--dur-fast),border-color var(--dur-fast);
   background:transparent;
   ${p=>p.$winner&&css`
     background:var(--surface2);
     border-color:${medalColor(p.$rank)};
   `}
   &:hover{background:var(--surface2);}
-  @media(max-width:768px){display:none;}
+  @media(max-width:${bp.tablet}px){display:none;}
 `;
 
 /* Avatar + name as one control that toggles the finishing rank */
@@ -503,13 +529,13 @@ const RankToggle = styled.button`
   grid-column:span 2;display:grid;grid-template-columns:40px minmax(0,1fr);gap:10px;align-items:center;
   background:none;border:none;padding:0;margin:0;text-align:left;
   color:inherit;font:inherit;cursor:pointer;border-radius:8px;min-height:44px;
-  @media(max-width:768px){display:flex;flex:1;min-width:0;}
+  @media(max-width:${bp.tablet}px){display:flex;flex:1;min-width:0;}
 `;
 
 /* Mobile player card */
 const PlayerCardMobile = styled.div<{$rank?:number|null}>`
   display:none;
-  @media(max-width:768px){
+  @media(max-width:${bp.tablet}px){
     display:block;background:var(--surface2);
     border:1px solid ${p=>p.$rank?medalColor(p.$rank):"var(--border)"};
     border-radius:12px;padding:12px 14px;margin-bottom:10px;
@@ -520,21 +546,21 @@ const PlayerCardTop = styled.div`
   display:flex;align-items:center;gap:10px;margin-bottom:10px;
 `;
 
-const PlayerName = styled.div`font-size:16px;font-weight:700;color:var(--text);`;
-const PlayerSub  = styled.div`font-size:15px;color:var(--text-muted);margin-top:1px;`;
+const PlayerName = styled.div`font-size:1rem;font-weight:700;color:var(--text);`;
+const PlayerSub  = styled.div`font-size:0.9375rem;color:var(--text-muted);margin-top:1px;`;
 
 const MobileBuyBtns = styled.div`display:flex;gap:8px;margin-bottom:8px;`;
 const MobileBuyBtn = styled.button<{$variant:"buy"|"sell"}>`
-  flex:1;padding:8px;min-height:44px;border-radius:8px;border:none;font-size:15px;font-weight:700;cursor:pointer;
-  font-family:inherit;transition:opacity .18s;
+  flex:1;padding:8px;min-height:44px;border-radius:8px;border:none;font-size:0.9375rem;font-weight:700;cursor:pointer;
+  font-family:inherit;transition:opacity var(--dur);
   background:${p=>p.$variant==="buy"?"var(--success)":"var(--accent)"};
   color:${p=>p.$variant==="buy"?"var(--on-success)":"var(--on-accent)"};
   &:hover{opacity:.88;}
 `;
 
 const CashOutRow = styled.div`display:flex;align-items:center;gap:8px;`;
-const CashLabel = styled.span`font-size:14px;color:var(--text-muted);white-space:nowrap;`;
-const CashInput = styled(Input)`font-size:16px;font-weight:700;`;
+const CashLabel = styled.span`font-size:0.875rem;color:var(--text-muted);white-space:nowrap;`;
+const CashInput = styled(Input)`font-size:1rem;font-weight:700;`;
 
 /* Count control (tournament) */
 const CountBox = styled.div`
@@ -543,7 +569,7 @@ const CountBox = styled.div`
 `;
 const CountBtn = styled.button`
   width:28px;height:28px;border-radius:5px;border:none;
-  background:var(--surface3);color:var(--text);font-size:16px;font-weight:700;
+  background:var(--surface3);color:var(--text);font-size:1rem;font-weight:700;
   cursor:pointer;display:flex;align-items:center;justify-content:center;
   &:hover{background:var(--border2);}
   @media(pointer:coarse){width:44px;height:44px;}
@@ -554,16 +580,16 @@ const TableHeader = styled.div`
   display:grid;
   grid-template-columns:40px minmax(0,1fr) 110px auto 120px 32px;
   gap:10px;padding:0 10px 8px;
-  font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  font-size:0.875rem;font-weight:700;text-transform:uppercase;letter-spacing:calc(.08em * var(--tracking));
   color:var(--text-muted);border-bottom:1px solid var(--border);margin-bottom:6px;
-  @media(max-width:768px){display:none;}
+  @media(max-width:${bp.tablet}px){display:none;}
 `;
 
 /* Rank badge */
 const RankBadge = styled.span<{$pos:number}>`
   display:inline-flex;align-items:center;justify-content:center;
   min-width:26px;height:22px;padding:0 6px;border-radius:6px;
-  font-size:15px;font-weight:900;margin-right:6px;letter-spacing:.02em;
+  font-size:0.9375rem;font-weight:900;margin-right:6px;letter-spacing:calc(.02em * var(--tracking));
   ${p=>p.$pos===1?css`background:var(--gold);color:#1a1206;`
     :p.$pos===2?css`background:var(--silver);color:#1a1206;`
     :p.$pos===3?css`background:var(--bronze);color:#1a1206;`
@@ -575,13 +601,13 @@ const RankBadge = styled.span<{$pos:number}>`
 ───────────────────────────────────────── */
 const StatRow = styled.div`
   display:flex;justify-content:space-between;align-items:center;
-  padding:9px 0;border-bottom:1px solid var(--border);font-size:16px;
+  padding:9px 0;border-bottom:1px solid var(--border);font-size:1rem;
   &:last-of-type{border-bottom:none;}
   .lbl{color:var(--text-muted);} .val{font-weight:700;}
 `;
 
 const BalanceBadge = styled.div<{$ok?:boolean}>`
-  padding:5px 12px;border-radius:7px;font-size:15px;font-weight:700;
+  padding:5px 12px;border-radius:7px;font-size:0.9375rem;font-weight:700;
   ${p=>p.$ok
     ? css`background:var(--success-soft);color:var(--success-ink);border:1px solid var(--success);`
     : css`background:var(--accent-soft);color:var(--accent-ink);border:1px solid var(--accent);`}
@@ -599,15 +625,26 @@ const PLArrow = styled.span<{$pos?:boolean}>`
 
 const ShareBtns = styled.div`
   display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:14px;
-  @media(max-width:768px){flex-direction:column;}
+  @media(max-width:${bp.tablet}px){flex-direction:column;}
 `;
 
 /* ─────────────────────────────────────────
    Tournament / Timer
 ───────────────────────────────────────── */
+/* Phones held sideways: circle on the left, blinds and controls on the right,
+   so Start/Pause stays on screen without scrolling */
+const shortLandscape = "@media (max-height:500px) and (orientation:landscape)";
+
 const TimerCard = styled(Card)`
   display:flex;flex-direction:column;align-items:center;gap:16px;
   padding:28px 20px;position:relative;overflow:hidden;
+  ${shortLandscape}{
+    &:not(:fullscreen){
+      display:grid;gap:8px 20px;padding:14px 16px;align-items:center;
+      grid-template-columns:auto minmax(0,1fr);
+      grid-template-areas:"circle badge" "circle blinds" "circle next" "circle ctrl";
+    }
+  }
   &::before{content:'';position:absolute;inset:0;
     background:radial-gradient(ellipse at center top,var(--accent-soft) 0%,transparent 70%);
     pointer-events:none;}
@@ -627,17 +664,19 @@ const FsBtn = styled.button`
   &:hover{color:var(--text);background:var(--surface2);}
 `;
 const LevelBadge = styled.div`
-  font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  font-size:0.9375rem;font-weight:700;text-transform:uppercase;letter-spacing:calc(.1em * var(--tracking));
   color:var(--text-muted);background:var(--surface2);border:1px solid var(--border);
   padding:3px 14px;border-radius:20px;
-  :fullscreen &, :-webkit-full-screen &{ font-size:22px;padding:6px 28px; }
+  :fullscreen &, :-webkit-full-screen &{ font-size:1.375rem;padding:6px 28px; }
+  ${shortLandscape}{grid-area:badge;justify-self:start;}
 `;
 
 /* Circular timer */
 const CircleWrap = styled.div`
   position:relative;display:flex;align-items:center;justify-content:center;
   width:200px;height:200px;
-  @media(max-width:640px){width:160px;height:160px;}
+  @media(max-width:${bp.tablet}px){width:160px;height:160px;}
+  ${shortLandscape}{grid-area:circle;width:150px;height:150px;}
   :fullscreen &, :-webkit-full-screen &{ width:min(55vmin,480px);height:min(55vmin,480px); }
 `;
 const CircleSvg = styled.svg`
@@ -655,15 +694,16 @@ const CircleInner = styled.div`
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
 `;
 const BigTimer = styled.div<{$urgent?:boolean}>`
-  font-size:52px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;
+  font-size:3.25rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;
   letter-spacing:-1px;color:var(--timer-color);
   ${p=>p.$urgent&&css`color:var(--accent-ink);animation:${pulse} 1s ease-in-out infinite;`}
   ${reducedMotion}{animation:none;}
-  @media(max-width:640px){font-size:42px;}
+  @media(max-width:${bp.tablet}px){font-size:2.625rem;}
+  ${shortLandscape}{font-size:2.375rem;}
   :fullscreen &, :-webkit-full-screen &{ font-size:min(13vmin,110px);letter-spacing:-2px; }
 `;
 const StatusLabel = styled.div<{$urgent?:boolean}>`
-  font-size:15px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  font-size:0.9375rem;font-weight:700;letter-spacing:calc(.18em * var(--tracking));text-transform:uppercase;
   color:${p=>p.$urgent?"var(--accent-ink)":"var(--text-muted)"};
   :fullscreen &, :-webkit-full-screen &{ font-size:min(2.5vmin,20px); }
 `;
@@ -672,13 +712,15 @@ const StatusLabel = styled.div<{$urgent?:boolean}>`
 const BlindsRow = styled.div`
   display:flex;gap:10px;width:100%;justify-content:center;
   :fullscreen &, :-webkit-full-screen &{ gap:20px;max-width:860px; }
+  ${shortLandscape}{grid-area:blinds;}
 `;
 const BlindCard = styled.div`
   flex:1;background:var(--surface2);border:1px solid var(--border);
   border-radius:var(--radius-sm);padding:10px 8px;text-align:center;
-  .lbl{font-size:15px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;}
-  .val{font-size:22px;font-weight:800;color:var(--text);}
-  @media(max-width:640px){.val{font-size:18px;}}
+  .lbl{font-size:0.9375rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:calc(.1em * var(--tracking));margin-bottom:4px;}
+  .val{font-size:1.375rem;font-weight:800;color:var(--text);}
+  @media(max-width:${bp.tablet}px){.val{font-size:1.125rem;}}
+  ${shortLandscape}{padding:6px 8px;.lbl{margin-bottom:0;}}
   :fullscreen &, :-webkit-full-screen &{
     padding:20px 16px;
     .lbl{font-size:min(2vmin,16px);}
@@ -690,21 +732,29 @@ const TimerCtrl = styled.div`
   display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;
   :fullscreen &, :-webkit-full-screen &{
     gap:20px;
-    button{ padding:14px 20px !important;font-size:18px !important; }
+    button{ padding:14px 20px !important;font-size:1.125rem !important; }
     button svg{ width:22px;height:22px; }
   }
+  ${shortLandscape}{grid-area:ctrl;justify-content:flex-start;}
+`;
+
+const NextLevelBox = styled.div`
+  width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:10px 16px;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  ${shortLandscape}{grid-area:next;padding:6px 12px;flex-direction:row;justify-content:center;gap:10px;}
 `;
 
 
 /* Tournament table */
 const TournTable = styled.table`
-  width:100%;border-collapse:collapse;font-size:15px;
-  th{background:var(--surface2);color:var(--text-muted);font-size:14px;font-weight:700;
-     text-transform:uppercase;letter-spacing:.06em;padding:8px 10px;text-align:left;
+  width:100%;border-collapse:collapse;font-size:0.9375rem;
+  th{background:var(--surface2);color:var(--text-muted);font-size:0.875rem;font-weight:700;
+     text-transform:uppercase;letter-spacing:calc(.06em * var(--tracking));padding:8px 10px;text-align:left;
      border-bottom:1px solid var(--border);}
   td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text);}
   tbody tr:last-child td{border-bottom:none;}
-  tbody tr{transition:background .15s;&:hover{background:var(--surface2);}}
+  tbody tr{transition:background var(--dur-fast);&:hover{background:var(--surface2);}}
 `;
 const TableScroll = styled.div`
   overflow-x:auto;border-radius:var(--radius-sm);border:1px solid var(--border);
@@ -718,7 +768,7 @@ const ActiveDot = styled.span`
 /* Payout row */
 const PayRow = styled.div`
   display:flex;align-items:center;gap:8px;margin-bottom:8px;
-  .num{font-size:15px;color:var(--text-muted);font-weight:700;min-width:22px;}
+  .num{font-size:0.9375rem;color:var(--text-muted);font-weight:700;min-width:22px;}
 `;
 
 /* Prize pool box */
@@ -728,20 +778,20 @@ const PrizeBox = styled.div`
   display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;
 `;
 const PrizeItem = styled.div`
-  .lbl{font-size:14px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;}
-  .val{font-size:18px;font-weight:700;margin-top:2px;}
+  .lbl{font-size:0.875rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:calc(.06em * var(--tracking));}
+  .val{font-size:1.125rem;font-weight:700;margin-top:2px;}
 `;
 
 /* Modal — Radix Dialog primitives */
 const ModalOverlay = styled(Dialog.Overlay)`
-  position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;backdrop-filter:blur(4px);
+  position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:var(--z-modal-base);backdrop-filter:blur(4px);
 `;
 const ModalBox = styled(Dialog.Content)`
-  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1001;
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:calc(var(--z-modal-base) + 1);
   background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);
   padding:22px;width:min(340px,90vw);box-shadow:var(--shadow-lg);
   &:focus{outline:none;}
-  h3{font-size:15px;font-weight:800;margin-bottom:14px;}
+  h3{font-size:0.9375rem;font-weight:800;margin-bottom:14px;}
 `;
 
 /* ─────────────────────────────────────────
@@ -753,6 +803,16 @@ const fmt  = (s:number) => `${Math.floor(s/60)}:${(s%60).toString().padStart(2,"
 const fmtN = (n:number) => n?.toLocaleString("en-US") ?? "";
 const initials = (name:string) =>
   name.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase().slice(0,2);
+
+type MobileTab = "players"|"summary"|"settings"|"timer"|"insurance";
+const TABS_BY_MODE: Record<"CASH"|"TOURNAMENT", readonly MobileTab[]> = {
+  CASH:       ["players","summary","insurance","settings"],
+  TOURNAMENT: ["timer","players","settings"],
+};
+const tabFromHash = (m: "CASH"|"TOURNAMENT"): MobileTab | null => {
+  const h = location.hash.slice(1) as MobileTab;
+  return TABS_BY_MODE[m].includes(h) ? h : null;
+};
 
 /* ─────────────────────────────────────────
    Types
@@ -772,7 +832,18 @@ export default function App() {
   const [lang,   setLang]  = useState<Lang>((_saved?.lang as Lang) ?? "TH");
   const [theme,  setTheme] = useState<ThemeKey>((_saved?.theme as ThemeKey) ?? "dark");
   const [mode,   setMode]  = useState<"TOURNAMENT"|"CASH">(_saved?.mode ?? "CASH");
-  const [mobileTab, setMobileTab] = useState<"players"|"summary"|"settings"|"timer"|"insurance">("players");
+  const [mobileTab, setMobileTab] = useState<MobileTab>(() => tabFromHash(_saved?.mode ?? "CASH") ?? "players");
+
+  /* Mobile sections live in the URL hash so Back and shared links work */
+  const goToTab = (tab: MobileTab) => {
+    setMobileTab(tab);
+    if (location.hash !== `#${tab}`) history.pushState(null, "", `#${tab}`);
+  };
+  useEffect(() => {
+    const onPop = () => setMobileTab(tabFromHash(mode) ?? (mode==="TOURNAMENT" ? "timer" : "players"));
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [mode]);
 
   /* ── Auth ── */
   const [user,        setUser]        = useState<AuthUser | null>(null);
@@ -801,17 +872,15 @@ export default function App() {
   /* ── App dialogs (replaces window.alert/confirm/prompt) ── */
   const [appDialog, setAppDialog] = useState<DialogConfig | null>(null);
 
-  const showAlert = (message: string) =>
-    new Promise<void>(resolve =>
-      setAppDialog({ type:"alert", message, resolve:()=>{ resolve(); setAppDialog(null); } }));
 
   const showConfirm = (title: string, body?: string) =>
     new Promise<boolean>(resolve =>
       setAppDialog({ type:"confirm", title, body, resolve:(ok)=>{ resolve(ok); setAppDialog(null); } }));
 
-  const showPrompt = (label: string, placeholder?: string) =>
+  const showPrompt = (label: string, placeholder?: string,
+      opts?: { inputMode?: "text"|"numeric"|"decimal"; validate?: (v:string)=>string|null }) =>
     new Promise<string|null>(resolve =>
-      setAppDialog({ type:"prompt", label, placeholder, resolve:(v)=>{ resolve(v); setAppDialog(null); } }));
+      setAppDialog({ type:"prompt", label, placeholder, ...opts, resolve:(v)=>{ resolve(v); setAppDialog(null); } }));
 
   /* restore session on mount + listen for auth changes */
   /* ── load cloud state when user logs in ── */
@@ -980,7 +1049,9 @@ export default function App() {
     if(!await showConfirm(title, body)) return;
     setMode(next); setPlayers([]); setPrizeWinners([]);
     setModeBounty(false); setRoundIndex(0); setRunning(false);
-    setMobileTab(next==="TOURNAMENT"?"timer":"players");
+    const landing: MobileTab = next==="TOURNAMENT" ? "timer" : "players";
+    setMobileTab(landing);
+    history.replaceState(null, "", `#${landing}`);
   };
 
   const addPlayer = async () => {
@@ -1003,13 +1074,20 @@ export default function App() {
     const label = isAdd
       ? `Buy-in ของ "${players[i].name}" (฿)`
       : `ลด buy-in ของ "${players[i].name}" (฿)`;
-    const raw = await showPrompt(label, "0");
+    const current = players[i].buyInTotal;
+    const raw = await showPrompt(label, "0", {
+      inputMode: "decimal",
+      validate: s => {
+        const n = Number(s);
+        if (isNaN(n) || n <= 0) return t("invalidNum");
+        if (!isAdd && n > current)
+          return lang==="TH" ? `${t("amtExceeded")} (สูงสุด ${fmtN(current)})` : `${t("amtExceeded")} (max ${fmtN(current)})`;
+        return null;
+      },
+    });
     if(!raw) return;
     const v = Number(raw);
-    if(isNaN(v)||v<=0){ await showAlert(t("invalidNum")); return; }
-    const next = players[i].buyInTotal + (isAdd ? v : -v);
-    if(next < 0){ await showAlert(t("amtExceeded")); return; }
-    setPlayers(prev=>{ const np=[...prev]; np[i]={...np[i],buyInTotal:next}; return np; });
+    setPlayers(prev=>{ const np=[...prev]; np[i]={...np[i],buyInTotal:np[i].buyInTotal + (isAdd ? v : -v)}; return np; });
   };
 
   const tournBuy = async (i:number, delta:number) => {
@@ -1141,7 +1219,7 @@ export default function App() {
       </TableHeader>
 
       {players.length===0 && (
-        <p style={{color:"var(--text-dim)",textAlign:"center",padding:"20px 0",fontSize:15}}>{t("noPlayer")}</p>
+        <p style={{color:"var(--text-dim)",textAlign:"center",padding:"20px 0",fontSize:"0.9375rem"}}>{t("noPlayer")}</p>
       )}
 
       {players.map((p,i)=>{
@@ -1153,19 +1231,19 @@ export default function App() {
             <PlayerRow>
               <Avatar $c={color}>{initials(p.name)}</Avatar>
               <div>
-                <div style={{fontWeight:700,fontSize:15}}>
+                <div style={{fontWeight:700,fontSize:"0.9375rem"}}>
                   {pos&&<RankBadge $pos={pos}>#{pos}</RankBadge>}
                   {p.name}
                 </div>
               </div>
-              <div style={{textAlign:"center",fontWeight:700,fontSize:14}}>{fmtN(p.buyInTotal)}</div>
+              <div style={{textAlign:"center",fontWeight:700,fontSize:"0.875rem"}}>{fmtN(p.buyInTotal)}</div>
               <div style={{display:"flex",gap:4}}>
                 <Btn $v="success" $sm aria-label={`+ ${t("buyIn")} ${p.name}`} onClick={()=>cashBuy(i,true)}>+</Btn>
                 <Btn $v="primary" $sm aria-label={`− ${t("buyIn")} ${p.name}`} onClick={()=>cashBuy(i,false)}>−</Btn>
               </div>
               <div>
                 <Input type="number" value={p.cashout===0?"":p.cashout} aria-label={`${t("cashOut")} ${p.name}`}
-                  style={{fontSize:15,fontWeight:600}}
+                  style={{fontSize:"0.9375rem",fontWeight:600}}
                   onChange={e=>{const np=[...players];np[i].cashout=Number(e.target.value)||0;setPlayers(np);}}
                   onBlur={e=>{if(e.target.value===""){const np=[...players];np[i].cashout=0;setPlayers(np);}}} />
               </div>
@@ -1211,11 +1289,11 @@ export default function App() {
       <CardTitle style={{marginBottom:14}}>{t("summary")}</CardTitle>
       <StatRow>
         <span className="lbl">{t("totalBuyIn")}</span>
-        <span style={{fontWeight:800,fontSize:20,color:"var(--info-ink)"}}>{fmtN(sumBuyIn)}</span>
+        <span style={{fontWeight:800,fontSize:"1.25rem",color:"var(--info-ink)"}}>{fmtN(sumBuyIn)}</span>
       </StatRow>
       <StatRow>
         <span className="lbl">{t("totalCashout")}</span>
-        <span style={{fontWeight:800,fontSize:20,color:"var(--success-ink)"}}>{fmtN(totalCashout)}</span>
+        <span style={{fontWeight:800,fontSize:"1.25rem",color:"var(--success-ink)"}}>{fmtN(totalCashout)}</span>
       </StatRow>
       <StatRow>
         <span className="lbl">{t("difference")}</span>
@@ -1230,21 +1308,21 @@ export default function App() {
           const color=AVATAR_COLORS[players.findIndex(p=>p.name===r.name)%AVATAR_COLORS.length];
           return (
             <SummaryPlayerItem key={i}>
-              <Avatar $c={color} style={{width:32,height:32,fontSize:15}}>{initials(r.name)}</Avatar>
+              <Avatar $c={color} style={{width:32,height:32,fontSize:"0.9375rem"}}>{initials(r.name)}</Avatar>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontWeight:700,fontSize:15}}>{r.name}</div>
+                <div style={{fontWeight:700,fontSize:"0.9375rem"}}>{r.name}</div>
                 <div style={{display:"flex",gap:10,marginTop:2,flexWrap:"wrap"}}>
-                  <span style={{fontSize:15,fontWeight:700,color:"var(--info-ink)"}}>
+                  <span style={{fontSize:"0.9375rem",fontWeight:700,color:"var(--info-ink)"}}>
                     {t("buyIn")}: {fmtN(r.count)}
                   </span>
-                  <span style={{fontSize:15,fontWeight:700,color:"var(--success-ink)"}}>
+                  <span style={{fontSize:"0.9375rem",fontWeight:700,color:"var(--success-ink)"}}>
                     {t("cashOut")}: {fmtN(r.total)}
                   </span>
                 </div>
               </div>
               <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
                 <PLArrow $pos={r.profit>=0}>{r.profit>=0?<TrendingUp size={14}/>:<TrendingDown size={14}/>}</PLArrow>
-                <span style={{fontWeight:800,fontSize:14,color:r.profit>=0?"var(--success-ink)":"var(--accent-ink)"}}>
+                <span style={{fontWeight:800,fontSize:"0.875rem",color:r.profit>=0?"var(--success-ink)":"var(--accent-ink)"}}>
                   {r.profit>=0?"+":""}{fmtN(r.profit)}
                 </span>
               </div>
@@ -1256,7 +1334,7 @@ export default function App() {
       <ShareBtns>
         <Btn $v="success" disabled={players.length===0} onClick={()=>setShowShare(true)}>
           <Share2 size={15}/>{lang==="TH"?"แชร์ผลลัพธ์":"Share Results"}
-          {plan==="free" && <span style={{fontSize:12,fontWeight:600,marginLeft:2}}>
+          {plan==="free" && <span style={{fontSize:"0.75rem",fontWeight:600,marginLeft:2}}>
             {Math.max(0,FREE_MAX_EXPORTS-exportCount)}/{FREE_MAX_EXPORTS}
           </span>}
         </Btn>
@@ -1282,7 +1360,7 @@ export default function App() {
         <span></span>
       </TableHeader>
       {players.length===0 && (
-        <p style={{color:"var(--text-dim)",textAlign:"center",padding:"20px 0",fontSize:15}}>{t("noPlayer")}</p>
+        <p style={{color:"var(--text-dim)",textAlign:"center",padding:"20px 0",fontSize:"0.9375rem"}}>{t("noPlayer")}</p>
       )}
       {players.map((p,i)=>{
         const pos=getPos(p.name);
@@ -1295,11 +1373,11 @@ export default function App() {
                   ? <MedalAvatar $rank={pos}>#{pos}</MedalAvatar>
                   : <Avatar $c={color}>{initials(p.name)}</Avatar>}
                 <span style={{minWidth:0}}>
-                  <span style={{display:"block",fontWeight:700,fontSize:15}}>
+                  <span style={{display:"block",fontWeight:700,fontSize:"0.9375rem"}}>
                     {pos && pos>3 && <RankBadge $pos={pos}>#{pos}</RankBadge>}
                     {p.name}
                   </span>
-                  {pos && <span style={{display:"block",fontSize:13,color:"var(--text-muted)",marginTop:2}}>
+                  {pos && <span style={{display:"block",fontSize:"0.8125rem",color:"var(--text-muted)",marginTop:2}}>
                     {rankLabel(pos)}
                   </span>}
                 </span>
@@ -1307,7 +1385,7 @@ export default function App() {
               <div style={{textAlign:"center"}}>
                 <CountBox>
                   <CountBtn aria-label={`− ${t("buyIn")} ${p.name}`} onClick={()=>tournBuy(i,-1)}>−</CountBtn>
-                  <span style={{minWidth:20,textAlign:"center",fontSize:15,fontWeight:700}}>{p.count}</span>
+                  <span style={{minWidth:20,textAlign:"center",fontSize:"0.9375rem",fontWeight:700}}>{p.count}</span>
                   <CountBtn aria-label={`+ ${t("buyIn")} ${p.name}`} onClick={()=>tournBuy(i,1)}>+</CountBtn>
                 </CountBox>
               </div>
@@ -1406,7 +1484,7 @@ export default function App() {
       <ShareBtns>
         <Btn $v="success" disabled={players.length===0} onClick={()=>setShowShare(true)}>
           <Share2 size={15}/>{lang==="TH"?"แชร์ผลลัพธ์":"Share Results"}
-          {plan==="free" && <span style={{fontSize:12,fontWeight:600,marginLeft:2}}>
+          {plan==="free" && <span style={{fontSize:"0.75rem",fontWeight:600,marginLeft:2}}>
             {Math.max(0,FREE_MAX_EXPORTS-exportCount)}/{FREE_MAX_EXPORTS}
           </span>}
         </Btn>
@@ -1417,6 +1495,10 @@ export default function App() {
   /* ─────────────────────────────────────────
      Tournament Timer Panel
   ───────────────────────────────────────── */
+  const levelAnnouncement = breakTime
+    ? `${t("breakTime")} · ${fmt(round.duration)}`
+    : `${t("level")} ${roundIndex+1} · Blinds ${fmtN(round.sb)} / ${fmtN(round.bb)}${round.ante?` · Ante ${fmtN(round.ante)}`:""}`;
+
   const TimerPanel = () => {
     const R = 88; const C = 2*Math.PI*R;
     const dashOffset = C * (1 - progress/100);
@@ -1469,22 +1551,20 @@ export default function App() {
         const next = tournament.rounds[roundIndex+1];
         if(!next) return null;
         return (
-          <div style={{width:"100%",background:"var(--surface2)",border:"1px solid var(--border)",
-            borderRadius:"var(--radius-sm)",padding:"10px 16px",display:"flex",
-            flexDirection:"column",alignItems:"center",gap:4}}>
-            <span style={{fontSize:15,fontWeight:700,textTransform:"uppercase",
-              letterSpacing:".1em",color:"var(--text-muted)"}}>
+          <NextLevelBox>
+            <span style={{fontSize:"0.9375rem",fontWeight:700,textTransform:"uppercase",
+              letterSpacing:"calc(.1em * var(--tracking))",color:"var(--text-muted)"}}>
               {lang==="TH"?"Level ถัดไป":"Next Level"}
             </span>
             {next.isBreak
-              ? <span style={{fontSize:18,fontWeight:800,color:"var(--info-ink)",display:"inline-flex",alignItems:"center",gap:6}}><Coffee size={16}/> Break · {fmt(next.duration)}</span>
-              : <span style={{fontSize:18,fontWeight:800,color:"var(--text)"}}>
+              ? <span style={{fontSize:"1.125rem",fontWeight:800,color:"var(--info-ink)",display:"inline-flex",alignItems:"center",gap:6}}><Coffee size={16}/> Break · {fmt(next.duration)}</span>
+              : <span style={{fontSize:"1.125rem",fontWeight:800,color:"var(--text)"}}>
                   {fmtN(next.sb)} / {fmtN(next.bb)}
-                  {next.ante ? <span style={{fontSize:14,fontWeight:600,color:"var(--text-muted)"}}> · Ante {fmtN(next.ante)}</span> : null}
-                  <span style={{fontSize:14,fontWeight:600,color:"var(--text-muted)"}}> · {fmt(next.duration)}</span>
+                  {next.ante ? <span style={{fontSize:"0.875rem",fontWeight:600,color:"var(--text-muted)"}}> · Ante {fmtN(next.ante)}</span> : null}
+                  <span style={{fontSize:"0.875rem",fontWeight:600,color:"var(--text-muted)"}}> · {fmt(next.duration)}</span>
                 </span>
             }
-          </div>
+          </NextLevelBox>
         );
       })()}
 
@@ -1493,7 +1573,7 @@ export default function App() {
           levelUpSound.currentTime=0;levelUpSound.play().catch(()=>{});
           setRoundIndex(i=>{const p=Math.max(i-1,0);setTimeLeft(tournament.rounds[p].duration);return p;});
         }}><SkipBack size={14} /></Btn>
-        <Btn $v="primary" style={{padding:"9px 28px",fontSize:15}} aria-label={running?t("pause"):t("start")} onClick={()=>{
+        <Btn $v="primary" style={{padding:"9px 28px",fontSize:"0.9375rem"}} aria-label={running?t("pause"):t("start")} onClick={()=>{
           if(timeLeft<=0) setTimeLeft(round.duration);
           setRunning(r=>!r);
         }}>{running?<Pause size={18}/>:<Play size={18}/>}</Btn>
@@ -1538,7 +1618,7 @@ export default function App() {
                 : r.isBreak?{background:"color-mix(in srgb,var(--info) 7%,transparent)",color:"var(--text-muted)"}:{}}>
                 <td style={{width:20}}>{i===roundIndex&&running&&<ActiveDot/>}</td>
                 {r.isBreak
-                  ? <td colSpan={3} style={{fontSize:14,fontWeight:700,letterSpacing:".04em",color:"var(--info-ink)"}}>
+                  ? <td colSpan={3} style={{fontSize:"0.875rem",fontWeight:700,letterSpacing:"calc(.04em * var(--tracking))",color:"var(--info-ink)"}}>
                       <span style={{display:"inline-flex",alignItems:"center",gap:6}}><Coffee size={14}/> Break</span>
                     </td>
                   : <><td>{r.sb?fmtN(r.sb):"—"}</td><td>{r.bb?fmtN(r.bb):"—"}</td><td>{r.ante?fmtN(r.ante):"—"}</td></>
@@ -1558,9 +1638,7 @@ export default function App() {
   /* ─────────────────────────────────────────
      Render
   ───────────────────────────────────────── */
-  const cashTabs  = ["players","summary","insurance","settings"] as const;
-  const tournTabs = ["timer","players","settings"]   as const;
-  const activeTabs = mode==="CASH" ? cashTabs : tournTabs;
+  const activeTabs = TABS_BY_MODE[mode];
 
   return (
     <>
@@ -1687,33 +1765,39 @@ export default function App() {
         </Dialog.Root>
 
         {/* ── Header ── */}
+        <SkipLink href="#main" onClick={e=>{e.preventDefault();document.getElementById("main")?.focus();}}>
+          {lang==="TH"?"ข้ามไปเนื้อหาหลัก":"Skip to main content"}
+        </SkipLink>
         <Header>
-          <LogoImg src={`${BASE}logo22.png`} alt="Go Poker" />
+          <h1 style={{margin:0,lineHeight:0}}>
+            <LogoImg src={`${BASE}logo.webp`} alt="Go Poker" width={459} height={250} />
+          </h1>
 
           <ModeTabs>
-            <ModeTab $active={mode==="TOURNAMENT"} onClick={()=>handleChangeMode("TOURNAMENT")}>
-              <Trophy size={13} /> {t("tournament")}
+            <ModeTab aria-pressed={mode==="TOURNAMENT"} $active={mode==="TOURNAMENT"} onClick={()=>handleChangeMode("TOURNAMENT")}>
+              <Trophy size={13} aria-hidden="true" /> {t("tournament")}
             </ModeTab>
-            <ModeTab $active={mode==="CASH"} onClick={()=>handleChangeMode("CASH")}>
-              <Banknote size={13} /> {t("cashGame")}
+            <ModeTab aria-pressed={mode==="CASH"} $active={mode==="CASH"} onClick={()=>handleChangeMode("CASH")}>
+              <Banknote size={13} aria-hidden="true" /> {t("cashGame")}
             </ModeTab>
           </ModeTabs>
 
           <HeaderRight>
             <Select.Root value={lang} onValueChange={v=>setLang(v as Lang)}>
-              <LangTrigger aria-label="Language">
-                <span className="lang-full">{lang==="TH"?"🇹🇭 ไทย":"🇬🇧 English"}</span>
-                <span className="lang-short">{lang==="TH"?"🇹🇭":"🇬🇧"}</span>
+              <LangTrigger aria-label={t("language")}>
+                <Languages size={15} aria-hidden="true" />
+                <span className="lang-full">{lang==="TH"?"ไทย":"English"}</span>
+                <span className="lang-short">{lang==="TH"?"TH":"EN"}</span>
                 <Select.Icon asChild><ChevronDown size={12}/></Select.Icon>
               </LangTrigger>
               <Select.Portal>
                 <LangContent position="popper" sideOffset={6}>
                   <Select.Viewport>
                     <LangItem value="TH">
-                      <Select.ItemText>🇹🇭 ไทย</Select.ItemText>
+                      <Select.ItemText>ไทย</Select.ItemText>
                     </LangItem>
                     <LangItem value="EN">
-                      <Select.ItemText>🇬🇧 English</Select.ItemText>
+                      <Select.ItemText>English</Select.ItemText>
                     </LangItem>
                   </Select.Viewport>
                 </LangContent>
@@ -1762,12 +1846,12 @@ export default function App() {
         {/* Save status indicator */}
         {saveStatus !== "idle" && (
           <div role="status" style={{
-            position:"fixed",bottom:16,right:16,zIndex:9999,
+            position:"fixed",bottom:16,right:16,zIndex:"var(--z-toast)",
             background:"var(--surface)",border:"1px solid var(--border2)",
-            borderRadius:8,padding:"6px 12px",fontSize:14,fontWeight:700,
+            borderRadius:8,padding:"6px 12px",fontSize:"0.875rem",fontWeight:700,
             color: saveStatus==="saved" ? "var(--success-ink)" : "var(--text-muted)",
             boxShadow:"var(--shadow-lg)",display:"flex",alignItems:"center",gap:6,
-            transition:"opacity .3s",
+            transition:"opacity var(--dur-slow)",
           }}>
             {saveStatus==="saving"
               ? <><Loader2 size={14} style={{animation:"spin 1s linear infinite"}}/> {lang==="TH"?"กำลังบันทึก...":"Saving..."}</>
@@ -1777,18 +1861,19 @@ export default function App() {
 
         {/* ── Mobile: mode select ── */}
         <MobileModeRow>
-          <MobileModeBtn $active={mode==="TOURNAMENT"} onClick={()=>handleChangeMode("TOURNAMENT")}>
-            <Trophy size={13} /> {t("tournament")}
+          <MobileModeBtn aria-pressed={mode==="TOURNAMENT"} $active={mode==="TOURNAMENT"} onClick={()=>handleChangeMode("TOURNAMENT")}>
+            <Trophy size={13} aria-hidden="true" /> {t("tournament")}
           </MobileModeBtn>
-          <MobileModeBtn $active={mode==="CASH"} onClick={()=>handleChangeMode("CASH")}>
-            <Banknote size={13} /> {t("cashGame")}
+          <MobileModeBtn aria-pressed={mode==="CASH"} $active={mode==="CASH"} onClick={()=>handleChangeMode("CASH")}>
+            <Banknote size={13} aria-hidden="true" /> {t("cashGame")}
           </MobileModeBtn>
         </MobileModeRow>
 
         {/* ── Mobile Tab Bar ── */}
-        <MobileTabBar>
+        <MobileTabBar aria-label={lang==="TH"?"ส่วนของหน้า":"Sections"}>
           {activeTabs.map(tab=>(
-            <MobileTabBtn key={tab} $active={mobileTab===tab} onClick={()=>setMobileTab(tab)}>
+            <MobileTabBtn key={tab} aria-current={mobileTab===tab ? "page" : undefined}
+              $active={mobileTab===tab} onClick={()=>goToTab(tab)}>
               {tab==="players"    ? t("players")
                :tab==="summary"   ? t("summary")
                :tab==="settings"  ? t("settings")
@@ -1799,8 +1884,10 @@ export default function App() {
           ))}
         </MobileTabBar>
 
+        {mode==="TOURNAMENT" && <VisuallyHidden aria-live="polite" aria-atomic="true">{levelAnnouncement}</VisuallyHidden>}
+
         <PageBody>
-        <Content>
+        <Content id="main" tabIndex={-1}>
 
           {/* ════════════════════════
               CASH GAME

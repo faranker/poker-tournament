@@ -8,21 +8,21 @@ const overlayShow = keyframes`from{opacity:0}to{opacity:1}`;
 const contentShow = keyframes`from{opacity:0;transform:translate(-50%,-48%) scale(.97)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}`;
 
 const Overlay = styled(Dialog.Overlay)`
-  position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:2000;backdrop-filter:blur(6px);
-  animation:${overlayShow} .15s ease;
+  position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:var(--z-modal);backdrop-filter:blur(6px);
+  animation:${overlayShow} var(--dur-fast) var(--ease-out);
 `;
 const Box = styled(Dialog.Content)`
-  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2001;
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:calc(var(--z-modal) + 1);
   background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);
   width:min(520px,96vw);max-height:90vh;display:flex;flex-direction:column;
-  box-shadow:var(--shadow-lg);animation:${contentShow} .18s ease;
+  box-shadow:var(--shadow-lg);animation:${contentShow} var(--dur) var(--ease-out);
   &:focus{outline:none;}
 `;
 const Header = styled.div`
   display:flex;align-items:center;justify-content:space-between;
   padding:18px 20px;border-bottom:1px solid var(--border);flex-shrink:0;
 `;
-const Title = styled.h2`font-size:16px;font-weight:900;display:flex;align-items:center;gap:8px;color:var(--text);`;
+const Title = styled.h2`font-size:1rem;font-weight:900;display:flex;align-items:center;gap:8px;color:var(--text);`;
 const CloseBtn = styled.button`@media(pointer:coarse){min-width:44px;min-height:44px;align-items:center;justify-content:center;}
   background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px;
   border-radius:6px;display:flex;&:hover{color:var(--text);background:var(--surface2);}
@@ -32,7 +32,7 @@ const TabRow = styled.div`
 `;
 const Tab = styled.button<{$active?:boolean}>`
   display:flex;align-items:center;gap:7px;padding:9px 16px;border:none;border-radius:8px 8px 0 0;
-  font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;
+  font-size:0.875rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all var(--dur-fast);
   background:${p=>p.$active?"var(--surface2)":"transparent"};
   color:${p=>p.$active?"var(--text)":"var(--text-muted)"};
   border-bottom:${p=>p.$active?"2px solid var(--accent)":"2px solid transparent"};
@@ -43,13 +43,13 @@ const Body = styled.div`flex:1;overflow-y:auto;padding:20px;display:flex;flex-di
 
 const TextBox = styled.pre`
   background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);
-  padding:16px;font-family:monospace;font-size:13px;line-height:1.7;color:var(--text);
+  padding:16px;font-family:monospace;font-size:0.8125rem;line-height:1.7;color:var(--text);
   white-space:pre-wrap;word-break:break-word;overflow-y:auto;max-height:320px;margin:0;
 `;
 const CopyBtn = styled.button<{$copied?:boolean}>`
   display:flex;align-items:center;justify-content:center;gap:8px;
   width:100%;padding:12px;border-radius:var(--radius-sm);border:none;
-  font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .18s,opacity .18s;
+  font-size:0.9375rem;font-weight:700;cursor:pointer;font-family:inherit;transition:background var(--dur),opacity var(--dur);
   background:${p=>p.$copied?"var(--success)":"var(--accent)"};
   color:${p=>p.$copied?"var(--on-success)":"var(--on-accent)"};
   &:hover:not(:disabled){opacity:.88;}
@@ -59,7 +59,7 @@ const ThemeGrid = styled.div`display:grid;grid-template-columns:repeat(3,1fr);ga
 const ThemeCard = styled.button<{$active?:boolean}>`
   display:flex;flex-direction:column;align-items:center;gap:10px;
   padding:16px 10px;border-radius:var(--radius-sm);border:2px solid;cursor:pointer;
-  font-family:inherit;transition:all .18s;
+  font-family:inherit;transition:all var(--dur);
   border-color:${p=>p.$active?"var(--accent)":"var(--border)"};
   background:${p=>p.$active?"var(--accent-soft)":"var(--surface2)"};
   color:${p=>p.$active?"var(--accent-ink)":"var(--text-muted)"};
@@ -72,14 +72,14 @@ const ThemePreview = styled.div<{$theme:"dark"|"light"|"custom";$bg?:string}>`
     p.$theme==="light"?"#f8f6f0":
     p.$bg?`url(${p.$bg}) center/cover`:"#334155"};
   border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:700;
+  font-size:0.75rem;font-weight:700;
   color:${p=>p.$theme==="light"?"#0f172a":"#fff"};
   opacity:${p=>p.$theme==="custom"&&!p.$bg?0.5:1};
 `;
 const DownloadBtn = styled.button`
   display:flex;align-items:center;justify-content:center;gap:8px;
   width:100%;padding:12px;border-radius:var(--radius-sm);border:none;
-  font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .18s;
+  font-size:0.9375rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all var(--dur);
   background:var(--accent);color:var(--on-accent);
   &:hover:not(:disabled){opacity:.88;}
   &:disabled{opacity:.5;cursor:not-allowed;}
@@ -264,21 +264,21 @@ export function ShareModal({ lang, mode, players, tournament, prizeWinners, sumB
                     <ThemePreview $theme="dark">
                       <Moon size={18} color="#818cf8"/>
                     </ThemePreview>
-                    <span style={{fontSize:13,fontWeight:700}}>Dark</span>
+                    <span style={{fontSize:"0.8125rem",fontWeight:700}}>Dark</span>
                   </ThemeCard>
 
                   <ThemeCard $active={theme==="light"} onClick={()=>setTheme("light")}>
                     <ThemePreview $theme="light">
                       <Sun size={18} color="#d97706"/>
                     </ThemePreview>
-                    <span style={{fontSize:13,fontWeight:700}}>Light</span>
+                    <span style={{fontSize:"0.8125rem",fontWeight:700}}>Light</span>
                   </ThemeCard>
 
                   <ThemeCard $active={theme==="custom"} onClick={()=>setTheme("custom")}>
                     <ThemePreview $theme="custom" $bg={customBg||undefined}>
                       {!customBg && <ImagePlus size={18} color="#94a3b8"/>}
                     </ThemePreview>
-                    <span style={{fontSize:13,fontWeight:700}}>Custom</span>
+                    <span style={{fontSize:"0.8125rem",fontWeight:700}}>Custom</span>
                   </ThemeCard>
                 </ThemeGrid>
 
@@ -287,12 +287,12 @@ export function ShareModal({ lang, mode, players, tournament, prizeWinners, sumB
                     <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",
                       background:"var(--surface2)",border:"1px solid var(--border)",borderRadius:8}}>
                       <img src={customBg} alt="bg" style={{width:56,height:36,objectFit:"cover",borderRadius:5,flexShrink:0,border:"1px solid var(--border)"}}/>
-                      <div style={{flex:1,fontSize:13,color:"var(--text-muted)",fontWeight:600,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                      <div style={{flex:1,fontSize:"0.8125rem",color:"var(--text-muted)",fontWeight:600,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                         {isTH?"รูป Background ที่เลือก":"Selected background"}
                       </div>
                       <label style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",
                         borderRadius:6,border:"1px solid var(--border2)",cursor:"pointer",
-                        fontSize:12,fontWeight:700,color:"var(--text-muted)",background:"var(--surface3)",flexShrink:0}}>
+                        fontSize:"0.75rem",fontWeight:700,color:"var(--text-muted)",background:"var(--surface3)",flexShrink:0}}>
                         <ImagePlus size={12}/>{isTH?"เปลี่ยน":"Change"}
                         <input type="file" accept="image/*" style={{display:"none"}} onChange={handleBgUpload}/>
                       </label>
@@ -304,7 +304,7 @@ export function ShareModal({ lang, mode, players, tournament, prizeWinners, sumB
                   ) : (
                     <label style={{display:"flex",alignItems:"center",gap:8,padding:"12px 16px",
                       border:"1.5px dashed var(--border2)",borderRadius:8,cursor:"pointer",
-                      color:"var(--text-muted)",fontSize:13,fontWeight:600,justifyContent:"center"}}>
+                      color:"var(--text-muted)",fontSize:"0.8125rem",fontWeight:600,justifyContent:"center"}}>
                       <ImagePlus size={16}/>{isTH?"อัปโหลดรูป Background":"Upload Background Image"}
                       <input type="file" accept="image/*" style={{display:"none"}} onChange={handleBgUpload}/>
                     </label>

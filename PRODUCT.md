@@ -52,7 +52,7 @@ What sets it apart from a generic poker blind timer:
 ## Brand Commitments
 
 - Product name: **Go Poker** (the page title; the repo is still named `poker-tournament`).
-- Logo and favicon live in `public/` (`logo22.png`, `favicon.png`).
+- Logo and favicon live in `public/`: `logo.webp` is what the app serves, `logo22.png` is the full-size original, plus `favicon.png`.
 - Bilingual Thai/English; every user-facing string has both versions.
 
 ## Evidence on Hand
