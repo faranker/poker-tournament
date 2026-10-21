@@ -1,121 +1,73 @@
--- ================================================================
--- Poker Tournament — Database Schema
--- Run this in psql or pgAdmin after creating the database
--- ================================================================
+-- Poker Tournament — full schema
+-- Run this once on a fresh Neon (or any Postgres) database
 
--- Users table (replaces Supabase auth.users)
+-- Users
 create table if not exists users (
-  id          uuid primary key default gen_random_uuid(),
-  email       text not null unique,
-  username    text not null unique,
-  password    text not null,
-  created_at  timestamptz default now(),
-  reset_token text,
+  id            serial primary key,
+  email         text unique not null,
+  username      text unique not null,
+  password      text not null,
+  role          text not null default 'user',
+  bg_image      text,
+  reset_token   text,
   reset_expires timestamptz,
-  bg_image text
-);
-alter table users add column if not exists bg_image text;
-
--- 2026-08-23 — role, for the bo-poker-tournament back office (user/vip/banned).
--- 'banned' is enforced in routes/auth.js's /login (rejects with 403).
-alter table users add column if not exists role text not null default 'user';
-alter table users drop constraint if exists users_role_check;
-alter table users add constraint users_role_check check (role in ('user','vip','banned'));
-
--- 2026-08-23 — donations table was created out-of-band directly on the DB
--- (routes/donations.js has always queried it) and was never added here;
--- documenting its real, live shape now that bo-poker-tournament needs it.
-create table if not exists donations (
-  id           serial primary key,
-  display_name text not null,
-  user_id      uuid references users(id) on delete set null,
-  amount       numeric not null,
-  slip_path    text,
-  status       text not null default 'pending' check (status in ('pending','pending_amount','approved','rejected')),
-  approved_at  timestamptz,
-  created_at   timestamptz default now(),
-  payer_name   text,
-  payer_bank   text
+  created_at    timestamptz default now()
 );
 
--- 2026-08-23 — SCB auto-match for donations, mirrors payment_requests.
-alter table donations add column if not exists expected_from_account_number text;
-alter table donations add column if not exists expected_from_bank text;
-alter table donations add column if not exists payment_window_expires_at timestamptz;
-alter table donations add column if not exists matched_transaction_key text unique;
-
-alter table donations drop constraint if exists donations_status_check;
-alter table donations add constraint donations_status_check
-  check (status in ('awaiting_transfer','pending','pending_amount','expired','approved','rejected'));
-
--- 2026-08-22 — donor no longer declares an amount up front; the real
--- amount is whatever the matched SCB deposit actually reports, set on
--- approval. Column stays null while a donation is awaiting_transfer.
-alter table donations alter column amount drop not null;
-
--- Subscriptions (plan management)
+-- Subscriptions
 create table if not exists subscriptions (
-  user_id    uuid primary key references users(id) on delete cascade,
-  plan       text not null default 'free' check (plan in ('free','cash_pro','full_pro')),
+  id         serial primary key,
+  user_id    integer not null references users(id) on delete cascade,
+  plan       text not null default 'free',
   expires_at timestamptz,
+  created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
 
--- Export logs (track free tier usage)
-create table if not exists export_logs (
-  id         serial primary key,
-  user_id    uuid not null references users(id) on delete cascade,
-  mode       text not null,
-  exported_at timestamptz default now()
-);
-
--- Payment requests (slip upload, and SCB auto-match)
-create table if not exists payment_requests (
-  id           serial primary key,
-  user_id      uuid not null references users(id) on delete cascade,
-  plan         text not null,
-  billing_cycle text not null default 'monthly',
-  amount       numeric not null,
-  slip_path    text,
-  status       text not null default 'pending' check (status in ('pending','approved','rejected')),
-  approved_at  timestamptz,
-  created_at   timestamptz default now()
-);
-
--- 2026-08-21 — SCB auto-match: a request starts as 'awaiting_transfer' with a
--- payment window; the line-forwarder-app webhook auto-approves it on a match,
--- or it becomes 'expired' and falls back to the existing slip-upload/admin flow.
-alter table payment_requests add column if not exists expected_from_account_number text;
-alter table payment_requests add column if not exists expected_from_bank text;
-alter table payment_requests add column if not exists payment_window_expires_at timestamptz;
-alter table payment_requests add column if not exists matched_transaction_key text unique;
-
-alter table payment_requests drop constraint if exists payment_requests_status_check;
-alter table payment_requests add constraint payment_requests_status_check
-  check (status in ('awaiting_transfer','pending','expired','approved','rejected'));
-
--- Game sessions (persist game state per user)
+-- Game sessions (cloud save)
 create table if not exists game_sessions (
   user_id    text primary key,
   game_state jsonb not null,
   updated_at timestamptz default now()
 );
 
--- 2026-08-23 — session_history was created out-of-band directly on the DB
--- (routes/history.js has always queried it) and was never added here;
--- documenting its shape now, inferred from that route's own insert/select.
-create table if not exists session_history (
+-- Game history
+create table if not exists game_history (
   id         serial primary key,
-  user_id    uuid not null references users(id) on delete cascade,
-  mode       text not null,
-  game_name  text,
-  players    jsonb not null,
-  summary    jsonb not null default '{}',
-  played_at  timestamptz not null default now()
+  user_id    integer not null references users(id) on delete cascade,
+  game_state jsonb not null,
+  saved_at   timestamptz default now()
 );
 
--- Auto-insert trial plan when user registers (1 day trial)
-create or replace function handle_new_user()
+-- Payment requests
+create table if not exists payment_requests (
+  id                              serial primary key,
+  user_id                         integer not null references users(id) on delete cascade,
+  plan                            text not null,
+  billing_cycle                   text not null,
+  amount                          numeric(10,2) not null,
+  status                          text not null default 'awaiting_transfer',
+  expected_from_bank              text,
+  expected_from_account_number    text,
+  payment_window_expires_at       timestamptz,
+  approved_at                     timestamptz,
+  created_at                      timestamptz default now()
+);
+
+-- Donations
+create table if not exists donations (
+  id          serial primary key,
+  user_id     integer references users(id) on delete set null,
+  amount      numeric(10,2),
+  status      text not null default 'awaiting_transfer',
+  from_bank   text,
+  from_account text,
+  approved_at timestamptz,
+  created_at  timestamptz default now()
+);
+
+-- Auto-give 1-day full_pro trial on new user registration
+create or replace function give_trial_plan()
 returns trigger language plpgsql as $$
 begin
   insert into subscriptions (user_id, plan, expires_at)
@@ -124,11 +76,7 @@ begin
 end;
 $$;
 
-drop trigger if exists on_user_created on users;
-create trigger on_user_created
+drop trigger if exists after_user_register on users;
+create trigger after_user_register
   after insert on users
-  for each row execute function handle_new_user();
-
--- Indexes for performance
-create index if not exists idx_export_logs_user_id on export_logs(user_id);
-create index if not exists idx_export_logs_exported_at on export_logs(exported_at);
+  for each row execute function give_trial_plan();
