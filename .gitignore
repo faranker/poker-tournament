@@ -29,3 +29,6 @@ server/uploads
 *.sw?
 
 .vercel
+
+# Impeccable engine binary (re-downloaded by the launcher on first run)
+.claude/skills/impeccable/scripts/bin/
